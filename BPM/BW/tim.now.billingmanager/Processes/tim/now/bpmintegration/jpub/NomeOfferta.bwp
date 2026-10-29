@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpws:process exitOnStandardFault="no"
+    name="tim.now.bpmintegration.jpub.NomeOfferta"
+    suppressJoinFailure="yes"
+    targetNamespace="http://xmlns.example.com/20170316173546"
+    xmlns:bpws="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+    xmlns:info="http://www.tibco.com/bw/process/info"
+    xmlns:ns="http://xmlns.example.com/20170316173546PLT"
+    xmlns:ns0="http://www.tibco.com/pe/EngineTypes"
+    xmlns:ns1="http://xmlns.example.com/20170316173546"
+    xmlns:ns2="http://www.tim.com/NOW/wsdl/abstract/NomeOfferta/"
+    xmlns:ns3="http://www.tim.com/NOW/xsd/GenericLogger"
+    xmlns:ns4="http://schemas.tibco.com/bw/plugins/basic/6.0/faults"
+    xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+    xmlns:sca-bpel="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"
+    xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"
+    xmlns:tibprop="http://ns.tibco.com/bw/property"
+    xmlns:tns="http://www.tim.com/NOW/xsd/JPUB_Util" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <tibex:Types>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/EngineTypes"
+            xmlns:tns="http://www.tibco.com/pe/EngineTypes" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ErrorReport">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="FullClass" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Class" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="FaultDetail">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ActivityName" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ProcessContext">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="JobId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessInstanceId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0"
+                        name="CustomJobId" type="xs:string"/>
+                    <!--xs:element name="RestartedFromCheckpoint" form="unqualified" block="extension restriction substitution" type="xs:boolean"/-->
+                    <!--xs:element minOccurs="0" maxOccurs="unbounded" name="TrackingInfo" form="unqualified" block="extension restriction substitution" type="xs:string"/-->
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="anydata">
+                <xs:sequence>
+                    <xs:any namespace="##any" processContents="lax"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ErrorReport" type="tns:ErrorReport"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="FaultDetail" type="tns:FaultDetail"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ProcessContext" type="tns:ProcessContext"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="CorrelationValue" type="xs:string"/>
+        </xs:schema>
+        <schema attributeFormDefault="unqualified"
+            elementFormDefault="unqualified"
+            targetNamespace="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions"
+            version="" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions">
+            <complexType name="ActivityExceptionType">
+                <sequence>
+                    <element name="msg" type="string"/>
+                    <element minOccurs="0" name="msgCode" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="ActivityException" type="tns:ActivityExceptionType"/>
+            <complexType name="ActivityTimedOutExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType"/>
+                </complexContent>
+            </complexType>
+            <element name="ActivityTimedOutException" type="tns:ActivityTimedOutExceptionType"/>
+            <complexType name="DuplicateKeyExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType">
+                        <sequence>
+                            <element name="duplicateKey" type="string"/>
+                            <element minOccurs="0" name="previousJobID" type="string"/>
+                        </sequence>
+                    </extension>
+                </complexContent>
+            </complexType>
+            <element name="DuplicateKeyException" type="tns:DuplicateKeyExceptionType"/>
+        </schema>
+        <wsdl:definitions
+            targetNamespace="http://xmlns.example.com/20170316173546PLT"
+            xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+            xmlns:ptyp="http://xmlns.example.com/20170316173546"
+            xmlns:ptyp2="http://www.tim.com/NOW/wsdl/abstract/NomeOfferta/"
+            xmlns:tns="http://xmlns.example.com/20170316173546PLT"
+            xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+            xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <plnk:partnerLinkType name="partnerLinkType">
+                <plnk:role name="use" portType="ptyp2:NomeOffertaPortType"/>
+            </plnk:partnerLinkType>
+            <wsdl:import namespace="http://www.tim.com/NOW/wsdl/abstract/NomeOfferta/"/>
+        </wsdl:definitions>
+    </tibex:Types>
+    <tibex:ProcessInfo callable="false" createdBy="Daniele Nicolini"
+        createdOn="Thu Mar 16 17:35:46 CET 2017" description=""
+        extraErrorVars="false" modifiers="public"
+        productVersion="6.3.2 HF3 V42 2016-09-08" scalable="true"
+        singleton="true" stateless="false" type="IT"/>
+    <tibex:ProcessInterface context="" input="" output=""/>
+    <tibex:ProcessTemplateConfigurations/>
+    <notation:Diagram measurementUnit="Pixel" type="BWProcess"
+        xmlns:bwnotation="http://tns.tibco.com/bw/runtime/BWNotation"
+        xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <children type="2001">
+            <children type="5001"/>
+            <children type="3001">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <children type="3002">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3003">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3004">
+                <children type="4018">
+                    <children type="3018">
+                        <children type="4020">
+                            <children type="3020">
+                                <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint x="-25"
+                                    xsi:type="notation:Bounds" y="62"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint x="74"
+                                    xsi:type="notation:Bounds" y="62"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.2"/>
+                                    <layoutConstraint x="302"
+                                    xsi:type="notation:Bounds" y="62"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.3"/>
+                                    <layoutConstraint x="180"
+                                    xsi:type="notation:Bounds" y="62"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.4"/>
+                                    <layoutConstraint x="408"
+                                    xsi:type="notation:Bounds" y="62"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    <layoutConstraint height="186"
+                                    width="555" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity"/>
+                            <layoutConstraint height="384" width="588" xsi:type="notation:Bounds"/>
+                        </children>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <element href="//0/@process/@activity"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@activity"/>
+                    <layoutConstraint height="408" width="588" x="1"
+                        xsi:type="notation:Bounds" y="1"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+            <element href="//0/@process"/>
+            <layoutConstraint height="262" width="900" xsi:type="notation:Bounds"/>
+        </children>
+        <styles xsi:type="notation:DiagramStyle"/>
+        <element href="//0"/>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.1"/>
+            <bendpoints points="[25, 0, -85, 0]$[86, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.2"/>
+            <bendpoints points="[25, 0, -123, 0]$[124, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.3"/>
+            <bendpoints points="[25, 0, -81, 0]$[82, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+    </notation:Diagram>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/GenericLogger"/>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://www.tim.com/NOW/wsdl/abstract/NomeOfferta/"/>
+    <bpws:partnerLinks>
+        <bpws:partnerLink myRole="use" name="NomeOffertaPortType"
+            partnerLinkType="ns:partnerLinkType" sca-bpel:ignore="false" sca-bpel:service="NomeOffertaPortType"/>
+    </bpws:partnerLinks>
+    <bpws:variables>
+        <bpws:variable element="ns0:ProcessContext"
+            name="_processContext" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns2:NomeOffertaRequest"
+            name="NomeOffertaIn" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:CW_BUS_MESSAGE"
+            name="LogNomeOffertaIn-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:CW_BUS_MESSAGE"
+            name="LogNomeOffertaOut-input" sca-bpel:internal="true"/>
+        <bpws:variable name="Offerta" type="xsd:string">
+            <bpws:from>
+                <bpws:literal>Mapping_</bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable name="LoggerName" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LoggerName" type="xsd:string"/>
+        <bpws:variable name="LogLevel" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LogLevel" type="xsd:string"/>
+        <bpws:variable messageType="ns2:NomeOffertaResponse"
+            name="Reply-input" sca-bpel:internal="true"/>
+    </bpws:variables>
+    <bpws:extensions>
+        <bpws:extension mustUnderstand="no" namespace="http://www.eclipse.org/gmf/runtime/1.0.2/notation"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bw/process/info"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca/200912"/>
+        <bpws:extension mustUnderstand="no" namespace="http://ns.tibco.com/bw/property"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bpel/2007/extensions"/>
+    </bpws:extensions>
+    <bpws:scope name="scope">
+        <bpws:flow name="flow">
+            <bpws:links>
+                <bpws:link name="NomeOffertaInToCallProcess" tibex:linkType="SUCCESS"/>
+                <bpws:link name="CallProcessToAssign" tibex:linkType="SUCCESS"/>
+                <bpws:link name="AssignToCallProcess1" tibex:linkType="SUCCESS"/>
+                <bpws:link name="LogNomeOffertaOutToReply" tibex:linkType="SUCCESS"/>
+            </bpws:links>
+            <bpws:receive createInstance="yes" name="NomeOffertaIn"
+                operation="NomeOfferta"
+                partnerLink="NomeOffertaPortType"
+                portType="ns2:NomeOffertaPortType"
+                tibex:xpdlId="f75bc07f-63ec-42bc-b88c-099b556a2c69" variable="NomeOffertaIn">
+                <bpws:sources>
+                    <bpws:source linkName="NomeOffertaInToCallProcess"/>
+                </bpws:sources>
+            </bpws:receive>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/JPUB_Util&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;NomeOffertaIn&quot;/>&lt;xsl:param name=&quot;LoggerName&quot;/>&lt;xsl:param name=&quot;LogLevel&quot;/>&lt;xsl:template name=&quot;LogNomeOffertaIn-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;'tim.now.billingmanager.application'&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;NomeOffertaPortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$NomeOffertaIn/parameters/tns2:NomeOffertaRequest/tns2:IDRichOLO&quot;/>&lt;/tns:BusinessID>&lt;tns:Message>&lt;xsl:value-of select=&quot;tib:render-xml($NomeOffertaIn/parameters/tns2:NomeOffertaRequest, true(), true())&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$LoggerName&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$LogLevel&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;tns:ActiveLoggerServices>&lt;tns:Envelope>&lt;tns:Identifier>&lt;tns:ServiceName>&lt;xsl:value-of select=&quot;'tim.now.bpmintegration.jpub.DynamicProcess'&quot;/>&lt;/tns:ServiceName>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:Source>&lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&lt;/tns:Source>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$NomeOffertaIn/parameters/tns2:NomeOffertaRequest/tns2:IDRichOLO&quot;/>&lt;/tns:BusinessID>&lt;tns:EventType>&lt;xsl:value-of select=&quot;&amp;quot;OpereSpeciali_STARTED&amp;quot;&quot;/>&lt;/tns:EventType>&lt;tns:trackID>&lt;xsl:value-of select=&quot;concat(&amp;quot;NomeOfferta_&amp;quot;, $NomeOffertaIn/parameters/tns2:NomeOffertaRequest/tns2:IDRichOLO)&quot;/>&lt;/tns:trackID>&lt;/tns:Identifier>&lt;tns:track_position>&lt;xsl:value-of select=&quot;'IN'&quot;/>&lt;/tns:track_position>&lt;tns:Timestamp>&lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&lt;/tns:Timestamp>&lt;/tns:Envelope>&lt;tns:Playload>&lt;tns:Binary>&lt;xsl:value-of select=&quot;xsd:base64Binary(tib:string-to-base64(tib:render-xml($NomeOffertaIn/parameters/tns2:NomeOffertaRequest))) &quot;/>&lt;/tns:Binary>&lt;tns:XMLString>&lt;xsl:value-of select=&quot;tib:render-xml($NomeOffertaIn/parameters/tns2:NomeOffertaRequest, true(), true())&quot;/>&lt;/tns:XMLString>&lt;/tns:Playload>&lt;/tns:ActiveLoggerServices>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="LogNomeOffertaIn-input"
+                    name="LogNomeOffertaIn"
+                    tibex:xpdlId="7652cef6-31d0-4dae-8407-2079b05fa76f"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="NomeOffertaInToCallProcess"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="CallProcessToAssign"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding coercion=""
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/JPUB_Util&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;NomeOffertaIn.parameters&quot;/>&#xa;    &lt;xsl:param name=&quot;LoggerName&quot;/>&#xa;    &lt;xsl:param name=&quot;LogLevel&quot;/>&#xa;    &lt;xsl:template name=&quot;LogNomeOffertaIn-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:CW_BUS_MESSAGE>&#xa;            &lt;tns:GenericLogger>&#xa;                &lt;tns:Application>&#xa;                    &lt;xsl:value-of select=&quot;'tim.now.billingmanager.application'&quot;/>&#xa;                &lt;/tns:Application>&#xa;                &lt;tns:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&#xa;                &lt;/tns:Process>&#xa;                &lt;tns:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;NomeOffertaPortType&amp;quot;&quot;/>&#xa;                &lt;/tns:Service>&#xa;                &lt;tns:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&#xa;                &lt;/tns:Operation>&#xa;                &lt;tns:BusinessID>&#xa;                    &lt;xsl:value-of select=&quot;$NomeOffertaIn.parameters/tns2:IDRichOLO&quot;/>&#xa;                &lt;/tns:BusinessID>&#xa;                &lt;tns:Message>&#xa;                    &lt;xsl:value-of select=&quot;tib:render-xml($NomeOffertaIn.parameters, true(), true())&quot;/>&#xa;                &lt;/tns:Message>&#xa;                &lt;tns:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$LoggerName&quot;/>&#xa;                &lt;/tns:LoggerName>&#xa;                &lt;tns:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$LogLevel&quot;/>&#xa;                &lt;/tns:LogLevel>&#xa;                &lt;tns:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                &lt;/tns:LogJMS>&#xa;            &lt;/tns:GenericLogger>&#xa;            &lt;tns:ActiveLoggerServices>&#xa;                &lt;tns:Envelope>&#xa;                    &lt;tns:Identifier>&#xa;                        &lt;tns:ServiceName>&#xa;                            &lt;xsl:value-of select=&quot;'tim.now.bpmintegration.jpub.DynamicProcess'&quot;/>&#xa;                        &lt;/tns:ServiceName>&#xa;                        &lt;tns:Operation>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&#xa;                        &lt;/tns:Operation>&#xa;                        &lt;tns:Source>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&#xa;                        &lt;/tns:Source>&#xa;                        &lt;tns:BusinessID>&#xa;                            &lt;xsl:value-of select=&quot;$NomeOffertaIn.parameters/tns2:IDRichOLO&quot;/>&#xa;                        &lt;/tns:BusinessID>&#xa;                        &lt;tns:EventType>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;OpereSpeciali_STARTED&amp;quot;&quot;/>&#xa;                        &lt;/tns:EventType>&#xa;                        &lt;tns:trackID>&#xa;                            &lt;xsl:value-of select=&quot;concat(&amp;quot;NomeOfferta_&amp;quot;, $NomeOffertaIn.parameters/tns2:IDRichOLO)&quot;/>&#xa;                        &lt;/tns:trackID>&#xa;                    &lt;/tns:Identifier>&#xa;                    &lt;tns:track_position>&#xa;                        &lt;xsl:value-of select=&quot;'IN'&quot;/>&#xa;                    &lt;/tns:track_position>&#xa;                    &lt;tns:Timestamp>&#xa;                        &lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&#xa;                    &lt;/tns:Timestamp>&#xa;                &lt;/tns:Envelope>&#xa;                &lt;tns:Playload>&#xa;                    &lt;tns:Binary>&#xa;                        &lt;xsl:value-of select=&quot;xsd:base64Binary(tib:string-to-base64(tib:render-xml($NomeOffertaIn.parameters))) &quot;/>&#xa;                    &lt;/tns:Binary>&#xa;                    &lt;tns:XMLString>&#xa;                        &lt;xsl:value-of select=&quot;tib:render-xml($NomeOffertaIn.parameters, true(), true())&quot;/>&#xa;                    &lt;/tns:XMLString>&#xa;                &lt;/tns:Playload>&#xa;            &lt;/tns:ActiveLoggerServices>&#xa;        &lt;/tns:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        moduleRef="tim.now.shared_library" spawn="true"
+                        subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/JPUB_Util&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;LogLevel&quot;/>&lt;xsl:param name=&quot;LoggerName&quot;/>&lt;xsl:param name=&quot;NomeOffertaIn&quot;/>&lt;xsl:template name=&quot;LogNomeOffertaOut-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;'tim.now.billingmanager.application'&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;NomeOffertaPortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$NomeOffertaIn/parameters/tns2:NomeOffertaRequest/tns2:IDRichOLO&quot;/>&lt;/tns:BusinessID>&lt;tns:Message>&lt;xsl:value-of select=&quot;'End processo ControlloOfferta'&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$LoggerName&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$LogLevel&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;tns:ActiveLoggerServices>&lt;tns:Envelope>&lt;tns:Identifier>&lt;tns:ServiceName>&lt;xsl:value-of select=&quot;'tim.now.bpmintegration.jpub.DynamicProcess'&quot;/>&lt;/tns:ServiceName>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:Source>&lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&lt;/tns:Source>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$NomeOffertaIn/parameters/tns2:NomeOffertaRequest/tns2:IDRichOLO&quot;/>&lt;/tns:BusinessID>&lt;tns:EventType>&lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta_COMPLETED&amp;quot;&quot;/>&lt;/tns:EventType>&lt;tns:trackID>&lt;xsl:value-of select=&quot;concat(&amp;quot;NomeOfferta_&amp;quot;, $NomeOffertaIn/parameters/tns2:NomeOffertaRequest/tns2:IDRichOLO)&quot;/>&lt;/tns:trackID>&lt;/tns:Identifier>&lt;tns:track_position>&lt;xsl:value-of select=&quot;'OUT'&quot;/>&lt;/tns:track_position>&lt;tns:Timestamp>&lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&lt;/tns:Timestamp>&lt;/tns:Envelope>&lt;/tns:ActiveLoggerServices>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="LogNomeOffertaOut-input"
+                    name="LogNomeOffertaOut"
+                    tibex:xpdlId="155fbd92-290f-46b8-b2c4-f6706e58a335"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="AssignToCallProcess1"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="LogNomeOffertaOutToReply"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding coercion=""
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/JPUB_Util&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;NomeOffertaIn.parameters&quot;/>&#xa;    &lt;xsl:param name=&quot;LogLevel&quot;/>&#xa;    &lt;xsl:param name=&quot;LoggerName&quot;/>&#xa;    &lt;xsl:template name=&quot;LogNomeOffertaOut-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:CW_BUS_MESSAGE>&#xa;            &lt;tns:GenericLogger>&#xa;                &lt;tns:Application>&#xa;                    &lt;xsl:value-of select=&quot;'tim.now.billingmanager.application'&quot;/>&#xa;                &lt;/tns:Application>&#xa;                &lt;tns:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&#xa;                &lt;/tns:Process>&#xa;                &lt;tns:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;NomeOffertaPortType&amp;quot;&quot;/>&#xa;                &lt;/tns:Service>&#xa;                &lt;tns:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&#xa;                &lt;/tns:Operation>&#xa;                &lt;tns:BusinessID>&#xa;                    &lt;xsl:value-of select=&quot;$NomeOffertaIn.parameters/tns2:IDRichOLO&quot;/>&#xa;                &lt;/tns:BusinessID>&#xa;                &lt;tns:Message>&#xa;                    &lt;xsl:value-of select=&quot;'End processo ControlloOfferta'&quot;/>&#xa;                &lt;/tns:Message>&#xa;                &lt;tns:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$LoggerName&quot;/>&#xa;                &lt;/tns:LoggerName>&#xa;                &lt;tns:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$LogLevel&quot;/>&#xa;                &lt;/tns:LogLevel>&#xa;                &lt;tns:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                &lt;/tns:LogJMS>&#xa;            &lt;/tns:GenericLogger>&#xa;            &lt;tns:ActiveLoggerServices>&#xa;                &lt;tns:Envelope>&#xa;                    &lt;tns:Identifier>&#xa;                        &lt;tns:ServiceName>&#xa;                            &lt;xsl:value-of select=&quot;'tim.now.bpmintegration.jpub.DynamicProcess'&quot;/>&#xa;                        &lt;/tns:ServiceName>&#xa;                        &lt;tns:Operation>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta&amp;quot;&quot;/>&#xa;                        &lt;/tns:Operation>&#xa;                        &lt;tns:Source>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&#xa;                        &lt;/tns:Source>&#xa;                        &lt;tns:BusinessID>&#xa;                            &lt;xsl:value-of select=&quot;$NomeOffertaIn.parameters/tns2:IDRichOLO&quot;/>&#xa;                        &lt;/tns:BusinessID>&#xa;                        &lt;tns:EventType>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;NomeOfferta_COMPLETED&amp;quot;&quot;/>&#xa;                        &lt;/tns:EventType>&#xa;                        &lt;tns:trackID>&#xa;                            &lt;xsl:value-of select=&quot;concat(&amp;quot;NomeOfferta_&amp;quot;, $NomeOffertaIn.parameters/tns2:IDRichOLO)&quot;/>&#xa;                        &lt;/tns:trackID>&#xa;                    &lt;/tns:Identifier>&#xa;                    &lt;tns:track_position>&#xa;                        &lt;xsl:value-of select=&quot;'OUT'&quot;/>&#xa;                    &lt;/tns:track_position>&#xa;                    &lt;tns:Timestamp>&#xa;                        &lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&#xa;                    &lt;/tns:Timestamp>&#xa;                &lt;/tns:Envelope>&#xa;            &lt;/tns:ActiveLoggerServices>&#xa;        &lt;/tns:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        moduleRef="tim.now.shared_library" spawn="true"
+                        subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="if(upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='ULLLINEANONATTIVA' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='ULLDATILINEANONATTIVA'or  upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='NP' or (upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='ULLDATILINEAATTIVA' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='ULLLINEAATTIVA' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='ULLDATILINEAATTIVANP' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='ULLLINEAATTIVANP') or (upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='WLRLINEAATTIVA' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='WLR' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='WLRLINEANONATTIVA' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='VARIAZIONEWLR' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='CESSAZIONEWLRLINEAATTIVA' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='CESSAZIONEWLRLINEANONATTIVA')or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='SLULINEANONATTIVA'or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='SLULINEAATTIVA' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='SLULINEAATTIVANP'  or &#xd;&#xa;upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='VULL'   or&#xd;&#xa;upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='VULLLINEANONATTIVA' or&#xd;&#xa;starts-with($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta,'SHA')) then concat ($Offerta,'REGNP') else if (upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMNGAFTTCAB' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMNGAFTTH' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='SEMIBITSTREAMNGAFTTH' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='VULAFTTCAB' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='VULAFTTH'or  upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='SEMIVULAFTTH'or  (upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMATMASIMMETRICOFLAT' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMATMASIMMETRICOHL' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMATMASIMMETRICOLITE' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='EASYIPBASEPLUSFLAT' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='EASYIPBASEPLUSLITE' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='EASYIPSPECIALPROFILEFLAT'or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='EASYIPSPECIALPROFILELITE') or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMGBEASIMMETRICOFLAT' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMATMSIMMETRICOFLAT' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMATMSIMMETRICOHL' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMGBESIMMETRICOFLAT' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMATMSIMMETRICO' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='BITSTREAMGBESIMMETRICO' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='EASYIPNGAFTTCAB' or   upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='EASYIPNGAFTTH' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='SEMIEASYIPNGAFTTH' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='FIXEDWIRELESSACCESS' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='FULLGPONPLUSNGA' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='FULLGPONPLUS' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='UBBSEMIGPON' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='SEMIGPON1BPNRR' or upper-case($NomeOffertaIn/parameters/tns:NomeOffertaRequest/tns:Offerta)='FULLGPON1BPNRR' ) then concat($Offerta,'NGAXDSL') else concat($Offerta,'Interfaccia')"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"
+                    inputVariable="Offerta" name="ControlloOfferta"
+                    outputVariable="Offerta"
+                    tibex:xpdlId="6a55d3de-94fe-48fa-80eb-56d40a11d288" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="CallProcessToAssign"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="AssignToCallProcess1"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="if(upper-case($NomeOffertaIn.parameters/tns:Offerta)='ULLLINEANONATTIVA' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='ULLDATILINEANONATTIVA'or  upper-case($NomeOffertaIn.parameters/tns:Offerta)='NP' or (upper-case($NomeOffertaIn.parameters/tns:Offerta)='ULLDATILINEAATTIVA' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='ULLLINEAATTIVA' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='ULLDATILINEAATTIVANP' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='ULLLINEAATTIVANP') or (upper-case($NomeOffertaIn.parameters/tns:Offerta)='WLRLINEAATTIVA' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='WLR' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='WLRLINEANONATTIVA' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='VARIAZIONEWLR' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='CESSAZIONEWLRLINEAATTIVA' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='CESSAZIONEWLRLINEANONATTIVA')or upper-case($NomeOffertaIn.parameters/tns:Offerta)='SLULINEANONATTIVA'or upper-case($NomeOffertaIn.parameters/tns:Offerta)='SLULINEAATTIVA' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='SLULINEAATTIVANP'  or &#xd;&#xa;upper-case($NomeOffertaIn.parameters/tns:Offerta)='VULL'   or&#xd;&#xa;upper-case($NomeOffertaIn.parameters/tns:Offerta)='VULLLINEANONATTIVA' or&#xd;&#xa;starts-with($NomeOffertaIn.parameters/tns:Offerta,'SHA')) then concat ($Offerta,'REGNP') else if (upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMNGAFTTCAB' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMNGAFTTH' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='SEMIBITSTREAMNGAFTTH' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='VULAFTTCAB' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='VULAFTTH'or  upper-case($NomeOffertaIn.parameters/tns:Offerta)='SEMIVULAFTTH'or  (upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMATMASIMMETRICOFLAT' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMATMASIMMETRICOHL' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMATMASIMMETRICOLITE' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='EASYIPBASEPLUSFLAT' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='EASYIPBASEPLUSLITE' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='EASYIPSPECIALPROFILEFLAT'or upper-case($NomeOffertaIn.parameters/tns:Offerta)='EASYIPSPECIALPROFILELITE') or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMGBEASIMMETRICOFLAT' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMATMSIMMETRICOFLAT' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMATMSIMMETRICOHL' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMGBESIMMETRICOFLAT' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMATMSIMMETRICO' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='BITSTREAMGBESIMMETRICO' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='EASYIPNGAFTTCAB' or   upper-case($NomeOffertaIn.parameters/tns:Offerta)='EASYIPNGAFTTH' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='SEMIEASYIPNGAFTTH' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='FIXEDWIRELESSACCESS' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='FULLGPONPLUSNGA' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='FULLGPONPLUS' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='UBBSEMIGPON' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='SEMIGPON1BPNRR' or upper-case($NomeOffertaIn.parameters/tns:Offerta)='FULLGPON1BPNRR' ) then concat($Offerta,'NGAXDSL') else concat($Offerta,'Interfaccia')" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.bwassign"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//BWAssign"/>
+                                    <value processVariable="Offerta" xsi:type="generalactivities:BWAssign"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:reply name="Reply" operation="NomeOfferta"
+                partnerLink="NomeOffertaPortType"
+                portType="ns2:NomeOffertaPortType"
+                tibex:xpdlId="ee6bb8df-34a6-4a45-8b0b-9625baff3236" variable="Reply-input">
+                <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://www.tim.com/NOW/wsdl/abstract/NomeOfferta/" xmlns:tns1="http://www.tim.com/NOW/xsd/JPUB_Util" version="2.0"&gt;&lt;xsl:param name="Offerta"/&gt;&lt;xsl:template name="Reply-input" match="/"&gt;&lt;tns:NomeOffertaResponse&gt;&lt;parameters&gt;&lt;tns1:NomeOffertaResponse&gt;&lt;tns1:NomeOfferta&gt;&lt;xsl:value-of select="$Offerta"/&gt;&lt;/tns1:NomeOfferta&gt;&lt;/tns1:NomeOffertaResponse&gt;&lt;/parameters&gt;&lt;/tns:NomeOffertaResponse&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                <tibex:inputBindings>
+                    <tibex:partBinding
+                        expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/wsdl/abstract/NomeOfferta/&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/JPUB_Util&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;Offerta&quot;/>&#xa;    &lt;xsl:template name=&quot;Reply-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns1:NomeOffertaResponse>&#xa;            &lt;tns1:NomeOfferta>&#xa;                &lt;xsl:value-of select=&quot;$Offerta&quot;/>&#xa;            &lt;/tns1:NomeOfferta>&#xa;        &lt;/tns1:NomeOffertaResponse>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                </tibex:inputBindings>
+                <bpws:targets>
+                    <bpws:target linkName="LogNomeOffertaOutToReply"/>
+                </bpws:targets>
+            </bpws:reply>
+        </bpws:flow>
+    </bpws:scope>
+</bpws:process>

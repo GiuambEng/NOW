@@ -1,0 +1,318 @@
+CREATE OR REPLACE PACKAGE APPUSER.PKG_ANAGRAFICA_MERCATO IS
+   -- 27/07/2026 FEA_32918 C26M42F01/F02
+   -- 03/08/2026 MODIFICHE T_NOW_SPF_In Progress_V10.98.docx
+
+   FUNCTION FNC_IS_VALID_DATE(P_DATE VARCHAR2) RETURN NUMBER;
+   PROCEDURE PRC_CTRL_FORMALI_ANA_MERCATO;
+   PROCEDURE PRC_ELAB_ANA_MERCATO;
+
+END PKG_ANAGRAFICA_MERCATO;
+/
+CREATE OR REPLACE PACKAGE BODY APPUSER.PKG_ANAGRAFICA_MERCATO IS
+   ------------------------------------------------------------------------------------------------
+   -- 27/07/2026 FEA_32918 C26M42F01 - Controlli formali su ANAGRAFICA_MERCATO_TEMP
+   -- 27/07/2026 FEA_32918 C26M42F02 - Elaborazione ANAGRAFICA_MERCATO
+   -- 03/08/2026 MODIFICHE T_NOW_SPF_In Progress_V10.98.docx
+   ------------------------------------------------------------------------------------------------
+
+   PROCEDURE INFO(TEXT VARCHAR2) IS
+   BEGIN
+      DBMS_OUTPUT.PUT_LINE('[' || TO_CHAR(SYSTIMESTAMP, 'DD/MM/RR HH24:MI:SS.FF') || '] ' || TEXT);
+   END INFO;
+
+   FUNCTION FNC_IS_VALID_DATE(p_date VARCHAR2) RETURN NUMBER IS
+      v_date DATE;
+   BEGIN
+      v_date := TO_DATE(p_date,'DD/MM/YYYY');
+      RETURN 1;
+   EXCEPTION
+      WHEN OTHERS THEN
+         RETURN 0;
+   END FNC_IS_VALID_DATE;
+
+
+   -- ==========================================================================================
+   -- C26M42F01 - Controlli formali su ANAGRAFICA_MERCATO_TEMP
+   -- Elabora i record con ELABORATO IS NULL.
+   -- Al termine ogni record ha VALIDO='Y' (superato) o VALIDO='N' (scartato).
+   -- ==========================================================================================
+   PROCEDURE PRC_CTRL_FORMALI_ANA_MERCATO IS
+
+   V_STEP    VARCHAR2(2);
+
+   BEGIN
+      INFO('*** INIZIO PROCEDURA PRC_CTRL_FORMALI_ANA_MERCATO');
+
+      -- Ad ogni caricamento SQLLdr, la tabella ANAGRAFICA_MERCATO_TEMP viene troncata e ricaricata
+
+      -- 0. CODICE_ISTAT_COMUNE deve essere valorizzato
+      V_STEP:='0';
+      INFO('*** INIZIO CONTROLLO CODICE_ISTAT_COMUNE NON VALORIZZATO');
+      UPDATE ANAGRAFICA_MERCATO_TEMP t
+         SET DATA_CTRL_FORMALI    = SYSTIMESTAMP, MSG_ERR_CTRL_FORMALI = 'CODICE_ISTAT_COMUNE NON VALORIZZATO', VALIDO= 'N'
+            WHERE ELABORATO IS NULL AND VALIDO IS NULL AND CODICE_ISTAT_COMUNE IS NULL;
+      INFO('*** RIGHE AGGIORNATE: '||SQL%ROWCOUNT);
+      COMMIT;
+      INFO('*** FINE CONTROLLO CODICE_ISTAT_COMUNE NON VALORIZZATO');
+
+
+      -- 1. CODICE_ISTAT_COMUNE duplicato (se per un dato CODICE_ISTAT_COMUNE, nella tabella ANAGRAFICA_MERCATO_TEMP vengono caricati piu record,
+      -- deve essere elaborato solo il primo)
+      V_STEP:='1';
+      INFO('*** INIZIO CONTROLLO CODICE_ISTAT_COMUNE DUPLICATO');
+      UPDATE ANAGRAFICA_MERCATO_TEMP t
+         SET DATA_CTRL_FORMALI    = SYSTIMESTAMP, MSG_ERR_CTRL_FORMALI = 'CODICE_ISTAT_COMUNE DUPLICATO', VALIDO= 'N'
+            WHERE ELABORATO IS NULL AND VALIDO IS NULL AND ROWID IN
+               (SELECT rid FROM (SELECT ROWID rid, ROW_NUMBER() OVER (PARTITION BY CODICE_ISTAT_COMUNE ORDER BY ROWID) rn
+              FROM ANAGRAFICA_MERCATO_TEMP WHERE ELABORATO IS NULL AND VALIDO IS NULL)WHERE rn > 1);
+      INFO('*** RIGHE AGGIORNATE: '||SQL%ROWCOUNT);
+      COMMIT;
+      INFO('*** FINE CONTROLLO CODICE_ISTAT_COMUNE DUPLICATO');
+
+      -- 2. CODICE_ISTAT_COMUNE non presente in COMUNE_O_LOCALITA
+      V_STEP:='2';
+      INFO('*** INIZIO CONTROLLO CODICE_ISTAT_COMUNE NON ANAGRAFATO SU COMUNE_O_LOCALITA');
+      UPDATE ANAGRAFICA_MERCATO_TEMP T
+         SET DATA_CTRL_FORMALI    = SYSTIMESTAMP,
+             MSG_ERR_CTRL_FORMALI = 'CODICE_ISTAT_COMUNE NON ANAGRAFATO IN COMUNE_O_LOCALITA',
+             VALIDO               = 'N'
+       WHERE ELABORATO IS NULL
+         AND VALIDO IS NULL
+         AND NOT EXISTS (SELECT 1
+                           FROM COMUNE_O_LOCALITA C
+                          WHERE C.COD_ISTAT_COMUNE= T.CODICE_ISTAT_COMUNE);
+      INFO('*** RIGHE AGGIORNATE: '||SQL%ROWCOUNT);
+      COMMIT;
+      INFO('*** FINE CONTROLLO CODICE_ISTAT_COMUNE NON ANAGRAFATO SU COMUNE_O_LOCALITA');
+
+      -- 3. MERCATO e'' NULL
+      V_STEP:='3';
+      INFO('*** INIZIO CONTROLLO PER MERCATO NON VALORIZZATO');
+      UPDATE ANAGRAFICA_MERCATO_TEMP
+         SET DATA_CTRL_FORMALI    = SYSTIMESTAMP,
+             MSG_ERR_CTRL_FORMALI = 'MERCATO NON VALORIZZATO',
+             VALIDO               = 'N'
+       WHERE ELABORATO IS NULL
+         AND VALIDO IS NULL
+         AND MERCATO IS NULL;
+      INFO('*** RIGHE AGGIORNATE: '||SQL%ROWCOUNT);
+      COMMIT;
+      INFO('*** FINE CONTROLLO PER MERCATO NON VALORIZZATO');
+
+      -- 4. DATA_INIZIO_VALIDITA e'' NULL
+      V_STEP:='4';
+      INFO('*** INIZIO CONTROLLO PER DATA_INIZIO_VALIDITA NON VALORIZZATA');
+      UPDATE ANAGRAFICA_MERCATO_TEMP
+         SET DATA_CTRL_FORMALI    = SYSTIMESTAMP,
+             MSG_ERR_CTRL_FORMALI = 'DATA_INIZIO_VALIDITA NON VALORIZZATA',
+             VALIDO               = 'N'
+       WHERE ELABORATO IS NULL
+         AND VALIDO IS NULL
+         AND DATA_INIZIO_VALIDITA IS NULL;
+      INFO('*** RIGHE AGGIORNATE: '||SQL%ROWCOUNT);
+      COMMIT;
+      INFO('*** FINE CONTROLLO PER DATA_INIZIO_VALIDITA NON VALORIZZATA');
+
+      -- 5. DATA_INIZIO_VALIDITA ha un formato diverso da dd/mm/yyyy
+      V_STEP:='5';
+      INFO('*** INIZIO CONTROLLO PER DATA_INIZIO_VALIDITA NON VALIDA');
+      UPDATE ANAGRAFICA_MERCATO_TEMP
+         SET DATA_CTRL_FORMALI    = SYSTIMESTAMP,
+            MSG_ERR_CTRL_FORMALI = 'DATA_INIZIO_VALIDITA NON VALIDA',
+            VALIDO               = 'N'
+          WHERE ELABORATO IS NULL AND VALIDO IS NULL AND DATA_INIZIO_VALIDITA IS NOT NULL
+             AND FNC_IS_VALID_DATE(DATA_INIZIO_VALIDITA) = 0;
+      INFO('*** RIGHE AGGIORNATE: '||SQL%ROWCOUNT);
+      COMMIT;
+      INFO('*** FINE CONTROLLO PER DATA_INIZIO_VALIDITA NON VALIDA');
+
+
+      -- Record che superano tutti i controlli
+      V_STEP:='6';
+      INFO('*** INIZIO SETTAGGIO VALIDITA'' OK PER I RESTANTI DATI');
+      UPDATE ANAGRAFICA_MERCATO_TEMP
+         SET DATA_CTRL_FORMALI    = SYSTIMESTAMP,
+             MSG_ERR_CTRL_FORMALI = NULL,
+             VALIDO               = 'Y'
+       WHERE ELABORATO IS NULL
+         AND VALIDO IS NULL;
+      INFO('*** RIGHE AGGIORNATE: '||SQL%ROWCOUNT);
+      COMMIT;
+      INFO('*** FINE SETTAGGIO VALIDITA'' OK PER I RESTANTI DATI');
+
+      INFO('*** FINITA PROCEDURA PRC_CTRL_FORMALI_ANA_MERCATO');
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         ROLLBACK;
+         INFO('*** [PRC_CTRL_FORMALI_ANA_MERCATO] - FATAL ERROR: ' || SQLERRM || ' STEP: ' || V_STEP);
+         INFO('*** FINITA PROCEDURA PRC_CTRL_FORMALI_ANA_MERCATO');
+         RAISE;
+   END PRC_CTRL_FORMALI_ANA_MERCATO;
+
+
+   -- ==========================================================================================
+   -- C26M42F02 - Elaborazione ANAGRAFICA_MERCATO
+   -- Elabora i record della TEMP con VALIDO='Y' e ELABORATO IS NULL.
+   -- Per ogni record determina il caso e aggiorna/inserisce su ANAGRAFICA_MERCATO.
+   -- ==========================================================================================
+   PROCEDURE PRC_ELAB_ANA_MERCATO IS
+      V_CURR_ROWID                        VARCHAR2(100);
+      V_VERSIONE                          NUMBER;
+      V_CHECK_EXIST_COD_ISTAT_COMUNE  NUMBER;
+      V_DATA_INIZIO_VALIDITA_AM           DATE;
+      V_MSG_ERR                           VARCHAR2(400);
+      V_NUM_RIGHE                         NUMBER;
+      V_NUM_NEW_COD_ISTAT_COMUNE          NUMBER:=0;
+      V_NUM_DISC_COD_ISTAT_COMUNE         NUMBER:=0;
+      V_NUM_CLOSED_COD_ISTAT_COMUNE       NUMBER:=0;
+      V_NUM_LOOP                          NUMBER:=0;
+
+   BEGIN
+      INFO('*** INIZIO PROCEDURA PRC_ELAB_ANA_MERCATO');
+
+      -- CHECK ESISTENZA PARAMETRO DI CONFIGURAZIONE
+      BEGIN
+          SELECT VALORE_NUMERICO
+             INTO V_NUM_RIGHE
+             FROM PARAMETRI_CFGZ_NOW
+            WHERE CHIAVE = 'ELAB_ANA_MERCATO';
+      EXCEPTION
+        WHEN OTHERS THEN
+           DBMS_OUTPUT.PUT_LINE('IL PARAMETRO ELAB_ANA_MERCATO NON E'' STATO CONFIGURATO IN PARAMETRI_CFGZ_NOW');
+           INFO('*** FINE PROCEDURA PRC_ELAB_ANA_MERCATO');
+           RETURN;
+      END;
+      IF V_NUM_RIGHE IS NULL THEN
+           DBMS_OUTPUT.PUT_LINE('IL PARAMETRO ELAB_ANA_MERCATO NON E'' STATO VALORIZZATO IN PARAMETRI_CFGZ_NOW');
+           INFO('*** FINE PROCEDURA PRC_ELAB_ANA_MERCATO');
+           RETURN;
+      END IF;
+      INFO('*** PARAMETRO ELAB_ANA_MERCATO CONFIGURATO CON VALORE: '||V_NUM_RIGHE);
+      FOR RIGA IN (SELECT T.ROWID, T.* FROM ANAGRAFICA_MERCATO_TEMP T WHERE T.VALIDO = 'Y' AND T.ELABORATO IS NULL AND ROWNUM <= V_NUM_RIGHE) LOOP
+         BEGIN
+            V_CHECK_EXIST_COD_ISTAT_COMUNE := 0;
+            V_DATA_INIZIO_VALIDITA_AM          := NULL;
+            V_MSG_ERR                          := NULL;
+            V_VERSIONE                         := NULL;
+            V_CURR_ROWID                       := RIGA.ROWID;
+            V_NUM_LOOP                         := V_NUM_LOOP+1;
+
+            SELECT COUNT(*) INTO V_CHECK_EXIST_COD_ISTAT_COMUNE FROM ANAGRAFICA_MERCATO WHERE CODICE_ISTAT_COMUNE=RIGA.CODICE_ISTAT_COMUNE;
+
+            IF V_CHECK_EXIST_COD_ISTAT_COMUNE = 0 THEN
+               V_VERSIONE := 1;
+
+               INSERT INTO ANAGRAFICA_MERCATO
+                  (COMUNE_ORIGINARIO,
+                   PROVINCIA,
+                   REGIONE,
+                   CODICE_ISTAT_COMUNE,
+                   CODICE_ISTAT_REGIONE,
+                   MERCATO,
+                   DATA_INIZIO_VALIDITA,
+                   DATA_FINE_VALIDITA,
+                   VERSIONE)
+               VALUES
+                  (RIGA.COMUNE_ORIGINARIO,
+                   RIGA.PROVINCIA,
+                   RIGA.REGIONE,
+                   RIGA.CODICE_ISTAT_COMUNE,
+                   RIGA.CODICE_ISTAT_REGIONE,
+                   RIGA.MERCATO,
+                   TO_DATE(RIGA.DATA_INIZIO_VALIDITA, 'DD/MM/YYYY'),
+                   TO_DATE('31/12/2999', 'DD/MM/YYYY'), -- DATA_FINE_VALIDITA
+                   V_VERSIONE
+                  );
+
+                  UPDATE ANAGRAFICA_MERCATO_TEMP
+                     SET DATA_ELAB_ANA_MERCATO    = SYSTIMESTAMP,
+                         ELABORATO                = 'Y',
+                         MSG_ERR_ELAB_ANA_MERCATO = NULL
+                   WHERE ROWID = V_CURR_ROWID;
+
+              V_NUM_NEW_COD_ISTAT_COMUNE := V_NUM_NEW_COD_ISTAT_COMUNE+1;
+           ELSE
+
+              SELECT VERSIONE, DATA_INIZIO_VALIDITA INTO V_VERSIONE, V_DATA_INIZIO_VALIDITA_AM FROM ANAGRAFICA_MERCATO
+                 WHERE CODICE_ISTAT_COMUNE=RIGA.CODICE_ISTAT_COMUNE AND DATA_FINE_VALIDITA=TO_DATE('31/12/2999', 'DD/MM/YYYY');
+
+              IF V_DATA_INIZIO_VALIDITA_AM >= TO_DATE(RIGA.DATA_INIZIO_VALIDITA, 'DD/MM/YYYY') THEN
+                 UPDATE ANAGRAFICA_MERCATO_TEMP
+                     SET DATA_ELAB_ANA_MERCATO    = SYSTIMESTAMP,
+                         ELABORATO                = 'N',
+                         MSG_ERR_ELAB_ANA_MERCATO = 'DATA_INIZIO_VALIDITA DI ANAGRAFICA_MERCATO >= DATA_INIZIO_VALIDITA DI ANAGRAFICA_MERCATO_TEMP'
+                   WHERE ROWID = V_CURR_ROWID;
+
+                   V_NUM_DISC_COD_ISTAT_COMUNE := V_NUM_DISC_COD_ISTAT_COMUNE+1;
+              ELSE
+                 UPDATE ANAGRAFICA_MERCATO SET DATA_FINE_VALIDITA=TO_DATE(RIGA.DATA_INIZIO_VALIDITA, 'DD/MM/YYYY')-1
+                     WHERE CODICE_ISTAT_COMUNE=RIGA.CODICE_ISTAT_COMUNE AND DATA_FINE_VALIDITA=TO_DATE('31/12/2999', 'DD/MM/YYYY');
+
+                  INSERT INTO ANAGRAFICA_MERCATO
+                     (COMUNE_ORIGINARIO,
+                      PROVINCIA,
+                      REGIONE,
+                      CODICE_ISTAT_COMUNE,
+                      CODICE_ISTAT_REGIONE,
+                      MERCATO,
+                      DATA_INIZIO_VALIDITA,
+                      DATA_FINE_VALIDITA,
+                      VERSIONE)
+                  VALUES
+                     (RIGA.COMUNE_ORIGINARIO,
+                      RIGA.PROVINCIA,
+                      RIGA.REGIONE,
+                      RIGA.CODICE_ISTAT_COMUNE,
+                      RIGA.CODICE_ISTAT_REGIONE,
+                      RIGA.MERCATO,
+                      TO_DATE(RIGA.DATA_INIZIO_VALIDITA, 'DD/MM/YYYY'),
+                      TO_DATE('31/12/2999', 'DD/MM/YYYY'), -- DATA_FINE_VALIDITA
+                      V_VERSIONE+1
+                     );
+
+                  UPDATE ANAGRAFICA_MERCATO_TEMP
+                     SET DATA_ELAB_ANA_MERCATO    = SYSTIMESTAMP,
+                         ELABORATO                = 'Y',
+                         MSG_ERR_ELAB_ANA_MERCATO = NULL
+                   WHERE ROWID = V_CURR_ROWID;
+
+                   V_NUM_CLOSED_COD_ISTAT_COMUNE := V_NUM_CLOSED_COD_ISTAT_COMUNE+1;
+               END IF;
+            END IF;
+
+
+            COMMIT;
+
+         EXCEPTION
+            WHEN OTHERS THEN
+               V_MSG_ERR := SUBSTR(SQLERRM, 1, 350);
+               ROLLBACK;
+               INFO('*** [PRC_ELAB_ANA_MERCATO] - ERROR: ' || V_MSG_ERR || ' SU ROWID: ' || V_CURR_ROWID);
+               UPDATE ANAGRAFICA_MERCATO_TEMP
+                  SET DATA_ELAB_ANA_MERCATO    = SYSTIMESTAMP,
+                      ELABORATO                = 'N',
+                      MSG_ERR_ELAB_ANA_MERCATO = 'Errore in fase di elaborazione: ' || V_MSG_ERR
+                WHERE ROWID = V_CURR_ROWID;
+               COMMIT;
+         END;
+      END LOOP;
+
+      INFO('***  ' || V_NUM_LOOP || ' CODICE_ISTAT_COMUNE SU ANAGRAFICA_MERCATO DA ELABORARE IN QUESTO RUN');
+      INFO('*** INSERITI ' || V_NUM_NEW_COD_ISTAT_COMUNE || ' NUOVI CODICE_ISTAT_COMUNE SU ANAGRAFICA_MERCATO');
+      INFO('*** CHIUSI ' || V_NUM_CLOSED_COD_ISTAT_COMUNE || ' CODICE_ISTAT_COMUNE E INSERITI ALTRETTANTI SU ANAGRAFICA_MERCATO');
+      INFO('*** SCARTATI ' || V_NUM_DISC_COD_ISTAT_COMUNE || ' CODICE_ISTAT_COMUNE PER DATA_INIZIO_VALIDITA NON COERENTE FRA ANAGRAFICA_MERCATO E ANAGRAFICA_MERCATO_TEMP');
+      INFO('*** FINE PROCEDURA PRC_ELAB_ANA_MERCATO');
+
+   EXCEPTION
+      WHEN OTHERS THEN
+         V_MSG_ERR := SUBSTR(SQLERRM, 1, 350);
+         ROLLBACK;
+         INFO('*** [PRC_ELAB_ANA_MERCATO] - FATAL ERROR: ' || V_MSG_ERR || ' SU ROWID: ' || V_CURR_ROWID);
+         INFO('*** FINE PROCEDURA PRC_ELAB_ANA_MERCATO');
+         RAISE;
+   END PRC_ELAB_ANA_MERCATO;
+
+
+END PKG_ANAGRAFICA_MERCATO;
+/

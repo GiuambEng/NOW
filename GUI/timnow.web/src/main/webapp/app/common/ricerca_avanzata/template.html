@@ -1,0 +1,240 @@
+<div ng-show="parametri.length>0">
+	<section class="zoom-icon" ng-show="!direttivaSearch.alwaysOpen">
+		<a href="#" ng-click="$event.preventDefault();collapse=!collapse" class="ricercaAvanzata" ng-class="{'ricercaAvanzataAttiva': datiToSearch.length>0}">
+			<img ng-if="!collapse" src="assets/css/i/zoom-icon.png" alt="zoom">
+			<img ng-if="collapse" src="assets/css/i/no-zoom-icon.png" alt="zoom">
+		</a>
+	</section>
+	<section ng-if="collapse || direttivaSearch.alwaysOpen" id="advanceSearchNowDirective">
+		<div class="content-section">
+
+			<section class="order-summary">
+				<div id="tabs">
+					<form class="form-container" 
+						ng-submit="datiRicercaForm.$valid && ok()" name="datiRicercaForm"
+						novalidate>
+						<div id="ricercaAvanzataSection" class="form-process">
+						<h3>Ricerca Avanzata {{direttivaSearch.titolo}}</h3>
+						<div class="tab-bottom" ng-if="!direttivaSearch.saveDisabled">
+							<button class="btn btn-disabled" 
+								ng-click="open('salva')" 
+								ng-disabled="direttivaSearch.disabilitaSaveRicerca || !datiToSearch.length>0">Salva Ricerca
+							</button>
+							
+							<button
+								class="btn btn-disabled" ng-click="open('cerca')">Ricerche memorizzate
+							</button>
+						</div>
+						<hr>
+						<h2>Creare ed aggiungere filtri per la ricerca avanzata</h2>
+						<div class="row" ng-repeat="item in datiToSearch">
+							<div class="col-xs-4">
+								<!-- CAMPO -->
+								<div class="form-group">
+									<select class="form-control selectmenu SB-width" 
+										name="nome{{$index}}" 
+										ng-model="item.nome"
+										disabled
+										ng-change="resetFromName(item);aggiornamentoTipologiaDato(item)"
+										>
+										<option 
+											ng-repeat="dati_campo in parametri" value="{{dati_campo.nomeDB}}">{{dati_campo.label}}
+										</option>										
+									</select>
+								</div>
+							</div>
+							<div class="col-xs-3">
+								<!-- CONDIZIONE -->
+								<div class="form-group"
+									ng-class="{ 'has-error' : item.operazione_error }">
+									<select class="form-control selectmenu SB-width"
+										name="operazione{{$index}}"
+										ng-change="resetFromOperazione(item);" 
+										disabled
+										ng-model="item.operazione">
+										<option 
+											ng-repeat="condition in conditions[item.nome]"
+											value="{{condition.value}}">{{condition.label}}
+										</option>
+									</select>
+									<div role="alert">
+										<span 
+											ng-show="item.operazione_error" class="help-block help-width">Campo Obbligatorio
+										</span>
+									</div>
+								</div>
+							</div>
+							<div class="col-xs-3">
+								<div class="form-group" ng-if="item.operazione!='ISNULL' && item.tipo != 'TIME'"
+									ng-class="{ 'has-error' : item.valore_error}">
+									<input type="text" 
+										name="valore{{$index}}" class="form-control SB-width"
+										ng-model="item.valore"
+										disabled
+										ng-required="item.operazione!='ISNULL'" >
+									<!-- 	ng-disabled="item.operazione=='ISNULL'  || !item.operazione || true" -->
+									<div role="alert">
+										<span  ng-show="item.valore_error" class="help-block help-width">{{item.valore_error_message}}
+										</span>
+									</div>
+								</div>
+								<div class="form-group" ng-if="item.operazione!='ISNULL' && item.tipo == 'TIME'"
+									ng-class="{ 'has-error' : item.valore_error}">
+									<input type="text"
+										   class="form-control SB-width"
+										   value="{{item.valore | date:'HH:mm:ss' }}"
+										   disabled
+									/>
+									<input type="hidden"
+										name="valore{{$index}}"
+										   class="form-control SB-width"
+										ng-model="item.valore"
+										disabled
+										ng-required="item.operazione!='ISNULL'" >
+									<div role="alert">
+										<span  ng-show="item.valore_error" class="help-block help-width">{{item.valore_error_message}}
+										</span>
+									</div>
+								</div>
+							</div>
+							<div class="col-xs-2">
+								<!-- TASTO ELIMINA -->
+								<span class="glyphicon glyphicon-trash" 
+									ng-click="elimina(item)" style="color: #004388; cursor: pointer;"> 
+								</span>
+							</div>
+						</div>
+						<!-- RU_896 -->
+						<div class="row" ng-if="(datiToSearch.length == 0 && isOPCCUser) || (!isOPCCUser)">
+							<div class="col-xs-4">
+								<div class="form-group"
+									ng-class="{ 'has-error' : (!noErrorAfterSearch && (datiRicercaForm.nome.$invalid && !datiRicercaForm.nome.$pristine ) || direttivaSearch.nome_error==true )}">
+									<select class="form-control selectmenu SB-width" name="nome"
+										ng-model="direttivaSearch.nome" required
+										ng-change="resetFromName()">
+										<option ng-repeat="dati_campo in parametri"
+											value="{{dati_campo.nomeDB}}">{{dati_campo.label}}</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-xs-3">
+								<div class="form-group"
+									ng-class="{ 'has-error' : (!noErrorAfterSearch && (datiRicercaForm.operazione.$invalid && !datiRicercaForm.operazione.$pristine ) || direttivaSearch.operazione_error==true )}">
+									<select class="form-control selectmenu SB-width"
+										name="operazione"
+										ng-model="direttivaSearch.operazione"
+										ng-disabled="!direttivaSearch.nome"
+										ng-change="resetFromOperazione();"
+										required>
+										<option 
+											ng-repeat="condition in conditions[direttivaSearch.nome]" 
+											value="{{condition.value}}">{{condition.label}}
+										</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-xs-3">
+								<div class="form-group"
+									ng-class="{ 'has-error' : (!noErrorAfterSearch && (datiRicercaForm.valore.$invalid && !datiRicercaForm.valore.$pristine ) || direttivaSearch.valore_error==true) }">
+									<input 
+										ng-if="!conditionsType[direttivaSearch.nome] && !(direttivaSearch.operazione=='=' && direttivaSearch.defaultValue)"
+										type="text" name="valore" class="form-control SB-width"
+										ng-disabled="true">
+									<input 
+										ng-if="conditionsType[direttivaSearch.nome]=='STRING' && !(direttivaSearch.operazione=='=' && direttivaSearch.defaultValue)"
+										type="text" name="valore" class="form-control SB-width"
+										ng-model="direttivaSearch.valore"
+										ng-required="direttivaSearch.operazione!='ISNULL'"
+										ng-disabled="direttivaSearch.operazione=='ISNULL' || !direttivaSearch.operazione"
+										ng-pattern="alphanumeric"
+									>
+									<input ng-if="conditionsType[direttivaSearch.nome]=='INT' && direttivaSearch.operazione!='IN' && !(direttivaSearch.operazione=='=' && direttivaSearch.defaultValue)"
+										ng-pattern="integerval"
+										ng-disabled="direttivaSearch.operazione=='ISNULL' || !direttivaSearch.operazione"
+										type="text" name="valore" class="form-control SB-width"
+										ng-model="direttivaSearch.valore"
+										ng-required="direttivaSearch.operazione!='ISNULL'">
+									<input ng-if="conditionsType[direttivaSearch.nome]=='INT' && direttivaSearch.operazione=='IN' && !(direttivaSearch.operazione=='=' && direttivaSearch.defaultValue)"
+										ng-pattern="integervalIN"
+										ng-disabled="direttivaSearch.operazione=='ISNULL' || !direttivaSearch.operazione"
+										type="text" name="valore" class="form-control SB-width"
+										ng-model="direttivaSearch.valore"
+										ng-required="direttivaSearch.operazione!='ISNULL'">
+									
+									<select ng-if="direttivaSearch.operazione=='=' && direttivaSearch.defaultValue"  class="form-control selectmenu SB-width"
+										name="valore"
+										ng-model="direttivaSearch.valore"
+										ng-disabled="direttivaSearch.operazione=='ISNULL' || !direttivaSearch.operazione"
+										ng-options= "def for def in direttivaSearch.defaultValue"
+										ng-init="direttivaSearch.valore=direttivaSearch.defaultValue[0]"
+										required>
+									</select>
+									
+									<!-- RU_1301 -->
+									<select ng-if="conditionsType[direttivaSearch.nome]=='LIST' && direttivaSearch.operazione=='!=' && direttivaSearch.defaultValue"  class="form-control selectmenu SB-width"
+										name="valore"
+										ng-model="direttivaSearch.valore"
+										ng-disabled="direttivaSearch.operazione=='ISNULL' || !direttivaSearch.operazione"
+										ng-options= "def for def in direttivaSearch.defaultValue"
+										ng-init="direttivaSearch.valore=direttivaSearch.defaultValue[0]"
+										required>
+									</select>
+										
+									<div class="form-group" ng-if="conditionsType[direttivaSearch.nome]=='DATE' && direttivaSearch.operazione!='ISNULL'">
+											<input type="text"
+												required
+												ng-disabled="!direttivaSearch.operazione"
+												name="valore" class="form-control SB-width selectDate"
+												ng-model="direttivaSearch.valore"
+												close-text="Chiudi" 
+												alt-input-formats="altInputFormats"
+												uib-datepicker-popup="dd/MM/yyyy"
+												datepicker-options="dateOptions"
+												ng-click="openDate()"
+												is-open="popup_date.opened"
+												   readonly/>
+									</div>
+									<div class="form-group" ng-if="conditionsType[direttivaSearch.nome]=='TIME' && direttivaSearch.operazione!='ISNULL'">
+										<uib-timepicker ng-model="direttivaSearch.valore"
+														hour-step="hstep"
+														show-seconds="true"
+														show-spinners="false"
+														show-meridian="false"
+														datetimepicker-neutral-timezone>
+														required
+										</uib-timepicker>
+									</div>
+								</div>
+							</div>
+							<div class="col-xs-2">
+								<!-- TASTO AGGIUNGI -->
+								<!-- RU_896 -->
+								<span class="glyphicon glyphicon-plus-sign" ng-if="!isOPCCUser"
+									ng-click="aggiungi(datiRicercaForm)" style="color: #004388; cursor: pointer;">
+								</span>
+							</div>
+						</div>
+						<div class="row" role="alert" ng-if="(!noErrorAfterSearch && ((datiRicercaForm.nome.$invalid && !datiRicercaForm.nome.$pristine) || (datiRicercaForm.operazione.$invalid && !datiRicercaForm.operazione.$pristine ) || (datiRicercaForm.valore.$invalid && !datiRicercaForm.valore.$pristine)) || (direttivaSearch.nome_error==true || direttivaSearch.operazione_error==true  || direttivaSearch.valore_error==true))">
+							<div class="col-xs-12">
+								<div role="alert">
+									<span ng-if="((datiRicercaForm.nome.$invalid && !datiRicercaForm.nome.$pristine) || direttivaSearch.nome_error==true ) || ((datiRicercaForm.operazione.$invalid && !datiRicercaForm.operazione.$pristine ) || direttivaSearch.operazione_error==true) || ((conditionsType[direttivaSearch.nome]!='DATE' && (datiRicercaForm.valore.$invalid && !datiRicercaForm.valore.$pristine)) || direttivaSearch.valore_error==true ) || ((conditionsType[direttivaSearch.nome]!='DATE' && (datiRicercaForm.valore.$invalid && !datiRicercaForm.valore.$pristine)) || direttivaSearch.valore_error==true)" class="help-block help-width">Campo Obbligatorio
+									</span>
+									<span ng-if="(conditionsType[direttivaSearch.nome]=='INT' && (datiRicercaForm.valore.$error.pattern || datiRicercaForm.valore.$error.number )) || direttivaSearch.valore_error_int==true" class="help-block help-width">Inserire
+										solo numeri
+									</span> 
+									<span ng-if="(conditionsType[direttivaSearch.nome]=='DATE' && (datiRicercaForm.valore.$invalid && !datiRicercaForm.valore.$pristine))|| direttivaSearch.valore_error_date==true"
+										  class="help-block help-width">Campo Obbligatorio con il formato dd/MM/yyyy
+									</span>
+								</div>
+							</div>
+						</div>
+						</div>
+					</form>
+					<button class="btn btn-disabled" type="submit" ng-click="ok()" >Ricerca</button>					<button class="btn btn-disabled" type="submit" ng-click="svuota()">Annulla</button>
+				</div>
+			
+				<hr>
+			</section>
+		</div>
+	</section>
+</div>

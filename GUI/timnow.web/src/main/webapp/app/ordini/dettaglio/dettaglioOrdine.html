@@ -1,0 +1,1752 @@
+<style type="text/css">
+form.tab-form-demo .tab-pane {
+	margin: 20px 20px;
+}
+.span-highlight {
+color: #24609b;
+}
+.my-class{
+	font-size: 12px;
+	color: #24609b !important;
+	background-color: rgba(0,0,0,0) !important;
+	border: 0px solid #ccc !important;
+	font-family: "Arial", sans-serif;
+    font-weight: normal;
+}
+
+</style>
+<div class="content-section">
+ <section class="form-heading">
+  <h1>Dettaglio Ordine ( N.  {{codiceOrdineOlo}})</h1>
+ </section>
+<button ng-if="ordersDetail.flagOpereSpeciali" class="btn btn-disabled turn-back-2" type="submit" ng-click="changeState()">&#60; indietro</button>
+ <div class="order-summary">
+ <button ng-if="!ordersDetail.flagOpereSpeciali"  class="btn btn-disabled turn-back pull-left" type="submit" ng-click="changeState()">&#60; indietro</button>
+  
+  <!-- DETTAGLIO --> 
+  <uib-tabset active="activeJustified" justified="true">
+  <uib-tab index="0" heading="Dettaglio" id="tab-1" class="nowrap">
+  <div ng-if="loadDettagli" class="spinner_container_direttiva">
+   <span us-spinner="{radius:18, width:3, length: 14}"></span>
+  </div>
+  <section class="section-content" ng-if="reqType == 'idrichiestaolo' && !loadDettagli && (orders.orderCodeTi.length != 0)">
+   <h1>Dettagli Richiesta</h1>
+   <div class="data-table table-fixed">
+    <table class="table table-hover">
+     <thead>
+      <tr>
+       <th>Nome</th>
+       <th>Progressivo</th>
+       <th>Tipologia richiesta</th>
+       <th>Dettaglio</th>
+      </tr>
+     </thead>
+     <tbody>
+      <tr class="accordion-toggle contract_row" ng-repeat="item in orders.orderCodeTi">
+       <td>{{item.nome}}</td>
+       <td>{{item.progressivo}}</td>
+       <td>{{item.tipologiadatorichiesta}}</td>
+       <td ng-if="!item.tokenizzazioneFittizia">{{item.richiestadettagliovalore}}</td>       
+       
+		<!-- Tokenizzazione fittizia per Referente -->
+		<td ng-if="item.tokenizzazioneFittizia && (item.nome =='COGNOMEREFERENTE' || item.nome == 'NOMEREFERENTE')">
+			{{_patternDetokenizzazioneFittizia}}
+		</td>
+		
+		<!-- Tokenizzazione fittizia per Cliente finale -->
+		<td ng-if="item.tokenizzazioneFittizia && (item.nome =='COGNOMERAGSOC' || item.nome == 'NOME' || item.nome == 'PIVA' || item.nome == 'CF')">
+			{{_patternDetokenizzazioneFittizia}}
+		</td>
+       
+       <!-- SM_9685 -->
+       <!-- R1F-20-0236 -->
+		<!-- PULSANTE DETOKENIZZA REFERENTE-->
+		<td ng-if="_showButtonDetokenizzazione && (item.detokenizzaReferente)">
+			<button class="bottonTable" ng-click="detokenizzaReferenteOrdineTi(item)">Detokenizza Referente</button> 
+		</td>
+
+		<!-- PULSANTE DETOKENIZZA CLIENTE FINALE-->
+		<td ng-if="_showButtonDetokenizzazione && (item.detokenizzaClienteFinale)">
+			<button class="bottonTable" ng-click="detokenizzaClienteFinaleOrdineTi()">Detokenizza Cliente</button> 
+		</td>  
+  
+      </tr>
+     </tbody>
+    </table>
+   </div>
+  </section>
+
+  <div ng-if="!loadDettagli">
+    <!-- add condition ng-if="ordersDetail" for hide this block for Scartato  -->
+   <table class="table-detail orderTableWordWrap" ng-if="ordersDetail">
+    <tbody>
+     <tr>
+        <td>Codice Ordine OAO:</td>
+        <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.ordineOlo}}</span></td>
+        <td></td>
+        <td>Ordine TI:</td>
+        <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.ordineTi}}</span></td>
+       </tr>
+	   
+	   <tr>
+        <td>Codice Ordine OAO Padre:</td>
+        <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{ordersDetail.codiceOLOOrdinePadre}}</span></td> <!-- SM_8263 -->
+        <td></td>
+        <td>Codice Ordine OAO Target:</td>
+        <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.codiceOloTarget}}</span></td>
+       </tr>
+	   
+	   <tr>
+		<td>Codice OAO:</td>
+		<td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.codiceOloNow}}</span></td><!-- SM_8263 -->
+		<td></td>
+		<td>Codifica OAO:</td>
+		<td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.codificaOao}}</span></td>
+		</tr>
+		
+		<tr>
+		<td>OAO:</td>
+		<td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.oao}}</span></td>
+		<td></td>
+		<!--  SM_8912 -->
+		<td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">Descrizione Scenario:</span></td>
+	    <td class="highlight"><span class="span-highlight" ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">{{orders.descrizioneScenario}}</span></td><!-- RU_749 -->
+		</tr>
+		<tr>
+		<td>Tipo Lavorazione:</td>
+        <td class="highlight">{{ordersDetail.tipoLavorazione}}</td>
+        <td></td>
+		<td>Sottolavorazione:</td>
+        <td class="highlight">{{ordersDetail.sottolavorazione}}</td>
+        </tr>
+		
+		<tr>
+		 <td>Contratto:</td>
+         <td><span class="span-highlight" ng-if="ordersDetail.offerta != 'NP'" class="highlight">{{ordersDetail.contratto}}</span></td>
+         <td></td>
+		 <td>Offerta:</td>
+         <td class="highlight">{{ordersDetail.offerta}}</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td><span>Opzione Dinamica:</span></td>
+                    <td class="highlight">
+                        <span ng-if="ordersDetail.opzioneDinamica && ordersDetail.opzioneDinamica=='Y'"
+                              class="glyphicon glyphicon-check" aria-hidden="true"
+                              style="color: #004388"></span> <span
+                            ng-if="!ordersDetail.opzioneDinamica || ordersDetail.opzioneDinamica=='N'"
+                            class="glyphicon glyphicon-unchecked" aria-hidden="true"
+                            style="color: #004388"></span>
+                    </td>
+        </tr>
+	  <tr>		
+	  <td>Stato OAO:</td>
+	  <!-- SM_9349 -->
+      <td class="highlight"><span ng-if="!!orders">{{orders.statoRichiestaOlo}}</span></td><!-- SM_8263 -->
+	  <td></td>
+      <td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">Stato NOW:</span></td>
+      <td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC" class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.statoNow}}</span></span></td><!-- SM_8263 -->
+     </tr>
+     <tr>
+	  <td>Codice Causale OAO:</td>
+      <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.codiceCausaleOao}}</span></td><!-- SM_8263 -->
+      <td></td>
+      <td>Causale OAO:</td>
+      <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.causaleOao}}</span></td><!-- SM_8263 -->
+     </tr>
+     <tr>
+      <!-- SM_8900 -->
+      <td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">Codice Causale Now:</span></td>
+      <td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC" class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.codiceCausaleNow}}</span></span></td><!-- SM_8263 -->
+      <td></td>
+      <!-- SM_8900 -->
+      <td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC"><span ng-if="!!orders">Causale NOW:</span></span></td>
+      <td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC" class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.descrizioneNow}}</span></span></td><!-- SM_8263 -->
+     </tr>
+	  <tr>
+      <td>Codice Progetto:</td>
+      <td class="highlight">{{orders.codiceProgetto}}</td><!-- SM_8254 -->
+      <td></td>
+      <td></td>
+      <td></td>
+     </tr> 
+	   
+	   <tr>
+      <td>Data Creazione:</td>
+      <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.dataInvioRichiesta}}</span></td>
+      <td></td>
+      <td>Data Aggiornamento:</td>
+      <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.dataAggiornamento}}</span></td>
+     </tr>
+     <tr>
+      <td>Data Inserimento:</td>
+      <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.dataInserimento}}</span></td>
+      <td></td>
+      <td>DRO:</td>
+      <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.dro}}</span></td>
+     </tr>
+	   <tr>
+	   <td>Data Invio Ordine a Delivery:</td>
+        <td class="highlight">{{ordersDetail.dataOrdineDelivery}}</td>
+        <td></td>
+		<td></td>
+        <td class="highlight"></td>
+	   </tr>
+	   <tr>
+        <td>DAD:</td>
+        <td class="highlight">{{ordersDetail.dad}}</td>
+        <td></td>
+        <td>Fascia Oraria:</td>
+        <td class="highlight">{{ordersDetail.fasciaOraria}}</td>
+       </tr>
+	   <tr>
+	    <td>DAD Rimodulata OAO:</td>
+        <td class="highlight">{{ordersDetail.dadRimodulata}}</td>
+	    <td></td>
+		<td>In Attesa Desospensione da OAO (SI/NO):</td>
+        <td class="highlight">{{ordersDetail.inAttesaDesospensioneDaOao}}</td>
+	   </tr>
+	   
+	   <tr>
+	    <td>Data Ultimo Appuntamento:</td>
+        <td class="highlight">{{ordersDetail.dataUltimoAppuntamento}}</td>
+        <td></td>
+        <td>Ora Ultimo Appuntamento:</td>
+        <td class="highlight">{{ordersDetail.oraUltimoAppuntamento}}</td>
+       </tr>
+	   
+	   <tr>
+	   <td>DAC:</td>
+	   <td class="highlight">{{ordersDetail.dac}}</td>
+	   <td></td>
+	   <td>DAC Rimodulata:</td>
+        <td class="highlight">{{ordersDetail.dacRimodulata}}</td>
+	   </tr>
+	   
+	   <tr >
+        <td>Posizione Coda:</td>
+        <td class="highlight" ng-show="tailPositionEnabled" ng-if="tailPosition.esito && tailPosition.esito != 'Errore' ">{{tailPosition.esito}}</td>
+		<td class="highlight" ng-show="tailPositionEnabled" ng-if="!tailPosition.esito || tailPosition.esito == 'Errore'">N.D.</td>
+		<td></td>
+		<td></td>
+		<td>Data Prevista Soluzione:</td>
+        <td class="highlight">{{ordersDetail.dataPrevistaSoluzione}}</td>
+       </tr>
+       
+	   <tr>
+        <td>DES:</td>
+        <td class="highlight">{{orders.des}}</td>
+        <td></td>
+        <td></td>
+	    <td></td>
+       </tr>
+	   
+	   <tr>
+	   <td>Data Espletamento Commerciale:</td>
+        <td class="highlight">{{ordersDetail.dataEspletamentoCommerciale}}</td><!-- dovrebbe stare in dettagli(non dettagliDettaglio) --><!-- SM_8263 -->
+		<td></td>
+		<td>Data Chiusura Ordine:</td>
+        <td class="highlight">{{ordersDetail.dataChiusuraOrdine}}</td>
+	   </tr>
+	   
+	   <tr><!-- RU_752 -->
+     	<td>Numero telefonico aggiuntivo:</td>
+     	<td><a ng-click="openNumeroTelefonicoAggiuntivo(orders.numeroTelefonicoAggiuntivo)"> <img src="assets/css/i/pag-next.png" alt="search" class="search"> </a> </td>
+     	<td></td>
+     	<!-- RU_966 -->
+     	<td>Intermediate Agent Full:</td>
+     	<td class="highlight">{{ordersDetail.intermediateAgentFull}}</td>
+       </tr>
+       <!-- SM_9839 -->
+       <!-- SM_10353 -->
+       <tr ng-if="showOperatoreRete">
+        <td>Operatore Rete:</td>
+        <td class="highlight">{{ordersDetail.operatoreRete}}</td>
+        <td></td>
+        <td></td>
+	    <td></td>
+       </tr>
+       <!-- RU_1492 -->
+       <tr ng-if="isOpenFiberOrder">
+     	<td>ID Risorsa OF:</td>
+     	<td class="highlight">{{orders.idRisorsaOF}}</td>
+     	<td></td>
+     	<td>Codice ordine OF:</td>
+     	<td class="highlight">{{orders.codiceOrdineOF}}</td>
+       </tr>
+       <tr ng-if="isOpenFiberOrder">
+     	<td>Stato OF:</td>
+     	<td class="highlight">{{orders.statoOF}}</td>
+     	<td></td>
+     	<td>Note OF:</td>
+     	<td class="highlight">{{orders.noteOF}}</td>
+       </tr>
+       <!-- RU_1525 -->
+       <tr ng-if="isOpenFiberOrder">
+     	<td>Caratterizzazione Area:</td>
+     	<td class="highlight">{{orders.caratterizzazioneArea}}</td>
+     	<td></td>
+     	<td></td>
+     	<td></td>
+       </tr>       
+	     
+	  <!-- new -->
+		  <tr >
+	      <td><button ng-if="orders.statoRichiestaOlo == 'SOSPESO'" class="bottonTable" ng-click="timeOut()">
+	      <span ng-hide="timeOutSpin">Richiesta data di TIMEOUT </span>
+	      <span ng-show="timeOutSpin" style="margin: 0 50px 0 40px;"><img src="assets/i/loading.gif" /></span></button></td>
+	      <td>
+  	<div ng-if="ordersDetail.flagPreventivo && showButtonRichiestaPreventivo()" >
+     <button ng-click="nuovoPreventivo()" ng-disabled="orders.statoNow=='IN RICHIESTA PREVENTIVO' || nuovoPreventivoLoading" ng-class="{'is-disabled' : orders.statoNow=='IN RICHIESTA PREVENTIVO' || nuovoPreventivoLoading}" id="buttonPreventivo">Richiesta Preventivo</button>
+    </div></td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	      <td></td>
+	     </tr>      
+    </tbody>
+   </table>
+
+<!--******************** only for scartato **********************--> <!-- CR 255 start -->
+   <table class="table-detail orderTableWordWrap" ng-if="!ordersDetail">
+    <tbody>
+	 <tr>
+      <td>Codice Ordine OAO:</td>
+      <td class="highlight">{{orders.richiesta.codiceOrdineOLO}}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+     </tr>
+     <tr>
+      <td>Codice Ordine OAO Padre:</td>
+      <td class="highlight">{{orders.richiesta.codiceOrdineOaoPadre}}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+     </tr>
+     <tr>
+      <td>Codice OAO:</td>
+      <td class="highlight">{{orders.richiesta.codiceOAO}}</td>
+	  <td></td>
+	  <td>Codifica OAO:</td>
+	  <td class="highlight">{{orders.richiesta.codificaOAO}}</td>
+     </tr>
+     <tr>
+      <td>Tipo Lavorazione:</td>
+      <td class="highlight">{{orders.richiesta.tipoLavorazione}}</td>
+      <td></td>
+	  <td></td>
+	  <td></td>
+     </tr>
+     <tr>
+	  <td>Stato OAO:</td>
+      <td class="highlight">{{orders.richiesta.statoOao}}</td>
+	  <td></td>
+      <td><span ng-if="!visibilitaProfiliNonOlo">Stato NOW:</span></td>
+      <td><span class="span-highlight" ng-if="!visibilitaProfiliNonOlo">{{orders.richiesta.statoNow}}</span></td>
+     </tr>
+     <tr>
+	  <td>Codice Causale OAO:</td>
+      <td class="highlight">{{orders.richiesta.codiceCausaleOao}}</td>
+      <td></td><!-- SM_8304 -->
+      <td>Causale OAO:</td>
+      <td class="highlight">{{orders.richiesta.causaleOao}}</td>     
+     </tr>
+     <tr>
+      <!-- SM_8900 -->
+      <td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">Codice Causale Now:</span></td>
+      <td><span class="span-highlight" ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">{{orders.richiesta.codiceCausaleNow}}</span></td>
+      <td></td>
+      <!-- SM_8900 -->
+      <td><span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">Causale NOW:</span></td>
+      <td><span class="span-highlight" ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">{{orders.richiesta.causaleNow}}</span></td>
+     </tr>
+     <tr>
+      <td>Codice Progetto:</td>
+      <td class="highlight">{{orders.codiceProgetto}}</td><!-- SM_8254 -->
+      <td></td>
+      <td></td>
+      <td></td>
+     </tr> 
+     <tr>
+      <td>Data Creazione:</td>
+      <td class="highlight">{{orders.richiesta.dataInvio}}</td>
+      <td></td>
+      <td>Data Aggiornamento:</td>
+      <td class="highlight">{{orders.richiesta.dataAggiornamento}}</td>
+     </tr>
+     <tr>
+      <td>Data Inserimento:</td>
+      <td class="highlight">{{orders.richiesta.dataInserimento}}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+     </tr>
+	 <tr>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+     </tr>
+	 <tr>
+	  <td>Id Risorsa:</td>
+      <td class="highlight"><pre class="my-class"><span class="span-highlight">{{orders.richiesta.idRisorsa}}</span></pre></td>
+	  <td></td>
+      <td></td>
+      <td></td>
+	 </tr>
+	 <tr>
+	  <td>Canale:</td>
+      <td class="highlight">{{orders.richiesta.canale}}</td>
+	  <td></td>
+	  <td>Nome File:</td>
+      <td class="highlight">{{orders.richiesta.nomeFile}}</td>
+	 </tr>
+	 <tr>
+	  <td>Note:</td>
+      <td class="highlight">{{orders.richiesta.note}}</td>
+	  <td></td>
+      <td></td>
+      <td></td>
+	 </tr>
+	 <!-- SM_8304 -->
+	 <tr ng-if="showRichiestaXml">
+      <td>Richiesta XML:</td>
+      <td class="highlight" colspan="5"><textarea rows="10" max-cols="115" cols="115" readonly>{{orders.richiesta.richiestaXML}}</textarea></td>
+      <td></td>
+     </tr>
+     <tr>
+      <!-- SM_9686 -->
+      <!-- R1F-20-0236 -->
+      <!-- Task #36766 -->
+      <td ng-if="_showButtonDetokenizzazione && showButtonDetokenizzazioneXml">
+        	<button class="bottonTable" ng-click="detokenizzaXml()">Detokenizza XML</button>
+        </td>
+     </tr>
+    </tbody>
+   </table>
+
+<!--******************** only for scartato **********************--> <!-- CR 255 -->
+
+   <section class="section-content" ng-if="ordersDetail">
+    <h1>Servizi</h1>
+    <div class="data-table table-fixed">
+     <table class="table table-hover">
+      <thead>
+       <tr>
+        <th>Componente</th>
+        <th ng-if="orders.lavorazioneRichiesta == 'VARIAZIONE'">Azione</th>
+        <th style="width: 10%">Dettaglio:</th>
+       </tr>
+      </thead>
+      <tbody>
+       <tr class="accordion-toggle contract_row" ng-repeat="item in orders.servizi">
+        <td style="cursor: default;">{{item.product}}</td>
+        <td ng-if="orders.lavorazioneRichiesta =='VARIAZIONE'">
+        <span ng-if="item.azione == 'A'">Componente Aggiunta</span>
+        <span ng-if="item.azione == 'D'">Componente Eliminata</span>
+        <span ng-if="item.azione == 'N'">Componente invariata</span>
+        <span ng-if="(item.azione != 'A') && (item.azione != 'D') && (item.azione != 'N')">Componente Modificata</span>
+        </td>
+        <td><a ng-click="open(item.product, item.customizations)"> <img src="assets/css/i/pag-next.png" alt="search" class="search">
+        </a></td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+   </section>
+   <section class="section-content" ng-if="ordersDetail">
+    <h1>Referenti</h1>
+    <div class="data-table table-fixed">
+     <table class="table table-hover">
+      <thead>
+       <tr>
+        <th>Progressivo</th>
+        <th>Nome</th>
+        <th>Cognome</th>
+        <th>Telefono Fisso</th>
+        <th>Cellulare</th>
+        <th>Qualifica</th>
+        <th>Email</th>
+        <th>Referente On Field</th>
+        <!-- RU_1084 -->
+        <!-- R1F-20-0236 -->
+        <!-- Task #36766 -->
+        <th ng-if="_showButtonDetokenizzazione">Detokenizza</th>
+       </tr>
+      </thead>
+      <tbody>
+	       <tr ng-repeat="item in referents track by item.progressivo" class="accordion-toggle contract_row">
+	        <td style="cursor: default;">{{item.progressivo}}</td>
+	        <td style="cursor: default;" ng-if="!item.detokenizzazioneFittizia">{{item.nome}}</td>
+	        <td style="cursor: default;" ng-if="item.detokenizzazioneFittizia">{{item.patternDetokenizzazioneFittizia}}</td>
+	        
+	        <td style="cursor: default;" ng-if="!item.detokenizzazioneFittizia">{{item.cognome}}</td>
+	        <td style="cursor: default;" ng-if="item.detokenizzazioneFittizia">{{item.patternDetokenizzazioneFittizia}}</td>
+	        <!-- SM_10618 -->
+	        <td style="cursor: default;" ng-if="!item.detokenizzazioneFittiziaFull">{{item.telefonoFisso}}</td>
+	        <td style="cursor: default;" ng-if="item.detokenizzazioneFittiziaFull">{{item.patternDetokenizzazioneFittizia}}</td>
+	        
+	        <td style="cursor: default;" ng-if="!item.detokenizzazioneFittiziaFull">{{item.cellulare}}</td>
+	        <td style="cursor: default;" ng-if="item.detokenizzazioneFittiziaFull">{{item.patternDetokenizzazioneFittizia}}</td>
+	        
+	        <td style="cursor: default;">{{item.qualifica}}</td>
+	        
+	        <td style="cursor: default;"ng-if="!item.detokenizzazioneFittizia">{{item.email}}</td>
+	        <td style="cursor: default;" ng-if="item.detokenizzazioneFittizia">{{item.patternDetokenizzazioneFittizia}}</td>
+	        
+	        <td style="cursor: default;"><span ng-if="item.onfield" class="glyphicon glyphicon-check" aria-hidden="true" style="color: #004388"></span> <span ng-if="!item.onfield"
+	         class="glyphicon glyphicon-unchecked" aria-hidden="true" style="color: #004388"></span></td>
+	        <!-- RU_1084 -->
+	        <!-- SM_9620 -->
+	        <!-- R1F-20-0236 -->
+	        <!-- Task #36766 -->
+	        <td ng-if="_showButtonDetokenizzazione && (item.detokenizza || item.detokenizzazioneFittizia)">
+	        	<button class="bottonTable" ng-click="detokenizzaReferente(item)">Detokenizza Referente</button>
+	        </td>
+	       </tr>       
+      </tbody>
+     </table>
+     <!-- SM_10493 -->
+     <table class="table table-hover" ng-if="orders.refOaoProgettiSpeciali">
+     	<thead>
+     		<th>Referente OAO Progetti Speciali</th>
+     	</thead>
+     	<tbody>
+     		<tr>
+     			<td>{{orders.refOaoProgettiSpeciali}}</td>
+     		</tr>
+     	</tbody>
+     </table>
+     
+    </div>
+   </section>
+
+   <section class="section-content" ng-if="ordersDetail">
+    <h1>Dati Cliente</h1>
+    <div class="data-table table-fixed">
+     <table class="table table-hover">
+      <thead>
+       <tr>
+        <th>Nome</th>
+        <th>Cognome/Ragione Sociale</th>
+        <th>CF</th>
+        <th>P.IVA</th>
+        <th>Indirizzi</th>
+        <th></th>
+       </tr>
+
+      </thead>
+      <tr class="accordion-toggle contract_row" ng-if="clienteFinale">
+       <td style="cursor: default;" ng-if="!clienteFinale.tokenizzazioneFittizia">{{clienteFinale.nome}}</td>
+       <td style="cursor: default;" ng-if="clienteFinale.tokenizzazioneFittizia">{{_patternDetokenizzazioneFittizia}}</td>
+       
+       <td style="cursor: default;" ng-if="!clienteFinale.tokenizzazioneFittizia">{{clienteFinale.ragioneSociale}}</td>
+       <td style="cursor: default;" ng-if="clienteFinale.tokenizzazioneFittizia">{{_patternDetokenizzazioneFittizia}}</td>
+       
+       <td style="cursor: default;" ng-if="!clienteFinale.tokenizzazioneFittizia">{{clienteFinale.codFiscale}}</td>
+       <td style="cursor: default;" ng-if="clienteFinale.tokenizzazioneFittizia">{{_patternDetokenizzazioneFittizia}}</td>
+       
+       <td style="cursor: default;" ng-if="!clienteFinale.tokenizzazioneFittizia">{{clienteFinale.partitaIva}}</td>
+       <td style="cursor: default;" ng-if="clienteFinale.tokenizzazioneFittizia">{{_patternDetokenizzazioneFittizia}}</td>
+       <td>
+       		<a ng-click="openIndirizziClienteFinale(clienteFinale.sedeClienteFinale)">
+       			<img src="assets/css/i/pag-next.png" alt="search" class="search">
+       		</a>
+       </td>
+       <!-- R1F-20-0236 -->
+       <td ng-if="_showButtonDetokenizzazione && showButtonDetokenizzazioneClienteFinale">
+       		<button class="bottonTable" ng-click="detokenizzaClienteFinale()">Detokenizza Cliente</button>
+       </td>
+      </tr>
+      <tr class="accordion-toggle contract_row" ng-if="!clienteFinale">
+       <td colspan="5">Nessun Cliente Finale</td>
+      </tr>
+     </table>
+    </div>
+   </section>
+   <section class="section-content" ng-if="ordersDetail">
+    <h1>Dettaglio Ordine</h1>
+    <div class="data-table table-fixed">
+     <table class="table-detail">
+      <tbody>
+      <!-- new -->
+      
+      <tr>
+	  <td>Id Risorsa:</td>
+      <td class="highlight"><pre class="my-class"><span class="span-highlight">{{ordersDetail.idRisorsa}}</span></pre></td> <!-- SM_8263 -->
+	  <td></td>
+      <td>
+      <!-- SM_8952 -->
+      <span ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">Id Risorsa Now:</span></td>
+      <td class="highlight"><pre class="my-class"><span class="span-highlight" ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">{{orders.idRisorsaNow}}</span></pre></td>
+      <td></td>
+	 </tr>
+	 <tr> <!-- RU_737 -->
+        <td>Identificativo Risorsa Operatore Rete:</td>
+        <td class="highlight">{{ordersDetail.idRisorsaOperatoreRete}}</td>
+        <td></td>
+        <!-- RU_817 -->
+        <td ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC">Dettagli Altro Operatore Rete:</td>
+        <td ng-if="!visibilitaProfiliNonOlo && !visibilitaProfiliNonOPCC" class="highlight">{{ordersDetail.dettagliAltroOperatoreRete}}</td>
+        <td></td>
+       </tr>
+	 <tr>
+	  <td>Canale:</td>
+      <td class="highlight">{{orders.canale}}</td>
+	  <td></td>
+	  <td>Nome File:</td>
+      <td class="highlight">{{ordersDetail.nomeFile}}</td><!-- SM_8263 -->
+      <td></td>
+	 </tr>
+	 <tr>
+	  <td>Note:</td>
+      <td class="highlight">{{orders.note}}</td>
+	  <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+	 </tr>
+	 <tr>
+      <td>Codice Delivery:</td>
+      <td class="highlight">{{ordersDetail.codiceDelivery}}</td>
+      <td></td>
+      <td>Codice Qualit&agrave;:</td>
+      <td class="highlight">{{ordersDetail.codiceQualita}}</td>
+      <td></td>
+     </tr>
+      
+       <tr>
+        <td>Tipo Pacchetto:</td>
+        <td class="highlight">{{ordersDetail.tipoPacchetto}}</td>
+        <td></td>
+        <td>Identificativo Correlazioni:</td>
+        <td class="highlight">{{ordersDetail.identificativoCorrelazioni}}</td>
+        <td></td>
+       </tr>
+       <tr>
+        <td></td>
+        <td class="highlight"></td>
+        <td></td>
+        <td>Tot Ordini Pacchetto:</td>
+        <td class="highlight">{{ordersDetail.totOrdiniPacchetto}}</td>
+        <td></td>
+       </tr>
+       <tr>
+        <td>Numero Verde OAO Collaudo:</td>
+        <td class="highlight">{{ordersDetail.numeroVerdeOaoCollaudo}}</td>
+        <td></td>
+        <td>Numero Verde OAO PT:</td>
+        <td class="highlight">{{ordersDetail.numeroVerdeOaoPT}}</td>
+        <td></td>
+       </tr>
+       <tr>
+        <td>DN OAO Collaudo:</td>
+        <td class="highlight">{{ordersDetail.dnOaoCollaudo}}</td>
+        <td></td>
+        <td></td>
+        <td></td>
+		<td></td>
+       </tr>
+	   <tr>
+        <td>IDULLCo:</td>
+        <td class="highlight">{{ordersDetail.idullco}}</td>
+        <td></td>
+        <td>Centrale:</td>
+        <td class="highlight">{{ordersDetail.centrale}}</td>
+		<td></td>
+       </tr>
+	   <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td>Codice GAT:</td>
+        <td class="highlight">{{ordersDetail.codiceGAT}}</td>
+		<td></td>
+       </tr>
+	   <tr>
+        <td>IDSLUCo:</td>
+        <td class="highlight">{{ordersDetail.idsluco}}</td>
+        <td></td>
+        <td></td>
+        <td></td>
+		<td></td>
+       </tr>
+	   <tr>
+        <td>Test Mode:</td>
+        <td class="highlight">{{ordersDetail.testMode}}</td>
+        <td></td>
+        <td>Monitoraggio:</td>
+        <td class="highlight"><span ng-if="ordersDetail.monitoraggio" class="glyphicon glyphicon-check span-highlight" aria-hidden="true" style="color: #004388"></span> <span ng-if="!ordersDetail.monitoraggio"
+         class="span-highlight glyphicon glyphicon-unchecked" aria-hidden="true" style="color: #004388"></span></td>
+        <td></td>
+       </tr>
+	   <tr>
+	   <!-- dovrebbe stare in dettagliDettaglio -->
+        <td>Naked:</td>
+        <td class="highlight"><span ng-if="!orders.Naked" class="span-highlight glyphicon glyphicon-unchecked" aria-hidden="true" style="color: #004388"></span><span ng-if="orders.Naked" class="span-highlight glyphicon glyphicon-check" aria-hidden="true" style="color: #004388"></span></td><!-- SM_8263 -->
+        <td></td>
+        <!-- RU_823 -->
+        <td>Rendez Vous:</td>
+        <td class="highlight"><span ng-if="!ordersDetail.rendezVous" class="span-highlight glyphicon glyphicon-unchecked" aria-hidden="true" style="color: #004388"></span><span ng-if="ordersDetail.rendezVous" class="span-highlight glyphicon glyphicon-check" aria-hidden="true" style="color: #004388"></span></td>
+        <td></td>
+       </tr>
+	   <tr>
+        <td>Note da Sistema:</td>
+        <td class="highlight">{{ordersDetail.noteSistema}}</td>
+        <td></td>
+        <td></td>
+		<td></td>
+        <td></td>
+       </tr>
+       <tr>
+		  <td>OAO Donor:</td>
+		  <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.oaoDonor}}</span></td>
+		  <td></td>
+		  <td></td>
+		  <td class="highlight"></td>
+		 </tr>
+		 <tr>
+		  <td>OAO Donating:</td>
+		  <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.oaoDonating}}</span></td>
+		  <td></td>
+		  <td></td>
+		  <td class="highlight"></td>
+		 </tr>
+       <tr> <!-- RU_737 -->
+        <td>Codice Risorsa Donating 1:</td>
+        <td class="highlight">{{ordersDetail.codiceRisorsaDonating1}}</td>
+        <td></td>
+        <td>Codice Risorsa Donating 2:</td>
+        <td class="highlight">{{ordersDetail.codiceRisorsaDonating2}}</td>
+        <td></td>
+       </tr>
+       <tr> <!-- RU_737 -->
+        <td>Codice Sessione 1:</td>
+        <td class="highlight">{{ordersDetail.codiceSessione1}}</td>
+        <td></td>
+        <td>Codice Sessione 2:</td>
+        <td class="highlight">{{ordersDetail.codiceSessione2}}</td>
+        <td></td>
+       </tr>
+       
+       <!-- R1E-21-0325 -->
+       <tr>
+		  <td>Ordine Asset White List:</td>
+		  <td class="highlight"><span class="span-highlight" ng-if="!!orders">{{orders.ordineAssetWhiteList}}</span></td>
+		  <td></td>
+		  <td></td>
+		  <td class="highlight"></td>
+		</tr>
+       
+       <tr ng-if="ordersDetail.richiestaXml && showRichiestaXml">
+        <td>Richiesta XML:</td>
+        <td class="highlight" colspan="5"><textarea rows="10" max-cols="115" cols="115" readonly>{{ordersDetail.richiestaXml}}</textarea></td>
+        </tr>
+        <tr>
+        <!-- SM_9686 -->
+        <!-- R1F-20-0236 -->
+        <!-- Task #36766 -->
+        <td ng-if="_showButtonDetokenizzazione && showButtonDetokenizzazioneXml">
+        	<button class="bottonTable" ng-click="detokenizzaXml()">Detokenizza XML</button>
+        </td>
+        <td></td>
+       </tr>    
+       <!-- new -->
+             </tbody>
+     </table>
+    </div>
+   </section>
+   
+   <!-- RU_918 -->
+   <section class="section-content" ng-if="orders.cambioTecnologia && orders.cambioTecnologia.length > 0">
+   <!-- Task #33913 -->
+    <h1>Cambio Tecnologia/Deprovisioning</h1>
+    <div class="data-table table-fixed">
+     <table class="table table-hover">
+      <tbody>
+       	<tr ng-repeat="item in orders.cambioTecnologia">
+         <td>{{item.label}}:</td>
+         <td class="highlight"><pre class="my-class"><span class="span-highlight">{{item.valore}}</span></pre></td>
+	  	 <td></td>
+       </tr>
+      </tbody>
+     </table>
+    </div>
+   </section>
+   
+  </div>
+  </uib-tab> 
+  <!--  fine dettaglio --> 
+  
+  <!-- NOTIFICHE E RICHIESTE --> 
+  <uib-tab index="1" heading="Notifiche e richieste"  class="nowrap">
+  <div ng-if="loadEsiti" class="spinner_container_direttiva">
+   <span us-spinner="{radius:18, width:3, length: 14}"></span>
+  </div>
+  <section class="section-content" ng-show="loadEsiti == false">
+   <h1>Richieste</h1>
+   <div class="data-table table-fixed">
+    <table class="table table-hover">
+     <thead>
+      <tr>
+       <th>Data Invio</th>
+       <!-- SM_8900 -->
+       <th ng-if="!isOLOUser() && !isOPCCUser()">Stato NOW</th>
+       <th>Stato OAO</th>
+       <th>Lavorazione</th>
+       <th>Cod. Richiesta OAO</th>
+       <th>User ID</th>
+       <th>XML</th>
+       <!-- RU_1103 -->
+       <!-- R1F-20-0236 -->
+       <!-- Task #36766 -->
+       <th ng-if="_showButtonDetokenizzazione">Detokenizza</th>
+              
+      </tr>
+     </thead>
+     <tbody>
+      <tr ng-repeat="item in request.outcomesRequests" class="contract_row">
+       <td class="esitiRichieste-span"><span>{{item.dataInvio}}</span></td>
+       <!-- SM_8900 -->
+       <td ng-if="!isOLOUser() && !isOPCCUser()">{{item.statoNow}}</td>
+       <td>{{item.statoOao}}</td>
+       <td id="esitiRichieste-td">{{item.lavorazioneRichiesta}}</td>
+       <td>{{item.codiceRichiestaOao}}</td>
+       <td>{{item.userId}}</td>
+       <!-- RU_1158 -->
+       <td class="allineamento-visualizza-nuovo-ordine"><span><button ng-click="showXML(item)">Visualizza</button></span></td>
+       <!-- RU_1103 -->
+       <!-- R1F-20-0236 -->
+       <!-- Task #36766 -->
+       <td ng-if="_showButtonDetokenizzazione" class="allineamento-visualizza-nuovo-ordine"><span><button ng-click="detokenizzaRichiestaXml(item)">Detokenizza e Visualizza</button></span></td>
+      </tr>
+      <tr ng-hide="request.outcomesRequests">
+     	  <td colspan="7">Non ci sono Richieste</td>
+      </tr>
+     </tbody>
+    </table>
+    <!-- RU_716 -->
+    <div ng-if="isNewRequestAllowedByOffer() && (isAuthorized('Ordini','Nuova Richiesta') && showNewRequestButton)">
+     <button ng-click="nuovaRichiesta()" ng-disabled="disableNewRequestButton" ng-class="{'is-disabled' : disableNewRequestButton}">Nuova Richiesta +</button>
+    </div>
+    <br class="clear">
+   </div>
+  </section>
+
+  <section class="section-content" ng-show="loadEsiti == false">
+   <h1>Notifiche Ordine</h1>
+   <div class="data-table table-fixed">
+    <now-table 
+          dati="request.notifications" 
+          custom-header="headerListRequestNotification" 
+          tipologia="tipologiaEsiti"
+          is-large-with-h-scroll="true"
+          detokenizza="_showButtonDetokenizzazione" 
+          show-spinner="true">
+   </now-table>
+   </div>
+  </section>
+  
+    <!-- RU_888 -->
+  <section class="section-content" ng-if="checkIfOfferEasy()" >
+   <h1>Notifiche Richieste</h1>
+   <div class="data-table table-fixed">
+    <now-table 
+          dati="notificheRichiesta.outputRecuperaNotificheRichiesta" 
+          custom-header="headerListRequestNotification" 
+          tipologia="tipologiaEsiti"
+          is-large-with-h-scroll="true"
+          show-spinner="true">
+   </now-table>
+   </div>
+  </section>
+  
+  <section class="section-content" ng-show="loadEsiti == false">
+   <h1>Referenti contattati</h1>
+   <div class="data-table table-fixed">
+	   <!-- SM_9650 -->
+	   <now-table dati="contacted_referents" custom-header="headerListReferenti" tipologia="tipologiaReferenti" show-spinner="true" detail-list="detailListReferenti" custom-action-callback="detokenizzaReferenteContattato" detokenizza="_showButtonDetokenizzazione"></now-table>
+   </div>
+  </section>
+
+  </uib-tab> 
+  <!-- FINE NOTIFICHE E RICHIESTE --> 
+  
+  <!-- TRACCIAMENTO E STATO --> 
+  <uib-tab index="2" heading="Tracciamento e stato" class="nowrap"> 
+	  <now-table 
+	  	   dati="tracciamentoStato"
+		   custom-header="headerListTracciamentoStato" 
+		   tipologia="tipologia" 
+		   show-spinner="tracciamentoStatoLoaded" 
+		   row-selection-callback="getTracciamentoStato" 
+		   >
+	   </now-table> 
+   </uib-tab> 
+   <!--  FINE TRACCIAMENTO E STATO -->
+   
+	<!-- FILE DI NOTIFICHE --> 
+	<uib-tab index="3" heading="File di notifiche" class="nowrap"> 
+	
+		<!-- SM_8904 -->
+		<now-table 
+			dati="files" 
+			custom-header="headerList" 
+			tipologia="tipologia"
+	   		show-spinner="filesLoaded" 
+	   		detail-list="detailList"
+	   		vista="$root.VIEW.DETTAGLIO_ORDINE" >
+	   </now-table> 
+	  </uib-tab> 
+	<!-- FINE FILE DI NOTIFICHE -->
+	
+	<!--  EXTERNAL DATA  --> 
+	<uib-tab index="4" heading="External Data" ng-if="externalDataAbilitazione" class="nowrap">
+	  <section class="section-content " >
+	   <h1>DTU</h1>
+	   <div class="data-table table-fixed">
+	   <div ng-if="!loadDTU" class="spinner_container_direttiva">
+	   <span us-spinner="{radius:18, width:3, length: 14}"></span>
+	  </div>
+    <table class="table table-hover dtu">
+     <thead>
+      <tr>
+       <th>Id Evento Ordine Now Wholesale</th>
+       <th>Progressivo Evento Dtu</th>
+       <th>Id Richiesta Dtu</th>
+       <th>Data Notifica Da Dtu</th>
+       <th>Stato Evento Da Dtu</th>
+       <th>Notifica Dtu</th>
+      </tr>
+
+     </thead>
+     <tbody ng-repeat="item in dtus">
+      <tr class="accordion-toggle contract_row" ng-class="{'downArrow': item.collapse, 'topArrow': !item.collapse}" ng-click="item.collapse=!item.collapse; getDettaglioDTU(item.identificativoEventoOrdineNowWholesale, item.progressivoEventoDtu)">
+      <td>{{item.identificativoEventoOrdineNowWholesale}}</td>
+      <td>{{item.progressivoEventoDtu}}</td>
+      <td>{{item.identificativoRichiestaDtu}}</td>
+      <td>{{item.dataNotificaDaDtu}}</td>
+      <td>{{item.statoEventoDaDtu}}</td>
+      <td>{{item.notificaDtu}}</td>
+      </tr>
+
+      <tr class="bordert0 collapse" ng-class="{'last': $last,'collapse': !item.collapse}">
+       <td colspan="6" class="contract_details">
+        <div class="accordion-body packageDetails4">
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Codice Impianto: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.codiceImpianto}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Codice Indirizzo: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.codiceIndirizzo}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Codice ISTAT Comune: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.codiceIstatComune}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Complesso: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.complesso}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Comune: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.comune}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Coppia: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.coppia}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">DAC: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dac}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Data Appuntamento: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dataAppuntamento}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Data ASU: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dataAsu}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope" >
+          <label class="col-xs-5 control-label ng-binding">Data Chiusura: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dataChiusura}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Data Invio Richiesta: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dataInvioRichiesta}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Data Permuta Armadio: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dataPermutaArmadio}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Data Telefonata: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dataTelefonata}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope" >
+          <label class="col-xs-5 control-label ng-binding">DES: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.des}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">DESC Prov: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.descrizioneProv}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Destinazione D'Uso: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.destinazioneDUso}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Distretto: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.distr}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope" >
+          <label class="col-xs-5 control-label ng-binding">DLCI Utente: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dlciUtente}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">DPNR: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dpnr}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">DPS: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.dps}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Esito: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.esito}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Fascia Oraria: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.fasciaOraria}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">ID ARL TI: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.idArlTi}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">ID ODR: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.idOdr}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">ID VLAN: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.idVlan}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">IDARLOLO: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.idarlolo}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Identificativo Richiesta OLO: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.idRichOlo}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Idsluco: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.idsluco}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Idullpa: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.idullpa}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Impresa: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.impresa}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Indicatore di Assurance: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.indicatoreDiAssrce}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Indicatore di Scaffale: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.indicatoreDiScaffale}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Indirizzo IP 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.indirizzoIp1}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope" >
+          <label class="col-xs-5 control-label ng-binding">Indirizzo IP 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.indirizzoIp2}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Indirizzo IP 3: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.indirizzoIp3}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Indirizzo IP 4: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.indirizzoIp4}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Intermediate Agent: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.intermediateAgent}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Interno: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.interno}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">ISTAT Prov: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.istatProv}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">ISTAT Via: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.istatVia}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Localit&agrave;: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.localita}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Lunghezza Coda: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.lunghezzaCoda}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Margine di Rumore Down: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.margineDiRumoreDown}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Margine di Rumore UP: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.margineDiRumoreUp}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Modem Rete TI: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.modemReteTi}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Modem Sede Cliente: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.modemSedeCliente}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Montante 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.montante1}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Montante 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.montante2}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Nodo 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.nodo1}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Nodo 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.nodo2}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Note per OLO: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.notePerOlo}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Numero Coppie Rame: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.numeroCoppieRame}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Ora Appuntamento: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.oraAppuntamento}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Ora DES: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.oraDes}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Ora Telefonata: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.oraTelefonata}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope" >
+          <label class="col-xs-5 control-label ng-binding">Paglietta 1 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.paglietta11}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Paglietta 1 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.paglietta12}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Paglietta 2 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.paglietta21}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Paglietta 2 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.paglietta22}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Particella Toponomastica: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.particellaTopon}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Permuta Armadio: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.permutaArmadio}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Piano: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.piano}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Posizione Arl OLO 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.posizioneArlOlo1}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Posizione Arl OLO 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.posizioneArlOlo2}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Posizione Arl TI 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.posizioneArlTi1}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Posizione Arl TI 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.posizioneArlTi2}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Posizione Coda: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.posizioneCoda}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Posizione Permutatore 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.posizionePermutatore1}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Posizione Permutatore 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.posizionePermutatore2}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Progressivo Rif: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.progressivoRiferimento}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">RDAC: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.rdac}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Ripartitore: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.ripartitore}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Scala: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.scala}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tecnologia: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.tecnologia}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tel Aggiuntivo 1: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.telefonoAggiuntivo1}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tel Aggiuntivo 2: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.telefonoAggiuntivo2}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tel Aggiuntivo 3: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.telefonoAggiuntivo3}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tel Aggiuntivo 4: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.telefonoAggiuntivo4}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tel Aggiuntivo 5: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.telefonoAggiuntivo5}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tel Aggiuntivo 6: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.telefonoAggiuntivo6}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tel Aggiuntivo 7: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.telefonoAggiuntivo7}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tipo Cessazione: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.tipoCessazione}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Tipo Collocazione: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.tipoClc}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Transaction ID: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.transactionId}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope" >
+          <label class="col-xs-5 control-label ng-binding">User VLAN: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.uservlan}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">UTR: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.utr}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">VCI SP: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.vciSp}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">VCI Utente: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.vciUtente}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Velocit&agrave; Aggangio Down: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.velocitaAggancioDown}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Vel&agrave; Aggancio Up: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.velocitaAggancioUp}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Via: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.via}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope" >
+          <label class="col-xs-5 control-label ng-binding">VPI Rete: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.vpiRete}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">VPI SP: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.vpiSp}}</div>
+         </div>
+         <div style="height:80px;" class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">VPI Utente: </label>
+          <div class="col-xs-7 selected-item">{{dtuDet.vpiUtente}}</div>
+         </div>
+          
+          <div ng-if="dtuDet.sezioneAggiuntivi.length > 0"  style="clear:both;" class="col-xs-12 ng-scope">
+               <br/> 
+             <div id="tabs">
+                <h2 style="text-align: center;">Sezione Aggiuntivi</h2>
+             </div>
+              <table class="intoTable">
+                    <tbody>
+                        <tr>
+                            <td>Numero Aggiuntivo</td>
+                            <td>Accesso</td>
+                            <td>Direzionalit&agrave;</td>
+                            <td>Progressivo</td>
+                            <td>Stato</td>
+                        </tr>
+                        <tr>
+                        <tr style="cursor: pointer;" ng-repeat="item in dtuDet.sezioneAggiuntivi">
+                            <td class="highlight">{{item.numeroAggiuntivo}}</td>
+                            <td class="highlight">{{item.accesso}}</td>
+                            <td class="highlight">{{item.direzionalita}}</td>
+                            <td class="highlight">{{item.progressivo}}</td>
+                            <td class="highlight">{{item.stato}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+               <br/> 
+        </div>   
+        </div>
+       </td>
+      </tr>
+
+     </tbody>
+    </table>
+   </div>
+   <div ng-if="!isOpenFiberOrder">
+	   <h1>JPUB</h1>
+	   <div class="data-table table-fixed">
+	   
+	   <div ng-if="!loadJPUBS" class="spinner_container_direttiva">
+	   <span us-spinner="{radius:18, width:3, length: 14}"></span>
+	  </div>
+	    <table class="table table-hover dtu">
+	     <thead>
+	      <tr>
+	       <th>Data Richiesta</th>
+	       <th>Verso</th>
+	       <th>Id Ordine Composto</th>
+	       <th>Stato Elaborazione Staging</th>
+	       <th>XML</th>
+	       <th>Consuntivo</th>
+	     </tr>
+	     </thead>
+	     <tbody>
+	      <tr class="accordion-toggle contract_row" ng-repeat="item in jpubs">
+	       <td>{{item.dataRichiesta}}</td>
+	       <td>{{item.verso}}</td>
+	       <td>{{item.identificativoOrdineComposto}}</td>
+	       <td>{{item.statoElaborazioneStaging}}</td>
+	       <td style="float: left;"><span><button ng-click="showXML(item.contenutoXML)">Visualizza</button></span></td>
+	       <td>{{item.flagConsuntivo}}</td>
+	      </tr>
+	     </tbody>
+	    </table>
+	   </div>
+   </div>
+   <div ng-if="showDBCFX() && !isOpenFiberOrder">
+	   <h1>DBCFX</h1>
+	   <div class="data-table table-fixed">
+	   		<now-table 
+	          dati="dbcfxList" 
+	          custom-header="headerListDbcfx" 
+	          tipologia="tipologiaDbcfx"
+	          is-large-with-h-scroll="false"
+	          show-spinner="true">
+	    	</now-table>
+	   </div>
+   </div>
+   
+   <!-- RU_1492 -->
+   <div  ng-if="isOpenFiberOrder && $root.isDGUser()">
+   		<h1>Open Fiber</h1>
+   		<div class="data-table table-fixed">
+   			<div ng-if="!loadJPUBS" class="spinner_container_direttiva">
+	   			<span us-spinner="{radius:18, width:3, length: 14}"></span>
+	  		</div>
+   			<table class="table table-hover dtu">
+     			<thead>
+      				<tr>
+       				   <th>Id Risorsa</th>
+				       <th>Verso</th>
+				       <th>Codice Ordine OLO</th>
+				       <th>Codice Ordine OLO OF</th>
+				       <th>Timestamp Richiesta</th>
+				       <th>Stato Staging</th>
+				       <th>Id Transazione</th>
+				       <th>Descrizione Errore</th>
+				       <th>Richiesta XML</th>
+				       <th>Risposta XML</th>
+				     </tr>
+				</thead>
+     			<tbody>
+			      <tr class="accordion-toggle contract_row" ng-repeat="item in eventiOpenFiber">
+			       <td>{{item.idRisorsa}}</td>
+			       <td>{{item.verso}}</td>
+			       <td>{{item.codOrdineOlo}}</td>
+			       <td>{{item.codOrdineOloOF}}</td>
+			       <td>{{item.timestampRichiesta}}</td>
+			       <td>{{item.statoStaging}}</td>
+			       <td>{{item.idTransazione}}</td>
+			       <td>{{item.descrizioneErrore}}</td>
+			       <td><span><button ng-click="showSimpleXML(item.richiestaXml)">Visualizza</button></span></td>
+			       <td><span><button ng-click="showSimpleXML(item.rispostaXml)">Visualizza</button></span></td>
+			      </tr>
+			    </tbody>
+			</table>
+   		</div>
+   </div>
+  </section>
+ 	</uib-tab> 
+  <!-- FINE EXTERNAL DATA -->
+  
+	<!--  PREVENTIVI E CONSUNTIVI  --> 
+	<uib-tab index="5" heading="Preventivi e Consuntivi" ng-show="ordersDetail.flagOpereSpeciali" class="nowrap">
+	  <section class="section-content ">
+	   <h1>Preventivi</h1>
+	   <div class="data-table table-fixed">
+	    <table class="table table-hover dtu">
+	     <thead>
+	      <tr>
+	       <th>Data Accettazione OAO</th>
+	       <th>Data Preventivo</th>
+	       <th>Stato</th>
+	       <th>Data Ultima Modifica</th>
+	       <th>Data Inserimento</th>
+	       <th>Data Timeout Accettazione</th>
+	       <th></th>
+	      </tr>
+     </thead>
+     <tbody ng-if="!preventivi || !preventivi.length">
+	     <tr>
+	     	<td colspan="7">Non ci sono preventivi</td>
+	     </tr>
+     </tbody>
+     <tbody ng-if="preventivi && preventivi.length" ng-repeat="item in preventivi">
+      <tr class="accordion-toggle contract_row" ng-class="{'downArrow': item.collapse, 'topArrow': !item.collapse}" >
+	      <td ng-click="item.collapse=!item.collapse;">{{item.dataAccettazioneOao}}</td>
+	      <td ng-click="item.collapse=!item.collapse;">{{item.dataPreventivo}}</td>
+	      <td ng-click="item.collapse=!item.collapse;">{{item.stato}}</td>
+	      <td ng-click="item.collapse=!item.collapse;">{{item.dataUltimaModifica}}</td>
+	      <td ng-click="item.collapse=!item.collapse;">{{item.dataInserimento}}</td>
+	      <td ng-click="item.collapse=!item.collapse;">{{item.dataTimeoutAccettazione}}</td>
+	      <td>  
+				<button class="ng-binding" ng-disabled="item.stato!=='INACCETTAZIONE' || attesaRispostaPreventivo!==''" ng-class="{'is-disabled' : item.stato!=='INACCETTAZIONE'}" ng-click="confermaPreventivo(item,true)">
+					<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+					Accetto Preventivo
+				</button>
+				<button class="ng-binding" ng-disabled="item.stato!=='INACCETTAZIONE' || attesaRispostaPreventivo!==''" ng-class="{'is-disabled' : item.stato!=='INACCETTAZIONE'}" ng-click="confermaPreventivo(item,false)">
+					<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+					Rifiuto Preventivo
+				</button>
+	 	 </td>
+      </tr>
+
+      <tr class="bordert0 collapse" ng-class="{'last': $last,'collapse': !item.collapse}">
+       <td colspan="7" class="contract_details">
+        <div class="accordion-body packageDetails4">
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Contributo Cliente:</label>
+          <div class="col-xs-7 selected-item">
+				<span ng-if="item.contributoCliente=='Y'"
+						class="glyphicon glyphicon-check" aria-hidden="true"
+						style="color: #004388"></span> <span
+						ng-if="item.contributoCliente!='Y'"
+						class="glyphicon glyphicon-unchecked" aria-hidden="true"
+						style="color: #004388"></span>
+		</div>
+         </div>
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">OPA: </label>
+          <div class="col-xs-7 selected-item">
+          <span ng-if="item.opa=='Y'"
+						class="glyphicon glyphicon-check" aria-hidden="true"
+						style="color: #004388"></span> <span
+						ng-if="item.opa!='Y'"
+						class="glyphicon glyphicon-unchecked" aria-hidden="true"
+						style="color: #004388"></span></div>
+         </div>
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Permessi: </label>
+          <div class="col-xs-7 selected-item">
+			<span ng-if="item.permessi=='Y'"
+						class="glyphicon glyphicon-check" aria-hidden="true"
+						style="color: #004388"></span> <span
+						ng-if="item.permessi!='Y'"
+						class="glyphicon glyphicon-unchecked" aria-hidden="true"
+						style="color: #004388"></span></div>
+         </div>
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Importo Totale: </label>
+          <div class="col-xs-7 selected-item">{{item.importoTotale}}</div>
+         </div>
+         <!-- RU_869 -->
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Prezzi esposti in: </label>
+          <div class="col-xs-7 selected-item">{{item.prezziEspostiIn}}</div>
+         </div>
+         <!-- RU_869 -->
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Timeout Accettazione: </label>
+          <div class="col-xs-7 selected-item">
+			<span ng-if="item.timeoutAccettazione=='Y'"
+						class="glyphicon glyphicon-check" aria-hidden="true"
+						style="color: #004388"></span> <span
+						ng-if="item.timeoutAccettazione!='Y'"
+						class="glyphicon glyphicon-unchecked" aria-hidden="true"
+						style="color: #004388"></span>
+			</div>
+         </div>
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Note: </label>
+          <div class="col-xs-7 selected-item">{{item.note}}</div>
+         </div>
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Num. Giorni Previsto: </label>
+          <div class="col-xs-7 selected-item">{{item.numGiorniPrevisto}}</div>
+         </div>
+         
+         <!-- RU_956 -->
+         <div ng-if="!RU_956">         
+	         <div class="col-xs-4 form-horizontal ng-scope">
+	          <label class="col-xs-5 control-label ng-binding">Descrizione Articolo: </label>
+	          <div class="col-xs-7 selected-item">{{item.descrizioneArticolo}}</div>
+	         </div>
+	         <div class="col-xs-4 form-horizontal ng-scope">
+	          <label class="col-xs-5 control-label ng-binding">Importo Articolo: </label>
+	          <div class="col-xs-7 selected-item">{{item.importoArticolo}}</div>
+	         </div>
+	 		<div class="col-xs-4 form-horizontal ng-scope">
+	          <label class="col-xs-5 control-label ng-binding">Quantit&agrave; Articolo: </label>
+	          <div class="col-xs-7 selected-item">{{item.quantitaArticolo}}</div>
+	         </div>
+         </div>
+        </div>
+       </td>
+      </tr>
+
+     </tbody>
+    </table>
+   </div>
+   <h1>Consuntivi</h1>
+   <div class="data-table table-fixed">
+    <table class="table table-hover dtu">
+     <thead>
+      <tr>
+       <th>Num. Giorni Previsto</th>
+       <th>Data inserimento</th>
+      </tr>
+     </thead>
+     <tbody ng-if="!consuntivi || !consuntivi.length">
+	     <tr>
+	     	<td colspan="2">Non ci sono consuntivi</td>
+	     </tr>
+     </tbody>
+     <tbody ng-if="consuntivi && consuntivi.length" ng-repeat="item in consuntivi">
+      <tr class="accordion-toggle contract_row" ng-class="{'downArrow': item.collapse, 'topArrow': !item.collapse}" ng-click="item.collapse=!item.collapse;">
+      <td>{{item.numGiorniPrevisto}}</td>
+      <td>{{item.dataInserimento}}</td>
+      </tr>
+
+      <tr class="bordert0 collapse" ng-class="{'last': $last,'collapse': !item.collapse}">
+       <td colspan="2" class="contract_details">
+        <div class="accordion-body packageDetails4">
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Flag Contributo Cliente: </label>
+          <div class="col-xs-7 selected-item">
+				<span ng-if="item.flagContributoCliente == 'Y'"
+						class="glyphicon glyphicon-check" aria-hidden="true"
+						style="color: #004388"></span> <span
+						ng-if="item.flagContributoCliente != 'Y'"
+						class="glyphicon glyphicon-unchecked" aria-hidden="true"
+						style="color: #004388"></span>
+		</div>
+         </div>
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">OPA: </label>
+          <div class="col-xs-7 selected-item">
+          <span ng-if="item.opa == 'Y'"
+						class="glyphicon glyphicon-check" aria-hidden="true"
+						style="color: #004388"></span> <span
+						ng-if="item.opa != 'Y'"
+						class="glyphicon glyphicon-unchecked" aria-hidden="true"
+						style="color: #004388"></span></div>
+         </div>
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Permessi: </label>
+          <div class="col-xs-7 selected-item">
+			<span ng-if="item.permessi == 'Y'"
+						class="glyphicon glyphicon-check" aria-hidden="true"
+						style="color: #004388"></span> <span
+						ng-if="item.permessi != 'Y'"
+						class="glyphicon glyphicon-unchecked" aria-hidden="true"
+						style="color: #004388"></span></div>
+         </div>
+          <!-- RU_869 -->
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Importo Totale: </label>
+          <div class="col-xs-7 selected-item">{{item.importoTotale}}</div>
+         </div>
+         <!-- RU_869 -->
+         <div class="col-xs-4 form-horizontal ng-scope">
+         <label class="col-xs-5 control-label ng-binding">Prezzi esposti in: </label>
+          <div class="col-xs-7 selected-item">{{item.prezziEspostiIn}}</div>
+         </div>
+         <div class="col-xs-4 form-horizontal ng-scope">
+          <label class="col-xs-5 control-label ng-binding">Note: </label>
+          <div class="col-xs-7 selected-item">{{item.note}}</div>
+         </div>
+         
+         <!-- RU_956 -->
+         <div ng-if="!RU_956">         
+	         <div class="col-xs-4 form-horizontal ng-scope">
+	          <label class="col-xs-5 control-label ng-binding">Descrizione Articolo: </label>
+	          <div class="col-xs-7 selected-item">{{item.descrizioneArticolo}}</div>
+	         </div>
+	         <div class="col-xs-4 form-horizontal ng-scope">
+	          <label class="col-xs-5 control-label ng-binding">Importo Articolo: </label>
+	          <div class="col-xs-7 selected-item">{{item.importoArticolo}}</div>
+	         </div>
+	 		<div class="col-xs-4 form-horizontal ng-scope">
+	          <label class="col-xs-5 control-label ng-binding">Quantit&agrave; Articolo: </label>
+	          <div class="col-xs-7 selected-item">{{item.quantitaArticolo}}</div>
+	         </div>
+         </div>
+        </div>
+       </td>
+      </tr>
+     </tbody>
+    </table>
+   </div>
+  </section>
+  </uib-tab> <!-- FINE PREVENTIVI E CONSUNTIVI -->
+
+	<!-- RU_1492 -->
+	<!-- LAVORAZIONE MANUALE -->
+	<uib-tab index="6" heading="Lavorazione Manuale" class="nowrap" ng-if="showLavorazioneManuale">
+		<section class="section-content">
+			<table class="table-detail orderTableWordWrap">
+    			<tbody>
+     				<tr>
+        				<td>Codice Ordine OLO:</td>
+        				<td class="highlight"><span class="span-highlight">{{orders.ordineOlo}}</span></td>
+        				<td></td>
+        				<td>Codice ordine OF:</td>
+     					<td class="highlight"><span class="span-highlight">{{orders.codiceOrdineOF}}</span></td>
+       				</tr>
+       				<tr>
+       					<td>ID Risorsa:</td>
+     					<td class="highlight"><span class="span-highlight">{{ordersDetail.idRisorsa}}</span></td>
+     					<td></td>
+     					<td>ID Risorsa OF:</td>
+     					<td class="highlight"><span class="span-highlight">{{orders.idRisorsaOF}}</span></td>
+       				</tr>
+       				<tr>
+       					<td>Codice Ordine TI:</td>
+     					<td class="highlight"><span class="span-highlight">{{orders.ordineTi}}</span></td>
+     					<td></td>
+      					<td></td>
+      					<td></td>
+       				</tr>
+       				<tr>
+	  					<td>Codice Causale OAO:</td>
+      					<td><span class="span-highlight" ng-if="!!orders">{{orders.codiceCausaleOao}}</span></td>
+      					<td></td>
+      					<td>Causale OAO:</td>
+      					<td><span class="span-highlight" ng-if="!!orders">{{orders.causaleOao}}</span></td>
+     				</tr>
+     				<tr>
+      			      	<td>Codice Causale Now:</td>
+      				  	<td><span class="span-highlight">{{orders.codiceCausaleNow}}</span></td>
+      				  	<td></td>      
+      				  	<td>Causale NOW:</td>
+      				  	<td><span class="span-highlight">{{orders.descrizioneNow}}</span></td>
+     				</tr>
+       				<tr>
+       					<td>Stato NOW:</td>
+      					<td><span class="span-highlight">{{orders.statoNow}}</span></td>
+      					<td></td>
+       					<td>Stato OF:</td>       					
+     					<td class="highlight"><span class="span-highlight">{{orders.statoOF}}</span></td>
+       				</tr>
+       				<tr>
+       					<td><span><button type="button" ng-if="showButtonRisottometti" ng-click="lavorazioneManualeRisottometti()">Risottometti</button><span ng-show="showSpinnerRisottomettiFiberstream"><img src="assets/i/loading.gif" /></span></span></td>
+      					<td></td>
+      					<td></td>
+       					<td><span><button type="button" ng-if="showButtonConfermaKo" ng-click="lavorazioneManualeConfermaKo()">Conferma KO</button><span ng-show="showSpinnerConfermaKoFiberstream"><img src="assets/i/loading.gif" /></span></span></td>       					
+     					<td></td>
+       				</tr>   				
+       			</tbody>
+       		</table>
+       		</section>
+       		
+	    	<form ng-submit="lavorazioneManualeForm.$valid && submitLavorazione()" class="form-container" name="lavorazioneManualeForm" novalidate ng-if="showButtonModifica">
+	        	<section class="form-process" style="padding-top: 0px;">
+	        		<h2>Modifica</h2>        		
+	            	<div class="row">
+	            		<div class="col-xs-6 form-horizontal paddL0">
+	            			<div ng-class="{ 'has-error' : lavorazioneManualeForm.id_building.$invalid && !lavorazioneManualeForm.id_building.$pristine }">
+	            				<label class="col-xs-3 control-label">ID Building<sup>*</sup></label>
+	            				<input
+	                                    type="text"
+	                                    name="id_building"
+	                                    class="form-control SB-width"
+	                                    ng-model="lavorazioneManuale.idBuilding"
+	                                    ng-maxlength="50"
+	                                    required>
+	                             <div role="alert">
+	                                <span ng-if="lavorazioneManualeForm.id_building.$error.required && !lavorazioneManualeForm.id_building.$pristine" class="help-block help-width">Compila questo campo</span>
+	                                <span ng-if="lavorazioneManualeForm.id_building.$error.maxlength" class="help-block help-width">Inserire al massimo 50 caratteri</span>
+	                            </div>
+	            			</div>
+	            		</div>
+	            	</div>
+	            	<div class="col-xs-12 madatory-field paddL0">
+						<i>*Campo obbligatorio</i>
+					</div>
+	            </section>
+	            <section class="form-button">
+            		<button type="button" ng-click="lavorazioneManualeModifica()" ng-disabled="!lavorazioneManualeForm.$valid">Modifica</button><span ng-show="showSpinnerModificaFiberstream"><img src="assets/i/loading.gif" /></span>           		
+        		</section>
+	        </form>
+	</uib-tab>
+  </uib-tabset>
+  <section class="form-button ">
+   <button class="btn btn-disabled pull-left" type="submit" ng-click="changeState()">indietro</button>
+  </section>
+ </div>
+</div>

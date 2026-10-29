@@ -1,0 +1,267 @@
+<uib-accordion class="accordion-bs" ng-init="getVPCode(); getTDCodes()">
+<uib-accordion-group
+                heading="VC"
+                ng-form="vc"
+                template-url="accordion-group-template.html"
+                ng-init="data.step4.vcItems = data.step4.vcItems || vcs;"
+                is-disabled="configurazioneOffertaForm.catalogo.$invalid"
+                is-open="true">
+            <div class="panel-body" ng-repeat="vc in data.step4.vcItems">
+                <div class="row">
+	                <div class="col-md-9">
+							<h2>VC {{vc.id}}</h2>
+					</div>
+	                <div class="col-md-3">
+						<button type="button" 
+							ng-if="!vc.readOnly && abilitaEliminaVC()"
+							class="close closeItem" 
+							alt="Elimina Vc {{vc.id}}" 
+							title="Elimina Vc {{vc.id}}" 
+							ng-click="eliminaVc(data.step4.vcItems, $index)" 
+							>
+						<span aria-hidden="true" class="glyphicon glyphicon-trash"></span>
+					</button>
+					</div>
+				</div>
+                <div class="row">
+                  <div class="col-xs-6 form-horizontal" ng-if="vc.readOnly">  
+	                     <div class="form-group" >
+						        <label class="col-xs-5 control-label">Elimina </label>
+						        <div class="col-xs-7">
+						            <input type="checkbox"
+						                   name="vc{{vc.id}}_elimina"
+						                   ng-model="vc.ELIMINA.dft"
+						                   ng-disabled="!abilitaEliminaVC() && !vc.ELIMINA.dft"
+						                   ng-click="eliminaVCAzione(vc)"
+						            >
+						        </div>
+						    </div>
+	                </div>
+                    <div class="col-xs-6 form-horizontal">
+                        <div class="form-group"
+                             ng-class="{ 'has-error' : configurazioneOffertaForm.vc.vc{{vc.id}}_tipo.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_tipo.$pristine }">
+                            <label class="col-xs-5 control-label">Tipo<sup>*</sup></label>
+                            <div class="col-xs-7"
+                                 ng-if="([MAP_OFFERTE.ATM_SF.id].indexOf(data.step3.offerta.idOfferta) >= 0) && (customizedOffer.offerTopDetails.TIPOPROTOCOLLO.dft != 'FR')"
+                            >
+                                <select ng-disabled="vc.readOnly"
+                                        class="selectmenu SB-width form-control"
+                                        name="vc{{vc.id}}_tipo"
+                                        ng-model="vc.TIPOPROFILOVC.dft"
+                                        ng-change="vc.IDPROFILOVC.dft = ''">
+                                    <option ng-repeat="item in botDetails.TIPOPROFILOVC['dft'].split(';')" >{{item}}</option>
+                                   </select>
+                                <div role="alert">
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_tipo.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_tipo.$pristine" class="help-block help-width">Compila questo campo</span>
+                                </div>
+                            </div>
+
+                            <div class="col-xs-7 selected-item"
+                                 ng-if="([MAP_OFFERTE.ATM_SF.id].indexOf(data.step3.offerta.idOfferta) < 0) || ([MAP_OFFERTE.ATM_SF.id].indexOf(data.step3.offerta.idOfferta) >= 0) && (customizedOffer.offerTopDetails.TIPOPROTOCOLLO.dft == 'FR')">
+                                <span ng-bind="vc.TIPOPROFILOVC.dft = 'ABR'" ></span> <!-- SM_8137 -->
+                                <!-- <span> {{vc.TIPOPROFILOVC.dft}} </span> --> <!-- SM_17333 --> <!-- SM_8137 -->
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    
+                    <div class="row">
+                    <div class="col-xs-6 form-horizontal">
+                        <div class="form-group"
+                             ng-if="(([MAP_OFFERTE.ATM_SF.name,MAP_OFFERTE.ATM_SH.name,MAP_OFFERTE.ATM_AF.name].indexOf(data.step3.offerta.nomeOffertaCatalogo) >= 0) && vc.TIPOPROFILOVC.dft == 'ABR')"
+                             ng-class="{ 'has-error' : configurazioneOffertaForm.vc.vc{{vc.id}}_consegna.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_consegna.$pristine }">
+                            <label class="col-xs-5 control-label">Consegna<sup>*</sup></label>
+                            <div class="col-xs-7">
+                                <select class="selectmenu SB-width form-control"
+                                        name="vc{{vc.id}}_consegna"
+                                        ng-model="vc.TIPOBANDACONSEGNA.dft"
+                                        ng-disabled="vc.readOnly"
+                                        ng-change="vc.CODICEVP.dft = ''; vc.CODICETD.dft = ''"
+                                        ng-required="!vc.readOnly">
+                                    <option ng-repeat="item in botDetails.TIPOBANDACONSEGNA['dft'].split(';')">{{item}}</option>
+                                </select>
+                                <div role="alert">
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_consegna.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_consegna.$pristine" class="help-block help-width">Compila questo campo</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group" ng-if="(([MAP_OFFERTE.ATM_AF.name, MAP_OFFERTE.ATM_SF.name].indexOf(data.step3.offerta.nomeOffertaCatalogo) >= 0) && (vc.TIPOPROFILOVC.dft == 'CBR' || vc.TIPOPROFILOVC.dft == 'VBR'))
+                                                        || ([MAP_OFFERTE.ATM_AH.name].indexOf(data.step3.offerta.nomeOffertaCatalogo) >= 0)">
+                            <label class="col-xs-5 control-label">Consegna</label>
+                            <div class="col-xs-7 selected-item">
+                                <span ng-bind="vc.TIPOBANDACONSEGNA.dft = 'DEDICATA'">Dedicata</span>
+                            </div>
+                        </div>
+                        <div class="form-group" ng-if="([MAP_OFFERTE.ATM_AL.name].indexOf(data.step3.offerta.nomeOffertaCatalogo) >= 0) ">
+                            <label class="col-xs-5 control-label">Consegna</label>
+                            <div class="col-xs-7 selected-item">
+                                <span ng-bind="vc.TIPOBANDACONSEGNA.dft = 'CONDIVISA'">Condivisa</span>
+                            </div>
+                        </div>
+                    </div>
+               
+                    <div class="col-xs-6 form-horizontal">
+                        <div class="form-group" ng-class="{ 'has-error' : configurazioneOffertaForm.vc.vc{{vc.id}}_profilo.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_profilo.$pristine}">
+                            <label class="col-xs-5 control-label"><span ng-show="errorVC" ng-class="{ 'errIcon' : errorVC }" class="glyphicon glyphicon-exclamation-sign" title="{{errorVC}}"></span>Profilo VC<sup>*</sup>
+                            <span ng-if="showSpinner" us-spinner="{radius:5, width:1, length: 5}"></span></label>
+                            <div class="col-xs-7" >
+                                <input type="text"
+                                        name="vc{{vc.id}}_profilo"
+                                        class="form-control SB-width"
+                                        ng-model="vc.IDPROFILOVC.dft"
+                                        ng-disabled="(!formData.ProfiliVC || vc.readOnly)"
+                                        ng-required="!vc.readOnly"
+                                        readonly>
+                                <button ng-if="formData.ProfiliVC" 
+                                        type="button"
+                                        class="close buttonDeleteSelection"
+                                        aria-label="Cancella Selezione"
+                                        ng-click="vc.IDPROFILOVC.dft = null;">
+                                    <span aria-hidden="true"><img src="assets/css/i/close.png" alt="close"></span>
+                                </button>
+                                <a ng-if="vc.TIPOPROFILOVC.dft && !vc.readOnly" class="openpopup" ng-click="getVCProfiles(vc.TIPOPROFILOVC.dft, vc.id)">
+                                    <img src="assets/css/i/form_arrow.png" alt="form">
+                                </a>
+                               <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_profilo.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_profilo.$pristine" class="help-block help-width">Compila questo campo</span>
+                            </div>
+                        </div>
+                        </div>
+                        </div>
+                        <div class="row">
+                        <div class="col-xs-6 form-horizontal">
+                        <div class="form-group" 
+                        	 ng-if="([MAP_OFFERTE.ATM_AH.id,MAP_OFFERTE.ATM_AF.id,MAP_OFFERTE.ATM_AL.id].indexOf(data.step3.offerta.idOfferta) >= 0) || (DettaglioAsset.offerTopDetails.TIPOPROTOCOLLO.dft == 'ATM')"
+                        	 ng-class="{ 'has-error' : configurazioneOffertaForm.vc.vc{{vc.id}}_vpi.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_vpi.$pristine }">
+                            <label class="col-xs-5 control-label">VPI <sup>*</sup></label>
+                            <div class="col-xs-7">
+                                <input  type="number"
+                                        name="vc{{vc.id}}_vpi"
+                                        class="form-control SB-width"
+                                        ng-model="vc.VPI.dft"
+                                        ng-required="!vc.readOnly"
+                                        ng-disabled="vc.readOnly"
+                                        ng-pattern="integerval"
+                                        min="8"
+                                        max="31">
+                                <div role="alert">
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_vpi.$error.required && !configurazioneOffertaForm.vc.vc{{vc.id}}_vpi.$pristine" class="help-block help-width">Compila questo campo</span>
+                                    <span ng-show="(configurazioneOffertaForm.vc.vc{{vc.id}}_vpi.$error.pattern || configurazioneOffertaForm.vc.vc{{vc.id}}_vpi.$error.number)" class="help-block help-width">Inserire solo numeri</span>
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_vpi.$error.min" class="help-block help-width">Inserire un valore tra 8 e 31</span>
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_vpi.$error.max" class="help-block help-width">Inserire un valore tra 8 e 31</span>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        <div class="col-xs-6 form-horizontal">
+                        <div class="form-group" 
+                        	 ng-if="([MAP_OFFERTE.ATM_AH.id,MAP_OFFERTE.ATM_AF.id,MAP_OFFERTE.ATM_AL.id].indexOf(data.step3.offerta.idOfferta) >= 0) || (customizedOffer.offerTopDetails.TIPOPROTOCOLLO.dft == 'ATM')"
+                             ng-class="{ 'has-error' : configurazioneOffertaForm.vc.vc{{vc.id}}_vci.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_vci.$pristine }">
+                            <label class="col-xs-5 control-label">VCI<sup>*</sup></label>
+                            <div class="col-xs-7">
+                                <input  type="number"
+                                        name="vc{{vc.id}}_vci"
+                                        class="form-control SB-width"
+                                        ng-model="vc.VCI.dft"
+                                        ng-required="!vc.readOnly"
+                                        ng-disabled="vc.readOnly"
+                                        ng-pattern="integerval"
+                                        min="35"
+                                        max="255">
+                                <div role="alert">
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_vci.$error.required && !configurazioneOffertaForm.vc.vc{{vc.id}}_vci.$pristine" class="help-block help-width">Compila questo campo</span>
+                                    <span ng-show="(configurazioneOffertaForm.vc.vc{{vc.id}}_vci.$error.pattern || configurazioneOffertaForm.vc.vc{{vc.id}}_vci.$error.number)" class="help-block help-width">Inserire solo numeri</span>
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_vci.$error.min" class="help-block help-width">Inserire un valore tra 35 e 255</span>
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_vci.$error.max" class="help-block help-width">Inserire un valore tra 35 e 255</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    <div class="row">
+                    <div class="col-xs-6 form-horizontal" ng-if="vc.TIPOBANDACONSEGNA.dft == 'CONDIVISA'">
+                        <div class="form-group" ng-class="{ 'has-error' : configurazioneOffertaForm.vc.vc{{vc.id}}_codice_vp.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_codice_vp.$pristine }">
+                            <label class="col-xs-5 control-label"><span ng-show="errorVP" ng-class="{ 'errIcon' : errorVP }" class="glyphicon glyphicon-exclamation-sign" title="{{errorVP}}"></span>Codice VP<sup>*</sup></label>
+                            <div class="col-xs-7" >
+                                <input  type="text"
+                                        ng-model="vc.CODICEVP.dft"
+                                        name="vc{{vc.id}}_codice_vp"
+                                        class="form-control SB-width"
+                                        required
+                                        ng-disabled="vc.readOnly"
+                                        readonly>
+                                <button ng-if="!vc.readOnly && vc.CODICEVP.dft"
+                                        type="button"
+                                        class="close buttonDeleteSelection"
+                                        aria-label="Cancella Selezione"
+                                        ng-click="vc.CODICEVP.dft = null;">
+                                    <span aria-hidden="true"><img src="assets/css/i/close.png" alt="close"></span>
+                                </button>
+                                <a ng-if="!vc.readOnly" href="#" class="openpopup" ng-click="configurazioneOffertaGetCodiceVP($event, vc.id)">
+                                    <img src="assets/css/i/form_arrow.png" alt="form">
+                                </a>
+                               <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_codice_vp.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_codice_vp.$pristine" class="help-block help-width">Compila questo campo</span>
+                            </div>
+                            </div>
+                            </div>
+                            <div class="col-xs-6 form-horizontal"  ng-if="vc.TIPOBANDACONSEGNA.dft == 'DEDICATA'">
+	                        <div class="form-group" ng-class="{ 'has-error' : configurazioneOffertaForm.vc.vc{{vc.id}}_codice_td.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_codice_td.$pristine }">
+	                            <label class="col-xs-5 control-label"><span ng-show="errorTD" ng-class="{ 'errIcon' : errorTD }" class="glyphicon glyphicon-exclamation-sign" title="{{errorTD}}"></span>Codice TD<sup>*</sup></label>
+	                            <div class="col-xs-7 selected-item">
+	                                <div class="select-box">
+	                                   <input	type="text"
+	                                        name="vc{{vc.id}}_codice_td"
+	                                        class="form-control SB-width"
+	                                        ng-model="vc.CODICETD.dft"
+	                                        required
+	                                        ng-disabled="vc.readOnly"
+	                                        readonly>
+                                <button type="button"
+                                        class="close buttonDeleteSelection"
+                                        aria-label="Cancella Selezione"
+                                        ng-click="vc.CODICETD.dft = null;"
+                                        ng-if="!vc.readOnly && vc.CODICETD.dft">
+                                    <span aria-hidden="true"><img src="assets/css/i/close.png" alt="close"></span>
+                                </button>
+                                <a ng-if="!vc.readOnly" href="#" class="openpopup" ng-click="configurazioneOffertaGetCodiceTDAtm($event,vc.id)">
+                                    <img src="assets/css/i/form_arrow.png" alt="form">
+                                </a>
+                                    <div role="alert">
+                                        <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_codice_td.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_codice_td.$pristine" class="help-block help-width">Compila questo campo</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                 <div class="col-xs-6 form-horizontal">
+                <div class="form-group" 
+                        ng-if="DettaglioAsset.offerTopDetails.TIPOPROTOCOLLO.dft == 'FR'"
+                        ng-class="{ 'has-error' : configurazioneOffertaForm.vc.vc{{vc.id}}_dlci.$invalid && !configurazioneOffertaForm.vc.vc{{vc.id}}_dlci.$pristine }">
+                            <label class="col-xs-5 control-label">DLCI<sup>*</sup></label>
+                            <div class="col-xs-7">
+                                <input  type="number"
+                                        name="vc{{vc.id}}_dlci"
+                                        class="form-control SB-width"
+                                        ng-model="vc.DLCI.dft"
+                                        required
+                                        ng-pattern="integerval"
+                                        ng-disabled="vc.readOnly"
+                                        min="20"
+                                        max="1000">
+                                <div role="alert">
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_dlci.$error.required && !configurazioneOffertaForm.vc.vc{{vc.id}}_dlci.$pristine" class="help-block help-width">Compila questo campo</span>
+                                    <span ng-show="(configurazioneOffertaForm.vc.vc{{vc.id}}_dlci.$error.pattern || configurazioneOffertaForm.vc.vc{{vc.id}}_dlci.$error.number)" class="help-block help-width">Inserire solo numeri</span>
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_dlci.$error.min" class="help-block help-width">Inserire un valore tra 20 e 1000</span>
+                                    <span ng-show="configurazioneOffertaForm.vc.vc{{vc.id}}_dlci.$error.max" class="help-block help-width">Inserire un valore tra 20 e 1000</span>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        </div>
+            </div>
+            <section class="form-button">
+                <button id="aggiungiVCButton" title="Aggiungi VC" alt="Aggiungi VC" name="aggiungiVCButton" class="close addItem" ng-click="aggiungiVCIncDec(data.step4.vcItems)"  ng-if="abilitaAddVC()"><span class="glyphicon glyphicon-plus"></span><label>Aggiungi Vc</label></button>
+            </section>
+        </uib-accordion-group>
+    </uib-accordion>

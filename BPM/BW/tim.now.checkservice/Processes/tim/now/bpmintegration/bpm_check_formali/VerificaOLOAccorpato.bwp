@@ -1,0 +1,747 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpws:process exitOnStandardFault="no"
+    name="tim.now.bpmintegration.bpm_check_formali.VerificaOLOAccorpato"
+    suppressJoinFailure="yes"
+    targetNamespace="http://xmlns.example.com/20170113121054"
+    xmlns:bpws="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+    xmlns:info="http://www.tibco.com/bw/process/info"
+    xmlns:ns="http://xmlns.example.com/20170113121054PLT"
+    xmlns:ns0="http://www.tibco.com/pe/EngineTypes"
+    xmlns:ns1="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckServiceFormali/"
+    xmlns:ns2="http://www.tim.com/NOW/xsd/ControlliFormali/"
+    xmlns:ns3="http://www.tibco.com/namespaces/tnt/plugins/jdbc+eaacf745-1d68-4237-bebc-5023f0cae580+input"
+    xmlns:ns4="http://www.tibco.com/namespaces/tnt/plugins/jdbc+eaacf745-1d68-4237-bebc-5023f0cae580+output"
+    xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+    xmlns:sca-bpel="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"
+    xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"
+    xmlns:tibprop="http://ns.tibco.com/bw/property" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <tibex:Types>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/EngineTypes"
+            xmlns:tns="http://www.tibco.com/pe/EngineTypes" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ErrorReport">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="FullClass" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Class" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="FaultDetail">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ActivityName" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ProcessContext">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="JobId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessInstanceId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0"
+                        name="CustomJobId" type="xs:string"/>
+                    <!--xs:element name="RestartedFromCheckpoint" form="unqualified" block="extension restriction substitution" type="xs:boolean"/-->
+                    <!--xs:element minOccurs="0" maxOccurs="unbounded" name="TrackingInfo" form="unqualified" block="extension restriction substitution" type="xs:string"/-->
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="anydata">
+                <xs:sequence>
+                    <xs:any namespace="##any" processContents="lax"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ErrorReport" type="tns:ErrorReport"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="FaultDetail" type="tns:FaultDetail"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ProcessContext" type="tns:ProcessContext"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="CorrelationValue" type="xs:string"/>
+        </xs:schema>
+        <schema attributeFormDefault="unqualified"
+            elementFormDefault="unqualified"
+            targetNamespace="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions"
+            version="" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions">
+            <complexType name="ActivityExceptionType">
+                <sequence>
+                    <element name="msg" type="string"/>
+                    <element minOccurs="0" name="msgCode" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="ActivityException" type="tns:ActivityExceptionType"/>
+            <complexType name="ActivityTimedOutExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType"/>
+                </complexContent>
+            </complexType>
+            <element name="ActivityTimedOutException" type="tns:ActivityTimedOutExceptionType"/>
+        </schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+eaacf745-1d68-4237-bebc-5023f0cae580+input"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+eaacf745-1d68-4237-bebc-5023f0cae580+input">
+            <element name="jdbcQueryActivityInput">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="1" minOccurs="1"
+                            name="CODFC_OLO_AGCOM" nillable="true" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="ServerTimeZone" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="timeout" type="long"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="maxRows" type="long"/>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+eaacf745-1d68-4237-bebc-5023f0cae580+output"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+eaacf745-1d68-4237-bebc-5023f0cae580+output">
+            <element name="resultSet">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="unbounded" minOccurs="0" name="Record">
+                            <complexType>
+                                <sequence>
+                                    <element maxOccurs="1" minOccurs="0"
+                                    name="COD_OLO_ACCORPANTE"
+                                    nillable="false" type="string"/>
+                                </sequence>
+                            </complexType>
+                        </element>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <wsdl:definitions
+            targetNamespace="http://xmlns.example.com/20170113121054PLT"
+            xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+            xmlns:ptyp="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckServiceFormali/"
+            xmlns:tns="http://xmlns.example.com/20170113121054PLT"
+            xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+            xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <plnk:partnerLinkType name="partnerLinkType">
+                <plnk:role name="use" portType="ptyp:BPM_CheckServiceFormaliPortType"/>
+            </plnk:partnerLinkType>
+            <wsdl:import namespace="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckServiceFormali/"/>
+        </wsdl:definitions>
+    </tibex:Types>
+    <tibex:ProcessInfo callable="false" createdBy="RexGi"
+        createdOn="Fri Jan 13 12:10:54 CET 2017" description=""
+        extraErrorVars="false" modifiers="public"
+        productVersion="6.3.2 V30 2016-04-28" scalable="true"
+        singleton="true" stateless="false" type="IT"/>
+    <tibex:ProcessInterface context="" input="" output=""/>
+    <tibex:ProcessTemplateConfigurations/>
+    <notation:Diagram measurementUnit="Pixel" type="BWProcess"
+        xmlns:bwnotation="http://tns.tibco.com/bw/runtime/BWNotation"
+        xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <children type="2001">
+            <children type="5001"/>
+            <children type="3001">
+                <children type="4001">
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="40011"/>
+                    <children type="3006">
+                        <styles xsi:type="notation:DrawerStyle"/>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <styles xsi:type="bwnotation:BackgroundStyle"/>
+                        <styles xsi:type="bwnotation:ResizingStyle"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@partnerLinks/@children.0"/>
+                    <layoutConstraint xsi:type="notation:Bounds"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <children type="3002">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3003">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3004">
+                <children type="4018">
+                    <children type="3018">
+                        <children type="4020">
+                            <children type="3020">
+                                <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint x="17"
+                                    xsi:type="notation:Bounds" y="60"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint x="425"
+                                    xsi:type="notation:Bounds" y="60"/>
+                                    </children>
+                                    <children type="4002 bw.generalactivities.bwassign">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.2"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="213"
+                                    xsi:type="notation:Bounds" y="60"/>
+                                    </children>
+                                    <children type="4002 bw.jdbc.JDBCQuery">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.3"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="17"
+                                    xsi:type="notation:Bounds" y="187"/>
+                                    </children>
+                                    <children type="4002 bw.generalactivities.bwassign">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.4"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="425"
+                                    xsi:type="notation:Bounds" y="187"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    <layoutConstraint height="317"
+                                    width="558" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity"/>
+                            <layoutConstraint height="384" width="561" xsi:type="notation:Bounds"/>
+                        </children>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <element href="//0/@process/@activity"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@activity"/>
+                    <layoutConstraint height="408" width="561" x="1"
+                        xsi:type="notation:Bounds" y="1"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+            <element href="//0/@process"/>
+            <layoutConstraint height="393" width="1120" xsi:type="notation:Bounds"/>
+        </children>
+        <children
+            description="C04M01F112 – Verifica OLO Accorpato Recipient Donating"
+            fillColor="13369343" fontName="Segoe UI" lineColor="6737151"
+            lineWidth="1" transparency="0" type="Note" xsi:type="notation:Shape">
+            <children type="DiagramName" xsi:type="notation:BasicDecorationNode">
+                <element xsi:nil="true"/>
+            </children>
+            <children type="Description" xsi:type="notation:BasicDecorationNode">
+                <element xsi:nil="true"/>
+            </children>
+            <styles xsi:type="notation:TextStyle"/>
+            <styles xsi:type="notation:LineTypeStyle"/>
+            <element xsi:nil="true"/>
+            <layoutConstraint x="560" xsi:type="notation:Bounds" y="-100"/>
+        </children>
+        <styles xsi:type="notation:DiagramStyle"/>
+        <element href="//0"/>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2" type="4006">
+            <children type="6002">
+                <layoutConstraint x="-60" xsi:type="notation:Location" y="-10"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.1"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.2"/>
+            <bendpoints points="[1, 25, 0, -114]$[0, 115, -1, -24]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.3"/>
+            <bendpoints points="[25, 1, -172, 0]$[173, 0, -24, -1]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.4"/>
+            <bendpoints points="[0, -24, 0, 103]$[0, -102, 0, 25]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges lineColor="0" lineWidth="1" source="//@children.1"
+            target="//@children.0" type="NoteAttachment" xsi:type="notation:Connector">
+            <styles xsi:type="notation:ArrowStyle"/>
+            <styles xsi:type="notation:LineTypeStyle"/>
+            <element xsi:nil="true"/>
+            <bendpoints points="[0, 0, -560, -196]$[0, 0, -560, -196]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+    </notation:Diagram>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckServiceFormali/"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/ControlliFormali/"/>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="../../../../../Service%20Descriptors/BPM_Check/BPM_CheckServiceFormali.wsdl" namespace="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckServiceFormali/"/>
+    <bpws:partnerLinks>
+        <bpws:partnerLink myRole="use"
+            name="BPM_CheckServiceFormaliPortType"
+            partnerLinkType="ns:partnerLinkType" sca-bpel:ignore="false" sca-bpel:service="BPM_CheckServiceFormaliPortType"/>
+    </bpws:partnerLinks>
+    <bpws:variables>
+        <bpws:variable element="ns0:ProcessContext"
+            name="_processContext" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:VerificaOLOAccorpatoRequest"
+            name="VerificaOLOAccorpatoIn" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:VerificaOLOAccorpatoResponse"
+            name="VerificaOLOAccorpatoOutput-input" sca-bpel:internal="true"/>
+        <bpws:variable
+            element="ns2:Verifica_OLO_Accorpato_Recipient_Donating_Response" name="VerificaOLOAccorpatoResponse"/>
+        <bpws:variable element="ns3:jdbcQueryActivityInput"
+            name="JDBC_OLO_Accorpato-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns4:resultSet" name="JDBC_OLO_Accorpato" sca-bpel:internal="true"/>
+        <bpws:variable name="jdbcProperty" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            sca-bpel:sharedResourceType="{http://xsd.tns.tibco.com/amf/models/sharedresource/jdbc}JdbcDataSource" type="xsd:string">
+            <bpws:from>
+                <bpws:literal>JDBC.JDBCConnectionResource</bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable name="TimeoutJDBC" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Process/TimerJDBC/TimeoutJDBC" type="xsd:int"/>
+    </bpws:variables>
+    <bpws:extensions>
+        <bpws:extension mustUnderstand="no" namespace="http://www.eclipse.org/gmf/runtime/1.0.2/notation"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bw/process/info"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca/200912"/>
+        <bpws:extension mustUnderstand="no" namespace="http://ns.tibco.com/bw/property"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bpel/2007/extensions"/>
+    </bpws:extensions>
+    <bpws:scope name="scope">
+        <bpws:flow name="flow">
+            <bpws:links>
+                <bpws:link name="StartToEnd_GUI" tibex:label="GUI" tibex:linkType="SUCCESSWITHCONDITION"/>
+                <bpws:link name="AssignToEnd" tibex:linkType="SUCCESS"/>
+                <bpws:link name="VerificaOLOAccorpatoInToJDBCQuery" tibex:linkType="SUCCESSWITHNOCONDITION"/>
+                <bpws:link name="JDBC_OLO_AccorpatoToAssign" tibex:linkType="SUCCESS"/>
+                <bpws:link name="AssignToVerificaOLOAccorpatoOutput" tibex:linkType="SUCCESS"/>
+            </bpws:links>
+            <bpws:receive createInstance="yes"
+                name="VerificaOLOAccorpatoIn"
+                operation="VerificaOLOAccorpato"
+                partnerLink="BPM_CheckServiceFormaliPortType"
+                portType="ns1:BPM_CheckServiceFormaliPortType"
+                tibex:xpdlId="b5317cac-0752-46de-82e9-8569245ef508" variable="VerificaOLOAccorpatoIn">
+                <bpws:sources>
+                    <bpws:source linkName="StartToEnd_GUI">
+                        <tibex:DesignExpression>
+                            <tibex:expression
+                                expression="$VerificaOLOAccorpatoIn/parameters/ns2:Verifica_OLO_Accorpato_Recipient_Donating_Request/ns2:Flag_GUI = true()" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                        </tibex:DesignExpression>
+                        <bpws:transitionCondition><![CDATA[$VerificaOLOAccorpatoIn.parameters/ns2:Flag_GUI = true()]]></bpws:transitionCondition>
+                    </bpws:source>
+                    <bpws:source linkName="VerificaOLOAccorpatoInToJDBCQuery">
+                        <tibex:DesignExpression>
+                            <tibex:expression expression="##otherwise##" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                        </tibex:DesignExpression>
+                        <bpws:transitionCondition><![CDATA[##otherwise##]]></bpws:transitionCondition>
+                    </bpws:source>
+                </bpws:sources>
+                <bpws:correlations/>
+            </bpws:receive>
+            <bpws:reply name="VerificaOLOAccorpatoOutput"
+                operation="VerificaOLOAccorpato"
+                partnerLink="BPM_CheckServiceFormaliPortType"
+                portType="ns1:BPM_CheckServiceFormaliPortType"
+                tibex:xpdlId="fcde437b-5f8b-4cdd-b80a-b5f116ad571c" variable="VerificaOLOAccorpatoOutput-input">
+                <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckServiceFormali/" version="2.0"&gt;&lt;xsl:param name="VerificaOLOAccorpatoResponse"/&gt;&lt;xsl:template name="Verifica_Richiesta_ColocazioneOut-input" match="/"&gt;&lt;tns:VerificaOLOAccorpatoResponse&gt;&lt;parameters&gt;&lt;xsl:copy-of select="$VerificaOLOAccorpatoResponse"/&gt;&lt;/parameters&gt;&lt;/tns:VerificaOLOAccorpatoResponse&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                <tibex:inputBindings>
+                    <tibex:partBinding
+                        expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckServiceFormali/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaOLOAccorpatoResponse&quot;/>&#xa;    &lt;xsl:template name=&quot;Verifica_Richiesta_ColocazioneOut-input&quot; match=&quot;/&quot;>&#xa;        &lt;xsl:copy-of select=&quot;$VerificaOLOAccorpatoResponse&quot;/>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                </tibex:inputBindings>
+                <bpws:targets>
+                    <bpws:target linkName="AssignToEnd"/>
+                    <bpws:target linkName="AssignToVerificaOLOAccorpatoOutput"/>
+                </bpws:targets>
+                <bpws:correlations/>
+            </bpws:reply>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/ControlliFormali/&quot; version=&quot;2.0&quot;>&lt;xsl:template name=&quot;VerificaOLOAccorpatoResponse&quot; match=&quot;/&quot;>&lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;tns:Esito>&lt;tns:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:Codice>&lt;tns:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns:Descrizione>&lt;/tns:Esito>&lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="VerificaOLOAccorpatoResponse"
+                    name="VerificaOLOAccorpatoGUIResponseAssign"
+                    outputVariable="VerificaOLOAccorpatoResponse"
+                    tibex:xpdlId="8b37e955-1043-4bb4-bfdd-b266734d8f18" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="StartToEnd_GUI"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="AssignToEnd"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/ControlliFormali/&quot; version=&quot;2.0&quot;>&lt;xsl:template name=&quot;VerificaOLOAccorpatoResponse&quot; match=&quot;/&quot;>&lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;tns:Esito>&lt;tns:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:Codice>&lt;tns:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns:Descrizione>&lt;/tns:Esito>&lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;/xsl:template>&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.bwassign"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//BWAssign"/>
+                                    <value
+                                    processVariable="VerificaOLOAccorpatoResponse" xsi:type="generalactivities:BWAssign"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+eaacf745-1d68-4237-bebc-5023f0cae580+input&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliFormali/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;VerificaOLOAccorpatoIn&quot;/>&lt;xsl:template name=&quot;JDBCQuery-input&quot; match=&quot;/&quot;>&lt;tns:jdbcQueryActivityInput>&lt;CODFC_OLO_AGCOM>&lt;xsl:value-of select=&quot;$VerificaOLOAccorpatoIn/parameters/tns1:Verifica_OLO_Accorpato_Recipient_Donating_Request/tns1:CodificaOLOAGCOM&quot;/>&lt;/CODFC_OLO_AGCOM>&lt;/tns:jdbcQueryActivityInput>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="JDBC_OLO_Accorpato-input"
+                    name="JDBC_OLO_Accorpato"
+                    outputVariable="JDBC_OLO_Accorpato"
+                    tibex:xpdlId="eaacf745-1d68-4237-bebc-5023f0cae580" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="VerificaOLOAccorpatoInToJDBCQuery"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="JDBC_OLO_AccorpatoToAssign"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+eaacf745-1d68-4237-bebc-5023f0cae580+input&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliFormali/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaOLOAccorpatoIn.parameters&quot;/>&#xa;    &lt;xsl:template name=&quot;JDBCQuery-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:jdbcQueryActivityInput>&#xa;            &lt;CODFC_OLO_AGCOM>&#xa;                &lt;xsl:value-of select=&quot;$VerificaOLOAccorpatoIn.parameters/tns1:CodificaOLOAGCOM&quot;/>&#xa;            &lt;/CODFC_OLO_AGCOM>&#xa;        &lt;/tns:jdbcQueryActivityInput>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.jdbc.JDBCQuery"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:jdbcPalette="http://ns.tibco.com/bw/palette/jdbc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <attributeBindings
+                                bindingType="moduleProperty"
+                                eAttributeName="timeout" processProperty="TimeoutJDBC"/>
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/jdbc#//JDBCQueryActivity"/>
+                                    <value maxRows="100"
+                                    sharedResourceProperty="jdbcProperty"
+                                    sqlStatement="SELECT COD_OLO_ACCORPANTE&#xa;&#x9;FROM OLO&#xa;&#x9;WHERE CODFC_OLO_AGCOM = ?&#xa;&#xa;" xsi:type="jdbcPalette:JDBCQueryActivity">
+                                    <PreparedParameters
+                                    DataType="12"
+                                    DataTypeDisplayValue="VARCHAR" ParameterName="CODFC_OLO_AGCOM"/>
+                                    <columnMetadata
+                                    columnName="COD_OLO_ACCORPANTE"
+                                    dataType="12"
+                                    status="OptionalElement" typeName="VARCHAR2"/>
+                                    </value>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/ControlliFormali/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;VerificaOLOAccorpatoIn&quot;/>&lt;xsl:param name=&quot;JDBC_OLO_Accorpato&quot;/>&lt;xsl:template name=&quot;VerificaOLOAccorpatoResponse&quot; match=&quot;/&quot;>&lt;xsl:choose>&lt;xsl:when test=&quot;string-length($VerificaOLOAccorpatoIn/parameters/tns:Verifica_OLO_Accorpato_Recipient_Donating_Request/tns:CodificaOLOAGCOM2) > 0&quot;>&lt;xsl:choose>&lt;xsl:when test=&quot;$JDBC_OLO_Accorpato/Record[1]/COD_OLO_ACCORPANTE = $VerificaOLOAccorpatoIn/parameters/tns:Verifica_OLO_Accorpato_Recipient_Donating_Request/tns:CodificaOLOAGCOM1 or $JDBC_OLO_Accorpato/Record[1]/COD_OLO_ACCORPANTE = $VerificaOLOAccorpatoIn/parameters/tns:Verifica_OLO_Accorpato_Recipient_Donating_Request/tns:CodificaOLOAGCOM2&quot;>&lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;tns:Esito>&lt;tns:Codice>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns:Codice>&lt;tns:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&lt;/tns:Descrizione>&lt;/tns:Esito>&lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;tns:Esito>&lt;tns:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:Codice>&lt;tns:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns:Descrizione>&lt;/tns:Esito>&lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:when>&lt;xsl:when test=&quot;string-length($VerificaOLOAccorpatoIn/parameters/tns:Verifica_OLO_Accorpato_Recipient_Donating_Request/tns:CodificaOLOAGCOM2) = 0 and string-length($VerificaOLOAccorpatoIn/parameters/tns:Verifica_OLO_Accorpato_Recipient_Donating_Request/tns:CodificaOLOAGCOM1)  > 0&quot;>&lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;xsl:choose>&lt;xsl:when test=&quot;$JDBC_OLO_Accorpato/Record[1]/COD_OLO_ACCORPANTE = $VerificaOLOAccorpatoIn/parameters/tns:Verifica_OLO_Accorpato_Recipient_Donating_Request/tns:CodificaOLOAGCOM1&quot;>&lt;tns:Esito>&lt;tns:Codice>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns:Codice>&lt;tns:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&lt;/tns:Descrizione>&lt;/tns:Esito>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:Esito>&lt;tns:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:Codice>&lt;tns:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns:Descrizione>&lt;/tns:Esito>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;tns:Esito>&lt;tns:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:Codice>&lt;tns:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns:Descrizione>&lt;/tns:Esito>&lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="VerificaOLOAccorpatoResponse"
+                    name="VerificaOLOAccorpatoResponseAssign"
+                    outputVariable="VerificaOLOAccorpatoResponse"
+                    tibex:xpdlId="162d1b63-f183-4c09-a5a0-eb3ffbadd52f" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="JDBC_OLO_AccorpatoToAssign"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="AssignToVerificaOLOAccorpatoOutput"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/ControlliFormali/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaOLOAccorpatoIn.parameters&quot;/>&#xa;    &lt;xsl:param name=&quot;JDBC_OLO_Accorpato&quot;/>&#xa;    &lt;xsl:template name=&quot;VerificaOLOAccorpatoResponse&quot; match=&quot;/&quot;>&#xa;        &lt;xsl:choose>&#xa;            &lt;xsl:when test=&quot;string-length($VerificaOLOAccorpatoIn.parameters/tns:CodificaOLOAGCOM2) > 0&quot;>&#xa;                &lt;xsl:choose>&#xa;                    &lt;xsl:when test=&quot;$JDBC_OLO_Accorpato/Record[1]/COD_OLO_ACCORPANTE = $VerificaOLOAccorpatoIn.parameters/tns:CodificaOLOAGCOM1 or $JDBC_OLO_Accorpato/Record[1]/COD_OLO_ACCORPANTE = $VerificaOLOAccorpatoIn.parameters/tns:CodificaOLOAGCOM2&quot;>&#xa;                        &lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&#xa;                            &lt;tns:Esito>&#xa;                                &lt;tns:Codice>&#xa;                                    &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                                &lt;/tns:Codice>&#xa;                                &lt;tns:Descrizione>&#xa;                                    &lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&#xa;                                &lt;/tns:Descrizione>&#xa;                            &lt;/tns:Esito>&#xa;                        &lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&#xa;                    &lt;/xsl:when>&#xa;                    &lt;xsl:otherwise>&#xa;                        &lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&#xa;                            &lt;tns:Esito>&#xa;                                &lt;tns:Codice>&#xa;                                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                                &lt;/tns:Codice>&#xa;                                &lt;tns:Descrizione>&#xa;                                    &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                                &lt;/tns:Descrizione>&#xa;                            &lt;/tns:Esito>&#xa;                        &lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&#xa;                    &lt;/xsl:otherwise>&#xa;                &lt;/xsl:choose>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:when test=&quot;string-length($VerificaOLOAccorpatoIn.parameters/tns:CodificaOLOAGCOM2) = 0 and string-length($VerificaOLOAccorpatoIn.parameters/tns:CodificaOLOAGCOM1)  > 0&quot;>&#xa;                &lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&#xa;                    &lt;xsl:choose>&#xa;                        &lt;xsl:when test=&quot;$JDBC_OLO_Accorpato/Record[1]/COD_OLO_ACCORPANTE = $VerificaOLOAccorpatoIn.parameters/tns:CodificaOLOAGCOM1&quot;>&#xa;                            &lt;tns:Esito>&#xa;                                &lt;tns:Codice>&#xa;                                    &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                                &lt;/tns:Codice>&#xa;                                &lt;tns:Descrizione>&#xa;                                    &lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&#xa;                                &lt;/tns:Descrizione>&#xa;                            &lt;/tns:Esito>&#xa;                        &lt;/xsl:when>&#xa;                        &lt;xsl:otherwise>&#xa;                            &lt;tns:Esito>&#xa;                                &lt;tns:Codice>&#xa;                                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                                &lt;/tns:Codice>&#xa;                                &lt;tns:Descrizione>&#xa;                                    &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                                &lt;/tns:Descrizione>&#xa;                            &lt;/tns:Esito>&#xa;                        &lt;/xsl:otherwise>&#xa;                    &lt;/xsl:choose>&#xa;                &lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:otherwise>&#xa;                &lt;tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&#xa;                    &lt;tns:Esito>&#xa;                        &lt;tns:Codice>&#xa;                            &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                        &lt;/tns:Codice>&#xa;                        &lt;tns:Descrizione>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                        &lt;/tns:Descrizione>&#xa;                    &lt;/tns:Esito>&#xa;                &lt;/tns:Verifica_OLO_Accorpato_Recipient_Donating_Response>&#xa;            &lt;/xsl:otherwise>&#xa;        &lt;/xsl:choose>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.bwassign"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//BWAssign"/>
+                                    <value
+                                    processVariable="VerificaOLOAccorpatoResponse" xsi:type="generalactivities:BWAssign"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+        </bpws:flow>
+    </bpws:scope>
+</bpws:process>

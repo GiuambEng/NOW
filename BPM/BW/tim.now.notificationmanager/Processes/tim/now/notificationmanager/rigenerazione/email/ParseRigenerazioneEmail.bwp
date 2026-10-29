@@ -1,0 +1,967 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpws:process exitOnStandardFault="no"
+    name="tim.now.notificationmanager.rigenerazione.email.ParseRigenerazioneEmail"
+    suppressJoinFailure="yes"
+    targetNamespace="http://xmlns.example.com/20180119113100"
+    xmlns:bpws="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+    xmlns:info="http://www.tibco.com/bw/process/info"
+    xmlns:ns="http://www.tibco.com/pe/EngineTypes"
+    xmlns:ns0="http://www.tibco.com/namespaces/tnt/plugins/parsexml"
+    xmlns:ns1="http://xsd.telecomitalia.it/crm/xdsl/nga"
+    xmlns:ns2="http://xsd.telecomitalia.it/crm/xdsl/order"
+    xmlns:ns3="http://xsd.telecomitalia.it/crm/regolatorio"
+    xmlns:ns4="http://www.tibco.com/namespaces/tnt/plugins/jdbc+8c628e08-ba7f-4a3b-ab45-3a797b04b1df+input"
+    xmlns:ns5="http://www.tibco.com/namespaces/tnt/plugins/jdbc+8c628e08-ba7f-4a3b-ab45-3a797b04b1df+output"
+    xmlns:ns6="http://NOW.it.telecomitalia.it/casedata"
+    xmlns:ns7="http://NOW.it.telecomitalia.it/casedata_v1"
+    xmlns:ns8="http://www.tibco.com/namespaces/tnt/plugins/transformxml"
+    xmlns:ns9="http://www.tim.com/NOW/xsd/ReplaceAllString/"
+    xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+    xmlns:sca-bpel="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"
+    xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions"
+    xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"
+    xmlns:tibprop="http://ns.tibco.com/bw/property"
+    xmlns:tns="http://www.tim.com/NOW/xsd/ParseSchema/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <tibex:Types>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/EngineTypes"
+            xmlns:tns="http://www.tibco.com/pe/EngineTypes" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ErrorReport">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="FullClass" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Class" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="FaultDetail">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ActivityName" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ProcessContext">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="JobId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessInstanceId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0"
+                        name="CustomJobId" type="xs:string"/>
+                    <!--xs:element name="RestartedFromCheckpoint" form="unqualified" block="extension restriction substitution" type="xs:boolean"/-->
+                    <!--xs:element minOccurs="0" maxOccurs="unbounded" name="TrackingInfo" form="unqualified" block="extension restriction substitution" type="xs:string"/-->
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="anydata">
+                <xs:sequence>
+                    <xs:any namespace="##any" processContents="lax"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ErrorReport" type="tns:ErrorReport"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="FaultDetail" type="tns:FaultDetail"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ProcessContext" type="tns:ProcessContext"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="CorrelationValue" type="xs:string"/>
+        </xs:schema>
+        <schema attributeFormDefault="unqualified"
+            elementFormDefault="unqualified"
+            targetNamespace="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions"
+            version="" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions">
+            <complexType name="ActivityExceptionType">
+                <sequence>
+                    <element name="msg" type="string"/>
+                    <element minOccurs="0" name="msgCode" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="ActivityException" type="tns:ActivityExceptionType"/>
+            <complexType name="ActivityTimedOutExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType"/>
+                </complexContent>
+            </complexType>
+            <element name="ActivityTimedOutException" type="tns:ActivityTimedOutExceptionType"/>
+        </schema>
+        <xsd:schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/parsexml"
+            xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/parsexml" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:complexType name="configType">
+                <xsd:sequence>
+                    <xsd:element form="unqualified" name="term" type="xsd:anyType"/>
+                    <xsd:element form="unqualified" minOccurs="0"
+                        name="inputStyle" type="xsd:string"/>
+                    <xsd:element form="unqualified" minOccurs="0"
+                        name="xsdVersion" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="dynamicInputType">
+                <xsd:choice>
+                    <xsd:element ref="tns:xmlBinary"/>
+                    <xsd:element ref="tns:xmlString"/>
+                </xsd:choice>
+            </xsd:complexType>
+            <xsd:element name="config" type="tns:configType"/>
+            <xsd:element name="element" type="xsd:string"/>
+            <xsd:element name="schemaRef" type="xsd:string"/>
+            <xsd:element name="textEncoding" type="xsd:string"/>
+            <xsd:element name="validateOutput" type="xsd:boolean"/>
+            <xsd:element name="writeXsiTypes" type="xsd:boolean"/>
+            <xsd:element name="xmlBinary">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:element form="unqualified" name="bytes" type="xsd:base64Binary"/>
+                        <xsd:element form="unqualified" minOccurs="0"
+                            name="forceEncoding" type="xsd:string"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="xmlParserInput" type="tns:dynamicInputType"/>
+            <xsd:element name="xmlString" type="xsd:string"/>
+        </xsd:schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+8c628e08-ba7f-4a3b-ab45-3a797b04b1df+input"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+8c628e08-ba7f-4a3b-ab45-3a797b04b1df+input">
+            <element name="jdbcQueryActivityInput">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="1" minOccurs="1"
+                            name="ID_RICH_OLO" nillable="true" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="ServerTimeZone" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="timeout" type="long"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="maxRows" type="long"/>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+8c628e08-ba7f-4a3b-ab45-3a797b04b1df+output"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+8c628e08-ba7f-4a3b-ab45-3a797b04b1df+output">
+            <element name="resultSet">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="unbounded" minOccurs="0" name="Record">
+                            <complexType>
+                                <sequence>
+                                    <element maxOccurs="1" minOccurs="1"
+                                    name="CONTENUTO_TRACC" type="string"/>
+                                </sequence>
+                            </complexType>
+                        </element>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <wsdl:definitions
+            targetNamespace="http://xmlns.example.com/20180119113100"
+            xmlns:tns="http://xmlns.example.com/20180119113100"
+            xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+            xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+    </tibex:Types>
+    <tibex:ProcessInfo callable="true" createdBy="RexGi"
+        createdOn="Fri Jan 19 11:31:00 CET 2018" description=""
+        extraErrorVars="false" modifiers="public"
+        productVersion="6.3.2 HF4 V43 2017-01-13" scalable="true"
+        singleton="true" stateless="false" type="IT"/>
+    <tibex:ProcessInterface context=""
+        input="{http://www.tim.com/NOW/xsd/ParseSchema/}ParseSchemaRequest" output="{http://www.tim.com/NOW/xsd/ParseSchema/}ParseSchemaResponseStruttura"/>
+    <tibex:ProcessTemplateConfigurations/>
+    <notation:Diagram measurementUnit="Pixel" type="BWProcess"
+        xmlns:bwnotation="http://tns.tibco.com/bw/runtime/BWNotation"
+        xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <children type="2001">
+            <children type="5001"/>
+            <children type="3002">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3003">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3004">
+                <children type="4018">
+                    <children type="3018">
+                        <children type="4020">
+                            <children type="3020">
+                                <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint x="1"
+                                    xsi:type="notation:Bounds" y="80"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint x="562"
+                                    xsi:type="notation:Bounds" y="80"/>
+                                    </children>
+                                    <children type="4002 bw.xml.parsexml">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.2"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="109"
+                                    xsi:type="notation:Bounds" y="32"/>
+                                    </children>
+                                    <children type="4002 bw.xml.parsexml">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.3"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="109"
+                                    xsi:type="notation:Bounds" y="128"/>
+                                    </children>
+                                    <children type="4002 bw.jdbc.JDBCQuery">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.4"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="221"
+                                    xsi:type="notation:Bounds" y="80"/>
+                                    </children>
+                                    <children type="4002 bw.generalactivities.bwassign">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.5"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="330"
+                                    xsi:type="notation:Bounds" y="80"/>
+                                    </children>
+                                    <children type="4002 bw.xml.parsexml">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.6"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="447"
+                                    xsi:type="notation:Bounds" y="80"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    <layoutConstraint height="237"
+                                    width="807" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity"/>
+                            <layoutConstraint height="237" width="810" xsi:type="notation:Bounds"/>
+                        </children>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <element href="//0/@process/@activity"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@activity"/>
+                    <layoutConstraint height="261" width="810" x="1"
+                        xsi:type="notation:Bounds" y="1"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+            <element href="//0/@process"/>
+            <layoutConstraint height="313" width="1047" xsi:type="notation:Bounds"/>
+        </children>
+        <styles xsi:type="notation:DiagramStyle"/>
+        <element href="//0"/>
+        <edges
+            source="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[25, 0, -371, 0]$[372, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.1"/>
+            <bendpoints points="[25, 9, -165, -64]$[166, 64, -24, -9]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.2"/>
+            <bendpoints points="[25, 0, -182, 0]$[183, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3"
+            target="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.3"/>
+            <bendpoints points="[25, -9, -181, 64]$[182, -64, -24, 9]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4"
+            target="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.5" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.4"/>
+            <bendpoints points="[25, 0, -68, 0]$[69, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.5"
+            target="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.6" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.5"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.6"
+            target="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.6"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.3/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.7"/>
+            <bendpoints
+                points="[0, -24, -220, -24]$[0, -91, -220, -91]$[220, -91, 0, -91]$[220, -24, 0, -24]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+    </notation:Diagram>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema"
+        location="../../../../../../Schemas/SchemaOLO/NOW_ServiziRegolamentati_v1.19.xsd" namespace=""/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://xsd.telecomitalia.it/crm/xdsl/nga"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://xsd.telecomitalia.it/crm/xdsl/order"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/ParseSchema/"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://xsd.telecomitalia.it/crm/regolatorio"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://NOW.it.telecomitalia.it/casedata"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://NOW.it.telecomitalia.it/casedata_v1"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/ReplaceAllString/"/>
+    <bpws:variables>
+        <bpws:variable element="ns:ProcessContext"
+            name="_processContext" sca-bpel:internal="true"/>
+        <bpws:variable element="ns0:xmlString" name="ParseNGA-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns1:RICHIESTA" name="ParseNGA" sca-bpel:internal="true"/>
+        <bpws:variable element="ns0:xmlString" name="ParseXDSL-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns2:RICHIESTA" name="ParseXDSL" sca-bpel:internal="true"/>
+        <bpws:variable element="tns:ParseSchemaRequest" name="Start"
+            sca-bpel:internal="true" tibex:parameter="in"/>
+        <bpws:variable element="tns:ParseSchemaResponseStruttura"
+            name="End-input" sca-bpel:internal="true" tibex:parameter="out"/>
+        <bpws:variable element="ns4:jdbcQueryActivityInput"
+            name="JDBCQuery-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns5:resultSet" name="JDBCQuery" sca-bpel:internal="true"/>
+        <bpws:variable name="jdbcProperty" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            sca-bpel:sharedResourceType="{http://xsd.tns.tibco.com/amf/models/sharedresource/jdbc}JdbcDataSource" type="xsd:string">
+            <bpws:from>
+                <bpws:literal>JDBC.JDBCConnectionResource</bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable name="Timeout" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Connection/JDBC/Timeout" type="xsd:int"/>
+        <bpws:variable name="Tracciamento" type="xsd:string"/>
+        <bpws:variable name="Intestazione" type="xsd:string">
+            <bpws:from>
+                <bpws:literal><![CDATA[<?xml version="1.0" encoding="UTF-8"?>]]></bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable name="AperturaTag" type="xsd:string">
+            <bpws:from>
+                <bpws:literal><![CDATA[<casedataV1:RichiestaElement xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:casedataV1="http://NOW.it.telecomitalia.it/casedata" xsi:type="casedataV1:Richiesta">]]></bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable name="ChiusuraTag" type="xsd:string">
+            <bpws:from>
+                <bpws:literal><![CDATA[</casedataV1:RichiestaElement>]]></bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable element="ns0:xmlString"
+            name="ParseXmlRichiesta-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns6:RichiestaElement"
+            name="ParseXmlRichiesta" sca-bpel:internal="true"/>
+        <bpws:variable name="NamespaceNGA" type="xsd:string">
+            <bpws:from>
+                <bpws:literal><![CDATA[<ns0:RICHIESTA xmlns:ns0="http://xsd.telecomitalia.it/crm/xdsl/nga">]]></bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable name="NamespaceXDSL" type="xsd:string">
+            <bpws:from>
+                <bpws:literal><![CDATA[<ns0:RICHIESTA xmlns:ns0="http://xsd.telecomitalia.it/crm/xdsl/order">]]></bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+    </bpws:variables>
+    <bpws:extensions>
+        <bpws:extension mustUnderstand="no" namespace="http://www.eclipse.org/gmf/runtime/1.0.2/notation"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bw/process/info"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca/200912"/>
+        <bpws:extension mustUnderstand="no" namespace="http://ns.tibco.com/bw/property"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bpel/2007/extensions"/>
+    </bpws:extensions>
+    <bpws:scope name="scope">
+        <bpws:flow name="flow">
+            <bpws:links>
+                <bpws:link name="StartToParseXml1" tibex:linkType="SUCCESSWITHCONDITION"/>
+                <bpws:link name="StartToParseXml2" tibex:linkType="SUCCESSWITHCONDITION"/>
+                <bpws:link name="ParseNGAToJDBCQuery" tibex:linkType="SUCCESS"/>
+                <bpws:link name="ParseXml2ToEnd" tibex:linkType="SUCCESS"/>
+                <bpws:link name="JDBCQueryToEnd" tibex:linkType="SUCCESS"/>
+                <bpws:link name="TracciamentoAssignToParseXmlRichiesta" tibex:linkType="SUCCESS"/>
+                <bpws:link name="ParseXmlToEnd" tibex:linkType="SUCCESS"/>
+                <bpws:link name="StartToJDBCQuery" tibex:linkType="SUCCESSWITHNOCONDITION"/>
+            </bpws:links>
+            <bpws:extensionActivity>
+                <tibex:receiveEvent createInstance="yes"
+                    eventTimeout="0" name="Start"
+                    tibex:xpdlId="38ba898d-9738-4dc9-a6ea-44220a6a4dd7"
+                    variable="Start" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:sources>
+                        <bpws:source linkName="StartToParseXml1">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="$Start/tns:StrutturaRichiesta = &quot;NGA&quot;" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[$Start/tns:StrutturaRichiesta = "NGA"]]></bpws:transitionCondition>
+                        </bpws:source>
+                        <bpws:source linkName="StartToParseXml2">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="$Start/tns:StrutturaRichiesta = &quot;XDSL&quot;" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[$Start/tns:StrutturaRichiesta = "XDSL"]]></bpws:transitionCondition>
+                        </bpws:source>
+                        <bpws:source linkName="StartToJDBCQuery">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="##otherwise##" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[##otherwise##]]></bpws:transitionCondition>
+                        </bpws:source>
+                    </bpws:sources>
+                    <tibex:eventSource>
+                        <tibex:StartEvent xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                    </tibex:eventSource>
+                </tibex:receiveEvent>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/ParseSchema/&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:ns=&quot;http://NOW.it.telecomitalia.it/casedata&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;ParseXmlRichiesta&quot;/>&lt;xsl:param name=&quot;Start&quot;/>&lt;xsl:param name=&quot;ParseNGA&quot;/>&lt;xsl:param name=&quot;ParseXDSL&quot;/>&lt;xsl:template name=&quot;End-input&quot; match=&quot;/&quot;>&lt;tns:ParseSchemaResponseStruttura>&lt;ns:RichiestaElement>&lt;created>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/created&quot;/>&lt;/created>&lt;lastUpdate>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/lastUpdate&quot;/>&lt;/lastUpdate>&lt;operatore>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/operatore&quot;/>&lt;/operatore>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;statoRichiestaNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/statoRichiestaNOW&quot;/>&lt;/statoRichiestaNOW>&lt;xsl:if test=&quot;$ParseXmlRichiesta/statoRichiestaPrecedNOW&quot;>&lt;statoRichiestaPrecedNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/statoRichiestaPrecedNOW&quot;/>&lt;/statoRichiestaPrecedNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/statoRichiestaOLO&quot;>&lt;statoRichiestaOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/statoRichiestaOLO&quot;/>&lt;/statoRichiestaOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/statoRichiestaPrecedOLO&quot;>&lt;statoRichiestaPrecedOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/statoRichiestaPrecedOLO&quot;/>&lt;/statoRichiestaPrecedOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/sottostatoLavorManuale&quot;>&lt;sottostatoLavorManuale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/sottostatoLavorManuale&quot;/>&lt;/sottostatoLavorManuale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDFileInput&quot;>&lt;IDFileInput>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDFileInput&quot;/>&lt;/IDFileInput>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDFileOutput&quot;>&lt;IDFileOutput>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDFileOutput&quot;/>&lt;/IDFileOutput>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ambito&quot;>&lt;ambito>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ambito&quot;/>&lt;/ambito>&lt;/xsl:if>&lt;canaleRichiesta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/canaleRichiesta&quot;/>&lt;/canaleRichiesta>&lt;xsl:if test=&quot;$ParseXmlRichiesta/lavorazione&quot;>&lt;lavorazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/lavorazione&quot;/>&lt;/lavorazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/progressivoRichiestaFile&quot;>&lt;progressivoRichiestaFile>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/progressivoRichiestaFile&quot;/>&lt;/progressivoRichiestaFile>&lt;/xsl:if>&lt;strutturaRichiesta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/strutturaRichiesta&quot;/>&lt;/strutturaRichiesta>&lt;tipoRichiesta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipoRichiesta&quot;/>&lt;/tipoRichiesta>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDRisorsa&quot;>&lt;IDRisorsa>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRisorsa&quot;/>&lt;/IDRisorsa>&lt;/xsl:if>&lt;codificaOLOAGCOM>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLOAGCOM&quot;/>&lt;/codificaOLOAGCOM>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLONOW&quot;>&lt;codificaOLONOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLONOW&quot;/>&lt;/codificaOLONOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineOLO&quot;>&lt;codiceOrdineOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineOLO&quot;/>&lt;/codiceOrdineOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineOLOTarget&quot;>&lt;codiceOrdineOLOTarget>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineOLOTarget&quot;/>&lt;/codiceOrdineOLOTarget>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineOLOPadre&quot;>&lt;codiceOrdineOLOPadre>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineOLOPadre&quot;/>&lt;/codiceOrdineOLOPadre>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineTI&quot;>&lt;codiceOrdineTI>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineTI&quot;/>&lt;/codiceOrdineTI>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineTITarget&quot;>&lt;codiceOrdineTITarget>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineTITarget&quot;/>&lt;/codiceOrdineTITarget>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceProgetto&quot;>&lt;codiceProgetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceProgetto&quot;/>&lt;/codiceProgetto>&lt;/xsl:if>&lt;dataInvioRichiesta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/dataInvioRichiesta&quot;/>&lt;/dataInvioRichiesta>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDAnagraficaCausale&quot;>&lt;IDAnagraficaCausale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDAnagraficaCausale&quot;/>&lt;/IDAnagraficaCausale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDCorrelazione&quot;>&lt;IDCorrelazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDCorrelazione&quot;/>&lt;/IDCorrelazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/totaleRichiestePacchetto&quot;>&lt;totaleRichiestePacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/totaleRichiestePacchetto&quot;/>&lt;/totaleRichiestePacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/tipoPacchetto&quot;>&lt;tipoPacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipoPacchetto&quot;/>&lt;/tipoPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDPacchettoNOW&quot;>&lt;IDPacchettoNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDPacchettoNOW&quot;/>&lt;/IDPacchettoNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/contenutoXML&quot;>&lt;contenutoXML>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/contenutoXML&quot;/>&lt;/contenutoXML>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/note&quot;>&lt;note>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/note&quot;/>&lt;/note>&lt;/xsl:if>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($ParseXmlRichiesta/ordine)&quot;>&lt;ordine>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/offertaCatalogo&quot;>&lt;offertaCatalogo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/offertaCatalogo&quot;/>&lt;/offertaCatalogo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DAC&quot;>&lt;DAC>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DAC&quot;/>&lt;/DAC>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DACRimodulata&quot;>&lt;DACRimodulata>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DACRimodulata&quot;/>&lt;/DACRimodulata>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DAD&quot;>&lt;DAD>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DAD&quot;/>&lt;/DAD>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DPP&quot;>&lt;DPP>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DPP&quot;/>&lt;/DPP>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DUVO&quot;>&lt;DUVO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DUVO&quot;/>&lt;/DUVO>&lt;/xsl:if>&lt;created>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/created&quot;/>&lt;/created>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/dataChiusuraOrdine&quot;>&lt;dataChiusuraOrdine>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/dataChiusuraOrdine&quot;/>&lt;/dataChiusuraOrdine>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/cognomeRagioneSociale&quot;>&lt;cognomeRagioneSociale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/cognomeRagioneSociale&quot;/>&lt;/cognomeRagioneSociale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/nome&quot;>&lt;nome>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/nome&quot;/>&lt;/nome>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/CF&quot;>&lt;CF>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/CF&quot;/>&lt;/CF>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/PIVA&quot;>&lt;PIVA>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/PIVA&quot;/>&lt;/PIVA>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDSLUCo&quot;>&lt;IDSLUCo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDSLUCo&quot;/>&lt;/IDSLUCo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDULLCo&quot;>&lt;IDULLCo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDULLCo&quot;/>&lt;/IDULLCo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceDelivery&quot;>&lt;codiceDelivery>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceDelivery&quot;/>&lt;/codiceDelivery>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DNOLOCollaudo&quot;>&lt;DNOLOCollaudo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DNOLOCollaudo&quot;/>&lt;/DNOLOCollaudo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numeroVerdeOloCollaudo&quot;>&lt;numeroVerdeOloCollaudo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numeroVerdeOloCollaudo&quot;/>&lt;/numeroVerdeOloCollaudo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numeroVerdeOloPT&quot;>&lt;numeroVerdeOloPT>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numeroVerdeOloPT&quot;/>&lt;/numeroVerdeOloPT>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceTTM&quot;>&lt;codiceTTM>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceTTM&quot;/>&lt;/codiceTTM>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/flagLavorazioneManuale&quot;>&lt;flagLavorazioneManuale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/flagLavorazioneManuale&quot;/>&lt;/flagLavorazioneManuale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/flagMonitoraggio&quot;>&lt;flagMonitoraggio>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/flagMonitoraggio&quot;/>&lt;/flagMonitoraggio>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/noteCliente&quot;>&lt;noteCliente>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/noteCliente&quot;/>&lt;/noteCliente>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/notedaSistema&quot;>&lt;notedaSistema>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/notedaSistema&quot;/>&lt;/notedaSistema>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/totaleOrdRilevPacchetto&quot;>&lt;totaleOrdRilevPacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/totaleOrdRilevPacchetto&quot;/>&lt;/totaleOrdRilevPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/CLLI&quot;>&lt;CLLI>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/CLLI&quot;/>&lt;/CLLI>&lt;/xsl:if>&lt;codificaOLONOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLONOW&quot;/>&lt;/codificaOLONOW>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceOrdineOLO&quot;>&lt;codiceOrdineOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceOrdineOLO&quot;/>&lt;/codiceOrdineOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceOrdineOLOPadre&quot;>&lt;codiceOrdineOLOPadre>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceOrdineOLOPadre&quot;/>&lt;/codiceOrdineOLOPadre>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceOrdineTI&quot;>&lt;codiceOrdineTI>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceOrdineTI&quot;/>&lt;/codiceOrdineTI>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceProgetto&quot;>&lt;codiceProgetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceProgetto&quot;/>&lt;/codiceProgetto>&lt;/xsl:if>&lt;codificaOLOAGCOM>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOM&quot;/>&lt;/codificaOLOAGCOM>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DADRimodulata&quot;>&lt;DADRimodulata>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DADRimodulata&quot;/>&lt;/DADRimodulata>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DEC&quot;>&lt;DEC>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DEC&quot;/>&lt;/DEC>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DES&quot;>&lt;DES>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DES&quot;/>&lt;/DES>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/ORA_DES&quot;>&lt;ORA_DES>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/ORA_DES&quot;/>&lt;/ORA_DES>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDRisorsa&quot;>&lt;IDRisorsa>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDRisorsa&quot;/>&lt;/IDRisorsa>&lt;/xsl:if>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;tipologiaLavorazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaLavorazione&quot;/>&lt;/tipologiaLavorazione>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaSottolav&quot;>&lt;tipologiaSottolav>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaSottolav&quot;/>&lt;/tipologiaSottolav>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/LNA_LA&quot;>&lt;LNA_LA>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/LNA_LA&quot;/>&lt;/LNA_LA>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/modalitaFatturazione&quot;>&lt;modalitaFatturazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/modalitaFatturazione&quot;/>&lt;/modalitaFatturazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/operatore&quot;>&lt;operatore>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/operatore&quot;/>&lt;/operatore>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/RO&quot;>&lt;RO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/RO&quot;/>&lt;/RO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/lastUpdate&quot;>&lt;lastUpdate>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/lastUpdate&quot;/>&lt;/lastUpdate>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipoPacchetto&quot;>&lt;tipoPacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipoPacchetto&quot;/>&lt;/tipoPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/dataInvioOrdineADelivery&quot;>&lt;dataInvioOrdineADelivery>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/dataInvioOrdineADelivery&quot;/>&lt;/dataInvioOrdineADelivery>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/dataInvioCommercializz&quot;>&lt;dataInvioCommercializz>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/dataInvioCommercializz&quot;/>&lt;/dataInvioCommercializz>&lt;/xsl:if>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/ordine/dettaglioordine&quot;>&lt;dettaglioordine>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;IDDettaglioOrdine>&lt;xsl:value-of select=&quot;IDDettaglioOrdine&quot;/>&lt;/IDDettaglioOrdine>&lt;xsl:if test=&quot;IDDettaglioOrdineParent&quot;>&lt;IDDettaglioOrdineParent>&lt;xsl:value-of select=&quot;IDDettaglioOrdineParent&quot;/>&lt;/IDDettaglioOrdineParent>&lt;/xsl:if>&lt;xsl:if test=&quot;IDDettaglioOrdineRoot&quot;>&lt;IDDettaglioOrdineRoot>&lt;xsl:value-of select=&quot;IDDettaglioOrdineRoot&quot;/>&lt;/IDDettaglioOrdineRoot>&lt;/xsl:if>&lt;created>&lt;xsl:value-of select=&quot;created&quot;/>&lt;/created>&lt;xsl:if test=&quot;lastUpdate&quot;>&lt;lastUpdate>&lt;xsl:value-of select=&quot;lastUpdate&quot;/>&lt;/lastUpdate>&lt;/xsl:if>&lt;operatore>&lt;xsl:value-of select=&quot;operatore&quot;/>&lt;/operatore>&lt;xsl:if test=&quot;IDRisorsa&quot;>&lt;IDRisorsa>&lt;xsl:value-of select=&quot;IDRisorsa&quot;/>&lt;/IDRisorsa>&lt;/xsl:if>&lt;nomeComponente>&lt;xsl:value-of select=&quot;nomeComponente&quot;/>&lt;/nomeComponente>&lt;integrationID>&lt;xsl:value-of select=&quot;integrationID&quot;/>&lt;/integrationID>&lt;xsl:for-each select=&quot;attributiDettaglioOrdine&quot;>&lt;attributiDettaglioOrdine>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;IDDettaglioOrdine>&lt;xsl:value-of select=&quot;IDDettaglioOrdine&quot;/>&lt;/IDDettaglioOrdine>&lt;created>&lt;xsl:value-of select=&quot;created&quot;/>&lt;/created>&lt;lastUpdate>&lt;xsl:value-of select=&quot;lastUpdate&quot;/>&lt;/lastUpdate>&lt;operatore>&lt;xsl:value-of select=&quot;operatore&quot;/>&lt;/operatore>&lt;nomeAttributo>&lt;xsl:value-of select=&quot;nomeAttributo&quot;/>&lt;/nomeAttributo>&lt;valoreAttributo>&lt;xsl:value-of select=&quot;valoreAttributo&quot;/>&lt;/valoreAttributo>&lt;tipologiaDato>&lt;xsl:value-of select=&quot;tipologiaDato&quot;/>&lt;/tipologiaDato>&lt;xsl:if test=&quot;valoreAttributoOLD&quot;>&lt;valoreAttributoOLD>&lt;xsl:value-of select=&quot;valoreAttributoOLD&quot;/>&lt;/valoreAttributoOLD>&lt;/xsl:if>&lt;/attributiDettaglioOrdine>&lt;/xsl:for-each>&lt;progressivo>&lt;xsl:value-of select=&quot;progressivo&quot;/>&lt;/progressivo>&lt;xsl:if test=&quot;IDRisorsaNOW&quot;>&lt;IDRisorsaNOW>&lt;xsl:value-of select=&quot;IDRisorsaNOW&quot;/>&lt;/IDRisorsaNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;azione&quot;>&lt;azione>&lt;xsl:value-of select=&quot;azione&quot;/>&lt;/azione>&lt;/xsl:if>&lt;/dettaglioordine>&lt;/xsl:for-each>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/ordine/sede&quot;>&lt;sede>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;IDSede>&lt;xsl:value-of select=&quot;IDSede&quot;/>&lt;/IDSede>&lt;xsl:if test=&quot;particellaToponomastica&quot;>&lt;particellaToponomastica>&lt;xsl:value-of select=&quot;particellaToponomastica&quot;/>&lt;/particellaToponomastica>&lt;/xsl:if>&lt;xsl:if test=&quot;via&quot;>&lt;via>&lt;xsl:value-of select=&quot;via&quot;/>&lt;/via>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceVia&quot;>&lt;codiceVia>&lt;xsl:value-of select=&quot;codiceVia&quot;/>&lt;/codiceVia>&lt;/xsl:if>&lt;xsl:if test=&quot;civico&quot;>&lt;civico>&lt;xsl:value-of select=&quot;civico&quot;/>&lt;/civico>&lt;/xsl:if>&lt;xsl:if test=&quot;localita&quot;>&lt;localita>&lt;xsl:value-of select=&quot;localita&quot;/>&lt;/localita>&lt;/xsl:if>&lt;xsl:if test=&quot;comune&quot;>&lt;comune>&lt;xsl:value-of select=&quot;comune&quot;/>&lt;/comune>&lt;/xsl:if>&lt;xsl:if test=&quot;provincia&quot;>&lt;provincia>&lt;xsl:value-of select=&quot;provincia&quot;/>&lt;/provincia>&lt;/xsl:if>&lt;xsl:if test=&quot;CAP&quot;>&lt;CAP>&lt;xsl:value-of select=&quot;CAP&quot;/>&lt;/CAP>&lt;/xsl:if>&lt;xsl:if test=&quot;complesso&quot;>&lt;complesso>&lt;xsl:value-of select=&quot;complesso&quot;/>&lt;/complesso>&lt;/xsl:if>&lt;xsl:if test=&quot;interno&quot;>&lt;interno>&lt;xsl:value-of select=&quot;interno&quot;/>&lt;/interno>&lt;/xsl:if>&lt;xsl:if test=&quot;scala&quot;>&lt;scala>&lt;xsl:value-of select=&quot;scala&quot;/>&lt;/scala>&lt;/xsl:if>&lt;xsl:if test=&quot;piano&quot;>&lt;piano>&lt;xsl:value-of select=&quot;piano&quot;/>&lt;/piano>&lt;/xsl:if>&lt;xsl:if test=&quot;indirizzoEsteso&quot;>&lt;indirizzoEsteso>&lt;xsl:value-of select=&quot;indirizzoEsteso&quot;/>&lt;/indirizzoEsteso>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceISTATComune&quot;>&lt;codiceISTATComune>&lt;xsl:value-of select=&quot;codiceISTATComune&quot;/>&lt;/codiceISTATComune>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceISTATProvincia&quot;>&lt;codiceISTATProvincia>&lt;xsl:value-of select=&quot;codiceISTATProvincia&quot;/>&lt;/codiceISTATProvincia>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceToponomastica&quot;>&lt;codiceToponomastica>&lt;xsl:value-of select=&quot;codiceToponomastica&quot;/>&lt;/codiceToponomastica>&lt;/xsl:if>&lt;tipologiaSede>&lt;xsl:value-of select=&quot;tipologiaSede&quot;/>&lt;/tipologiaSede>&lt;xsl:if test=&quot;siglaProvincia&quot;>&lt;siglaProvincia>&lt;xsl:value-of select=&quot;siglaProvincia&quot;/>&lt;/siglaProvincia>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceNumeroCivico&quot;>&lt;codiceNumeroCivico>&lt;xsl:value-of select=&quot;codiceNumeroCivico&quot;/>&lt;/codiceNumeroCivico>&lt;/xsl:if>&lt;operatore>&lt;xsl:value-of select=&quot;operatore&quot;/>&lt;/operatore>&lt;xsl:if test=&quot;CODICECOMUNEINPUT&quot;>&lt;CODICECOMUNEINPUT>&lt;xsl:value-of select=&quot;CODICECOMUNEINPUT&quot;/>&lt;/CODICECOMUNEINPUT>&lt;/xsl:if>&lt;/sede>&lt;/xsl:for-each>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/ordine/referente&quot;>&lt;referente>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;created>&lt;xsl:value-of select=&quot;created&quot;/>&lt;/created>&lt;xsl:if test=&quot;lastUpdate&quot;>&lt;lastUpdate>&lt;xsl:value-of select=&quot;lastUpdate&quot;/>&lt;/lastUpdate>&lt;/xsl:if>&lt;operatore>&lt;xsl:value-of select=&quot;operatore&quot;/>&lt;/operatore>&lt;xsl:if test=&quot;progressivoReferente&quot;>&lt;progressivoReferente>&lt;xsl:value-of select=&quot;progressivoReferente&quot;/>&lt;/progressivoReferente>&lt;/xsl:if>&lt;tipoReferenteOrdine>&lt;xsl:value-of select=&quot;tipoReferenteOrdine&quot;/>&lt;/tipoReferenteOrdine>&lt;xsl:if test=&quot;qualificaReferente&quot;>&lt;qualificaReferente>&lt;xsl:value-of select=&quot;qualificaReferente&quot;/>&lt;/qualificaReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;cognomeReferente&quot;>&lt;cognomeReferente>&lt;xsl:value-of select=&quot;cognomeReferente&quot;/>&lt;/cognomeReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;nomeReferente&quot;>&lt;nomeReferente>&lt;xsl:value-of select=&quot;nomeReferente&quot;/>&lt;/nomeReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;telefonoFissoReferente&quot;>&lt;telefonoFissoReferente>&lt;xsl:value-of select=&quot;telefonoFissoReferente&quot;/>&lt;/telefonoFissoReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;telefonoMobileReferente&quot;>&lt;telefonoMobileReferente>&lt;xsl:value-of select=&quot;telefonoMobileReferente&quot;/>&lt;/telefonoMobileReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;emailReferente&quot;>&lt;emailReferente>&lt;xsl:value-of select=&quot;emailReferente&quot;/>&lt;/emailReferente>&lt;/xsl:if>&lt;/referente>&lt;/xsl:for-each>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaAccesso&quot;>&lt;tipologiaAccesso>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaAccesso&quot;/>&lt;/tipologiaAccesso>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaQualita&quot;>&lt;tipologiaQualita>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaQualita&quot;/>&lt;/tipologiaQualita>&lt;/xsl:if>&lt;offerta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/offerta&quot;/>&lt;/offerta>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceSLAAssurance&quot;>&lt;codiceSLAAssurance>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceSLAAssurance&quot;/>&lt;/codiceSLAAssurance>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DPS&quot;>&lt;DPS>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DPS&quot;/>&lt;/DPS>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/totaleOrdiniPacchetto&quot;>&lt;totaleOrdiniPacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/totaleOrdiniPacchetto&quot;/>&lt;/totaleOrdiniPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/distretto&quot;>&lt;distretto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/distretto&quot;/>&lt;/distretto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numeroFittizio&quot;>&lt;numeroFittizio>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numeroFittizio&quot;/>&lt;/numeroFittizio>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numeroTelefonico&quot;>&lt;numeroTelefonico>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numeroTelefonico&quot;/>&lt;/numeroTelefonico>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDRisorsaNOW&quot;>&lt;IDRisorsaNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDRisorsaNOW&quot;/>&lt;/IDRisorsaNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOMDonating&quot;>&lt;codificaOLOAGCOMDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOMDonating&quot;/>&lt;/codificaOLOAGCOMDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOMDonor&quot;>&lt;codificaOLOAGCOMDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOMDonor&quot;/>&lt;/codificaOLOAGCOMDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codificaOLONOWDonating&quot;>&lt;codificaOLONOWDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLONOWDonating&quot;/>&lt;/codificaOLONOWDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codificaOLONOWDonor&quot;>&lt;codificaOLONOWDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLONOWDonor&quot;/>&lt;/codificaOLONOWDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaScenario&quot;>&lt;tipologiaScenario>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaScenario&quot;/>&lt;/tipologiaScenario>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaLinea&quot;>&lt;tipologiaLinea>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaLinea&quot;/>&lt;/tipologiaLinea>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numTelPrincipale&quot;>&lt;numTelPrincipale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numTelPrincipale&quot;/>&lt;/numTelPrincipale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceFatturazioneJPUB&quot;>&lt;codiceFatturazioneJPUB>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceFatturazioneJPUB&quot;/>&lt;/codiceFatturazioneJPUB>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDPacchettoNOW&quot;>&lt;IDPacchettoNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDPacchettoNOW&quot;/>&lt;/IDPacchettoNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codicePacchettoNOW&quot;>&lt;codicePacchettoNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codicePacchettoNOW&quot;/>&lt;/codicePacchettoNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/operatoreRete&quot;>&lt;operatoreRete>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/operatoreRete&quot;/>&lt;/operatoreRete>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DACOpereSpeciali&quot;>&lt;DACOpereSpeciali>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DACOpereSpeciali&quot;/>&lt;/DACOpereSpeciali>&lt;/xsl:if>&lt;/ordine>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;xsl:if test=&quot;$ParseXmlRichiesta/dataControlliFormali&quot;>&lt;dataControlliFormali>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/dataControlliFormali&quot;/>&lt;/dataControlliFormali>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/totaleRichiesteRilevPac&quot;>&lt;totaleRichiesteRilevPac>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/totaleRichiesteRilevPac&quot;/>&lt;/totaleRichiesteRilevPac>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDContratto&quot;>&lt;IDContratto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDContratto&quot;/>&lt;/IDContratto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ISTATComune&quot;>&lt;ISTATComune>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ISTATComune&quot;/>&lt;/ISTATComune>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/localita&quot;>&lt;localita>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/localita&quot;/>&lt;/localita>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/offerta&quot;>&lt;offerta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/offerta&quot;/>&lt;/offerta>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/flagNaked&quot;>&lt;flagNaked>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/flagNaked&quot;/>&lt;/flagNaked>&lt;/xsl:if>&lt;IDRichiestaLocalizzatore>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRichiestaLocalizzatore&quot;/>&lt;/IDRichiestaLocalizzatore>&lt;xsl:if test=&quot;$ParseXmlRichiesta/testMode&quot;>&lt;testMode>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/testMode&quot;/>&lt;/testMode>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/DAD&quot;>&lt;DAD>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/DAD&quot;/>&lt;/DAD>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDFasciaOraria&quot;>&lt;IDFasciaOraria>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDFasciaOraria&quot;/>&lt;/IDFasciaOraria>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDOfferta&quot;>&lt;IDOfferta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDOfferta&quot;/>&lt;/IDOfferta>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/DRO&quot;>&lt;DRO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/DRO&quot;/>&lt;/DRO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDNotifica&quot;>&lt;IDNotifica>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDNotifica&quot;/>&lt;/IDNotifica>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLOAGCOMDonating&quot;>&lt;codificaOLOAGCOMDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLOAGCOMDonating&quot;/>&lt;/codificaOLOAGCOMDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLOAGCOMDonor&quot;>&lt;codificaOLOAGCOMDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLOAGCOMDonor&quot;/>&lt;/codificaOLOAGCOMDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLONOWDonating&quot;>&lt;codificaOLONOWDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLONOWDonating&quot;/>&lt;/codificaOLONOWDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLONOWDonor&quot;>&lt;codificaOLONOWDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLONOWDonor&quot;/>&lt;/codificaOLONOWDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/numeroTelefonico&quot;>&lt;numeroTelefonico>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/numeroTelefonico&quot;/>&lt;/numeroTelefonico>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/tipologiaScenario&quot;>&lt;tipologiaScenario>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipologiaScenario&quot;/>&lt;/tipologiaScenario>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/DAC&quot;>&lt;DAC>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/DAC&quot;/>&lt;/DAC>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/progressivoNotificaDTU&quot;>&lt;progressivoNotificaDTU>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/progressivoNotificaDTU&quot;/>&lt;/progressivoNotificaDTU>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLOAGCOMRic&quot;>&lt;codificaOLOAGCOMRic>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLOAGCOMRic&quot;/>&lt;/codificaOLOAGCOMRic>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDNotificaDonor&quot;>&lt;IDNotificaDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDNotificaDonor&quot;/>&lt;/IDNotificaDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDNotificaDonating&quot;>&lt;IDNotificaDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDNotificaDonating&quot;/>&lt;/IDNotificaDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/esito&quot;>&lt;esito>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/esito&quot;/>&lt;/esito>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceCausaleInterno&quot;>&lt;codiceCausaleInterno>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceCausaleInterno&quot;/>&lt;/codiceCausaleInterno>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/dataEspletamentoDONOR&quot;>&lt;dataEspletamentoDONOR>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/dataEspletamentoDONOR&quot;/>&lt;/dataEspletamentoDONOR>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceTrasformazione&quot;>&lt;codiceTrasformazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceTrasformazione&quot;/>&lt;/codiceTrasformazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/flagOpereSpeciali&quot;>&lt;flagOpereSpeciali>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/flagOpereSpeciali&quot;/>&lt;/flagOpereSpeciali>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDRisorsaCorrelato&quot;>&lt;IDRisorsaCorrelato>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRisorsaCorrelato&quot;/>&lt;/IDRisorsaCorrelato>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDRichiestaOLOGenerante&quot;>&lt;IDRichiestaOLOGenerante>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRichiestaOLOGenerante&quot;/>&lt;/IDRichiestaOLOGenerante>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/tipoComunicazioneNP&quot;>&lt;tipoComunicazioneNP>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipoComunicazioneNP&quot;/>&lt;/tipoComunicazioneNP>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/servizioOrigine&quot;>&lt;servizioOrigine>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/servizioOrigine&quot;/>&lt;/servizioOrigine>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceSTS&quot;>&lt;codiceSTS>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceSTS&quot;/>&lt;/codiceSTS>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/caratteristica&quot;>&lt;caratteristica>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/caratteristica&quot;/>&lt;/caratteristica>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceRisorsaDonating&quot;>&lt;codiceRisorsaDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceRisorsaDonating&quot;/>&lt;/codiceRisorsaDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceRisorsaDonating2&quot;>&lt;codiceRisorsaDonating2>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceRisorsaDonating2&quot;/>&lt;/codiceRisorsaDonating2>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/cowCodeOLO&quot;>&lt;cowCodeOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/cowCodeOLO&quot;/>&lt;/cowCodeOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/cowCodeOLO2&quot;>&lt;cowCodeOLO2>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/cowCodeOLO2&quot;/>&lt;/cowCodeOLO2>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceSessione&quot;>&lt;codiceSessione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceSessione&quot;/>&lt;/codiceSessione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceSessione2&quot;>&lt;codiceSessione2>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceSessione2&quot;/>&lt;/codiceSessione2>&lt;/xsl:if>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/DNAggiuntivo&quot;>&lt;DNAggiuntivo>&lt;xsl:value-of select=&quot;.&quot;/>&lt;/DNAggiuntivo>&lt;/xsl:for-each>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDPreventivo&quot;>&lt;IDPreventivo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDPreventivo&quot;/>&lt;/IDPreventivo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDConsuntivo&quot;>&lt;IDConsuntivo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDConsuntivo&quot;/>&lt;/IDConsuntivo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/noteAltreLavorazioni&quot;>&lt;noteAltreLavorazioni>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/noteAltreLavorazioni&quot;/>&lt;/noteAltreLavorazioni>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codicePacchettoNOW&quot;>&lt;codicePacchettoNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codicePacchettoNOW&quot;/>&lt;/codicePacchettoNOW>&lt;/xsl:if>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/assetTarget&quot;>&lt;assetTarget>&lt;IDAsset>&lt;xsl:value-of select=&quot;IDAsset&quot;/>&lt;/IDAsset>&lt;flagInLavorazione>&lt;xsl:value-of select=&quot;flagInLavorazione&quot;/>&lt;/flagInLavorazione>&lt;/assetTarget>&lt;/xsl:for-each>&lt;xsl:if test=&quot;$ParseXmlRichiesta/operatoreRete&quot;>&lt;operatoreRete>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/operatoreRete&quot;/>&lt;/operatoreRete>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/transactionIDLocator&quot;>&lt;transactionIDLocator>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/transactionIDLocator&quot;/>&lt;/transactionIDLocator>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/flagNumAggiuntive&quot;>&lt;flagNumAggiuntive>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/flagNumAggiuntive&quot;/>&lt;/flagNumAggiuntive>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDAnagraficaCausaleGUI&quot;>&lt;IDAnagraficaCausaleGUI>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDAnagraficaCausaleGUI&quot;/>&lt;/IDAnagraficaCausaleGUI>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceRifiutoDonating&quot;>&lt;codiceRifiutoDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceRifiutoDonating&quot;/>&lt;/codiceRifiutoDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/DACFile&quot;>&lt;DACFile>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/DACFile&quot;/>&lt;/DACFile>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/tipologiaSottolav&quot;>&lt;tipologiaSottolav>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipologiaSottolav&quot;/>&lt;/tipologiaSottolav>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceRifiuto&quot;>&lt;codiceRifiuto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceRifiuto&quot;/>&lt;/codiceRifiuto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/routingNumber&quot;>&lt;routingNumber>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/routingNumber&quot;/>&lt;/routingNumber>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/progressivoEmissioneDTU&quot;>&lt;progressivoEmissioneDTU>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/progressivoEmissioneDTU&quot;/>&lt;/progressivoEmissioneDTU>&lt;/xsl:if>&lt;/ns:RichiestaElement>&lt;xsl:choose>&lt;xsl:when test=&quot;$Start/tns:StrutturaRichiesta != &amp;quot;REGOLATORIO&amp;quot;&quot;>&lt;tns:Notifica>&lt;xsl:choose>&lt;xsl:when test=&quot;$Start/tns:StrutturaRichiesta = &amp;quot;NGA&amp;quot;&quot;>&lt;tns:RICHIESTA_NGA>&lt;xsl:copy-of select=&quot;$ParseNGA&quot;/>&lt;/tns:RICHIESTA_NGA>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:RICHIESTA_XDSL>&lt;xsl:copy-of select=&quot;$ParseXDSL&quot;/>&lt;/tns:RICHIESTA_XDSL>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/tns:Notifica>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;/tns:ParseSchemaResponseStruttura>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="End-input" name="End"
+                    tibex:xpdlId="d8b1402c-9472-4437-9708-bff58fc470b0" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="ParseXmlToEnd"/>
+                    </bpws:targets>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/ParseSchema/&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:ns=&quot;http://NOW.it.telecomitalia.it/casedata&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;ParseXmlRichiesta&quot;/>&lt;xsl:param name=&quot;Start&quot;/>&lt;xsl:param name=&quot;ParseNGA&quot;/>&lt;xsl:param name=&quot;ParseXDSL&quot;/>&lt;xsl:template name=&quot;End-input&quot; match=&quot;/&quot;>&lt;tns:ParseSchemaResponseStruttura>&lt;ns:RichiestaElement>&lt;created>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/created&quot;/>&lt;/created>&lt;lastUpdate>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/lastUpdate&quot;/>&lt;/lastUpdate>&lt;operatore>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/operatore&quot;/>&lt;/operatore>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;statoRichiestaNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/statoRichiestaNOW&quot;/>&lt;/statoRichiestaNOW>&lt;xsl:if test=&quot;$ParseXmlRichiesta/statoRichiestaPrecedNOW&quot;>&lt;statoRichiestaPrecedNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/statoRichiestaPrecedNOW&quot;/>&lt;/statoRichiestaPrecedNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/statoRichiestaOLO&quot;>&lt;statoRichiestaOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/statoRichiestaOLO&quot;/>&lt;/statoRichiestaOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/statoRichiestaPrecedOLO&quot;>&lt;statoRichiestaPrecedOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/statoRichiestaPrecedOLO&quot;/>&lt;/statoRichiestaPrecedOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/sottostatoLavorManuale&quot;>&lt;sottostatoLavorManuale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/sottostatoLavorManuale&quot;/>&lt;/sottostatoLavorManuale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDFileInput&quot;>&lt;IDFileInput>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDFileInput&quot;/>&lt;/IDFileInput>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDFileOutput&quot;>&lt;IDFileOutput>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDFileOutput&quot;/>&lt;/IDFileOutput>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ambito&quot;>&lt;ambito>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ambito&quot;/>&lt;/ambito>&lt;/xsl:if>&lt;canaleRichiesta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/canaleRichiesta&quot;/>&lt;/canaleRichiesta>&lt;xsl:if test=&quot;$ParseXmlRichiesta/lavorazione&quot;>&lt;lavorazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/lavorazione&quot;/>&lt;/lavorazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/progressivoRichiestaFile&quot;>&lt;progressivoRichiestaFile>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/progressivoRichiestaFile&quot;/>&lt;/progressivoRichiestaFile>&lt;/xsl:if>&lt;strutturaRichiesta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/strutturaRichiesta&quot;/>&lt;/strutturaRichiesta>&lt;tipoRichiesta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipoRichiesta&quot;/>&lt;/tipoRichiesta>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDRisorsa&quot;>&lt;IDRisorsa>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRisorsa&quot;/>&lt;/IDRisorsa>&lt;/xsl:if>&lt;codificaOLOAGCOM>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLOAGCOM&quot;/>&lt;/codificaOLOAGCOM>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLONOW&quot;>&lt;codificaOLONOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLONOW&quot;/>&lt;/codificaOLONOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineOLO&quot;>&lt;codiceOrdineOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineOLO&quot;/>&lt;/codiceOrdineOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineOLOTarget&quot;>&lt;codiceOrdineOLOTarget>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineOLOTarget&quot;/>&lt;/codiceOrdineOLOTarget>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineOLOPadre&quot;>&lt;codiceOrdineOLOPadre>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineOLOPadre&quot;/>&lt;/codiceOrdineOLOPadre>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineTI&quot;>&lt;codiceOrdineTI>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineTI&quot;/>&lt;/codiceOrdineTI>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceOrdineTITarget&quot;>&lt;codiceOrdineTITarget>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceOrdineTITarget&quot;/>&lt;/codiceOrdineTITarget>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceProgetto&quot;>&lt;codiceProgetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceProgetto&quot;/>&lt;/codiceProgetto>&lt;/xsl:if>&lt;dataInvioRichiesta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/dataInvioRichiesta&quot;/>&lt;/dataInvioRichiesta>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDAnagraficaCausale&quot;>&lt;IDAnagraficaCausale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDAnagraficaCausale&quot;/>&lt;/IDAnagraficaCausale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDCorrelazione&quot;>&lt;IDCorrelazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDCorrelazione&quot;/>&lt;/IDCorrelazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/totaleRichiestePacchetto&quot;>&lt;totaleRichiestePacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/totaleRichiestePacchetto&quot;/>&lt;/totaleRichiestePacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/tipoPacchetto&quot;>&lt;tipoPacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipoPacchetto&quot;/>&lt;/tipoPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDPacchettoNOW&quot;>&lt;IDPacchettoNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDPacchettoNOW&quot;/>&lt;/IDPacchettoNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/contenutoXML&quot;>&lt;contenutoXML>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/contenutoXML&quot;/>&lt;/contenutoXML>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/note&quot;>&lt;note>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/note&quot;/>&lt;/note>&lt;/xsl:if>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($ParseXmlRichiesta/ordine)&quot;>&lt;ordine>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/offertaCatalogo&quot;>&lt;offertaCatalogo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/offertaCatalogo&quot;/>&lt;/offertaCatalogo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DAC&quot;>&lt;DAC>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DAC&quot;/>&lt;/DAC>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DACRimodulata&quot;>&lt;DACRimodulata>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DACRimodulata&quot;/>&lt;/DACRimodulata>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DAD&quot;>&lt;DAD>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DAD&quot;/>&lt;/DAD>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DPP&quot;>&lt;DPP>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DPP&quot;/>&lt;/DPP>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DUVO&quot;>&lt;DUVO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DUVO&quot;/>&lt;/DUVO>&lt;/xsl:if>&lt;created>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/created&quot;/>&lt;/created>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/dataChiusuraOrdine&quot;>&lt;dataChiusuraOrdine>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/dataChiusuraOrdine&quot;/>&lt;/dataChiusuraOrdine>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/cognomeRagioneSociale&quot;>&lt;cognomeRagioneSociale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/cognomeRagioneSociale&quot;/>&lt;/cognomeRagioneSociale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/nome&quot;>&lt;nome>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/nome&quot;/>&lt;/nome>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/CF&quot;>&lt;CF>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/CF&quot;/>&lt;/CF>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/PIVA&quot;>&lt;PIVA>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/PIVA&quot;/>&lt;/PIVA>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDSLUCo&quot;>&lt;IDSLUCo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDSLUCo&quot;/>&lt;/IDSLUCo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDULLCo&quot;>&lt;IDULLCo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDULLCo&quot;/>&lt;/IDULLCo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceDelivery&quot;>&lt;codiceDelivery>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceDelivery&quot;/>&lt;/codiceDelivery>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DNOLOCollaudo&quot;>&lt;DNOLOCollaudo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DNOLOCollaudo&quot;/>&lt;/DNOLOCollaudo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numeroVerdeOloCollaudo&quot;>&lt;numeroVerdeOloCollaudo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numeroVerdeOloCollaudo&quot;/>&lt;/numeroVerdeOloCollaudo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numeroVerdeOloPT&quot;>&lt;numeroVerdeOloPT>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numeroVerdeOloPT&quot;/>&lt;/numeroVerdeOloPT>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceTTM&quot;>&lt;codiceTTM>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceTTM&quot;/>&lt;/codiceTTM>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/flagLavorazioneManuale&quot;>&lt;flagLavorazioneManuale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/flagLavorazioneManuale&quot;/>&lt;/flagLavorazioneManuale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/flagMonitoraggio&quot;>&lt;flagMonitoraggio>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/flagMonitoraggio&quot;/>&lt;/flagMonitoraggio>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/noteCliente&quot;>&lt;noteCliente>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/noteCliente&quot;/>&lt;/noteCliente>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/notedaSistema&quot;>&lt;notedaSistema>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/notedaSistema&quot;/>&lt;/notedaSistema>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/totaleOrdRilevPacchetto&quot;>&lt;totaleOrdRilevPacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/totaleOrdRilevPacchetto&quot;/>&lt;/totaleOrdRilevPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/CLLI&quot;>&lt;CLLI>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/CLLI&quot;/>&lt;/CLLI>&lt;/xsl:if>&lt;codificaOLONOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLONOW&quot;/>&lt;/codificaOLONOW>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceOrdineOLO&quot;>&lt;codiceOrdineOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceOrdineOLO&quot;/>&lt;/codiceOrdineOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceOrdineOLOPadre&quot;>&lt;codiceOrdineOLOPadre>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceOrdineOLOPadre&quot;/>&lt;/codiceOrdineOLOPadre>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceOrdineTI&quot;>&lt;codiceOrdineTI>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceOrdineTI&quot;/>&lt;/codiceOrdineTI>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceProgetto&quot;>&lt;codiceProgetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceProgetto&quot;/>&lt;/codiceProgetto>&lt;/xsl:if>&lt;codificaOLOAGCOM>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOM&quot;/>&lt;/codificaOLOAGCOM>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DADRimodulata&quot;>&lt;DADRimodulata>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DADRimodulata&quot;/>&lt;/DADRimodulata>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DEC&quot;>&lt;DEC>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DEC&quot;/>&lt;/DEC>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DES&quot;>&lt;DES>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DES&quot;/>&lt;/DES>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/ORA_DES&quot;>&lt;ORA_DES>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/ORA_DES&quot;/>&lt;/ORA_DES>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDRisorsa&quot;>&lt;IDRisorsa>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDRisorsa&quot;/>&lt;/IDRisorsa>&lt;/xsl:if>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;tipologiaLavorazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaLavorazione&quot;/>&lt;/tipologiaLavorazione>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaSottolav&quot;>&lt;tipologiaSottolav>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaSottolav&quot;/>&lt;/tipologiaSottolav>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/LNA_LA&quot;>&lt;LNA_LA>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/LNA_LA&quot;/>&lt;/LNA_LA>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/modalitaFatturazione&quot;>&lt;modalitaFatturazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/modalitaFatturazione&quot;/>&lt;/modalitaFatturazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/operatore&quot;>&lt;operatore>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/operatore&quot;/>&lt;/operatore>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/RO&quot;>&lt;RO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/RO&quot;/>&lt;/RO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/lastUpdate&quot;>&lt;lastUpdate>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/lastUpdate&quot;/>&lt;/lastUpdate>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipoPacchetto&quot;>&lt;tipoPacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipoPacchetto&quot;/>&lt;/tipoPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/dataInvioOrdineADelivery&quot;>&lt;dataInvioOrdineADelivery>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/dataInvioOrdineADelivery&quot;/>&lt;/dataInvioOrdineADelivery>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/dataInvioCommercializz&quot;>&lt;dataInvioCommercializz>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/dataInvioCommercializz&quot;/>&lt;/dataInvioCommercializz>&lt;/xsl:if>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/ordine/dettaglioordine&quot;>&lt;dettaglioordine>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;IDDettaglioOrdine>&lt;xsl:value-of select=&quot;IDDettaglioOrdine&quot;/>&lt;/IDDettaglioOrdine>&lt;xsl:if test=&quot;IDDettaglioOrdineParent&quot;>&lt;IDDettaglioOrdineParent>&lt;xsl:value-of select=&quot;IDDettaglioOrdineParent&quot;/>&lt;/IDDettaglioOrdineParent>&lt;/xsl:if>&lt;xsl:if test=&quot;IDDettaglioOrdineRoot&quot;>&lt;IDDettaglioOrdineRoot>&lt;xsl:value-of select=&quot;IDDettaglioOrdineRoot&quot;/>&lt;/IDDettaglioOrdineRoot>&lt;/xsl:if>&lt;created>&lt;xsl:value-of select=&quot;created&quot;/>&lt;/created>&lt;xsl:if test=&quot;lastUpdate&quot;>&lt;lastUpdate>&lt;xsl:value-of select=&quot;lastUpdate&quot;/>&lt;/lastUpdate>&lt;/xsl:if>&lt;operatore>&lt;xsl:value-of select=&quot;operatore&quot;/>&lt;/operatore>&lt;xsl:if test=&quot;IDRisorsa&quot;>&lt;IDRisorsa>&lt;xsl:value-of select=&quot;IDRisorsa&quot;/>&lt;/IDRisorsa>&lt;/xsl:if>&lt;nomeComponente>&lt;xsl:value-of select=&quot;nomeComponente&quot;/>&lt;/nomeComponente>&lt;integrationID>&lt;xsl:value-of select=&quot;integrationID&quot;/>&lt;/integrationID>&lt;xsl:for-each select=&quot;attributiDettaglioOrdine&quot;>&lt;attributiDettaglioOrdine>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;IDDettaglioOrdine>&lt;xsl:value-of select=&quot;IDDettaglioOrdine&quot;/>&lt;/IDDettaglioOrdine>&lt;created>&lt;xsl:value-of select=&quot;created&quot;/>&lt;/created>&lt;lastUpdate>&lt;xsl:value-of select=&quot;lastUpdate&quot;/>&lt;/lastUpdate>&lt;operatore>&lt;xsl:value-of select=&quot;operatore&quot;/>&lt;/operatore>&lt;nomeAttributo>&lt;xsl:value-of select=&quot;nomeAttributo&quot;/>&lt;/nomeAttributo>&lt;valoreAttributo>&lt;xsl:value-of select=&quot;valoreAttributo&quot;/>&lt;/valoreAttributo>&lt;tipologiaDato>&lt;xsl:value-of select=&quot;tipologiaDato&quot;/>&lt;/tipologiaDato>&lt;xsl:if test=&quot;valoreAttributoOLD&quot;>&lt;valoreAttributoOLD>&lt;xsl:value-of select=&quot;valoreAttributoOLD&quot;/>&lt;/valoreAttributoOLD>&lt;/xsl:if>&lt;/attributiDettaglioOrdine>&lt;/xsl:for-each>&lt;progressivo>&lt;xsl:value-of select=&quot;progressivo&quot;/>&lt;/progressivo>&lt;xsl:if test=&quot;IDRisorsaNOW&quot;>&lt;IDRisorsaNOW>&lt;xsl:value-of select=&quot;IDRisorsaNOW&quot;/>&lt;/IDRisorsaNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;azione&quot;>&lt;azione>&lt;xsl:value-of select=&quot;azione&quot;/>&lt;/azione>&lt;/xsl:if>&lt;/dettaglioordine>&lt;/xsl:for-each>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/ordine/sede&quot;>&lt;sede>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;IDSede>&lt;xsl:value-of select=&quot;IDSede&quot;/>&lt;/IDSede>&lt;xsl:if test=&quot;particellaToponomastica&quot;>&lt;particellaToponomastica>&lt;xsl:value-of select=&quot;particellaToponomastica&quot;/>&lt;/particellaToponomastica>&lt;/xsl:if>&lt;xsl:if test=&quot;via&quot;>&lt;via>&lt;xsl:value-of select=&quot;via&quot;/>&lt;/via>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceVia&quot;>&lt;codiceVia>&lt;xsl:value-of select=&quot;codiceVia&quot;/>&lt;/codiceVia>&lt;/xsl:if>&lt;xsl:if test=&quot;civico&quot;>&lt;civico>&lt;xsl:value-of select=&quot;civico&quot;/>&lt;/civico>&lt;/xsl:if>&lt;xsl:if test=&quot;localita&quot;>&lt;localita>&lt;xsl:value-of select=&quot;localita&quot;/>&lt;/localita>&lt;/xsl:if>&lt;xsl:if test=&quot;comune&quot;>&lt;comune>&lt;xsl:value-of select=&quot;comune&quot;/>&lt;/comune>&lt;/xsl:if>&lt;xsl:if test=&quot;provincia&quot;>&lt;provincia>&lt;xsl:value-of select=&quot;provincia&quot;/>&lt;/provincia>&lt;/xsl:if>&lt;xsl:if test=&quot;CAP&quot;>&lt;CAP>&lt;xsl:value-of select=&quot;CAP&quot;/>&lt;/CAP>&lt;/xsl:if>&lt;xsl:if test=&quot;complesso&quot;>&lt;complesso>&lt;xsl:value-of select=&quot;complesso&quot;/>&lt;/complesso>&lt;/xsl:if>&lt;xsl:if test=&quot;interno&quot;>&lt;interno>&lt;xsl:value-of select=&quot;interno&quot;/>&lt;/interno>&lt;/xsl:if>&lt;xsl:if test=&quot;scala&quot;>&lt;scala>&lt;xsl:value-of select=&quot;scala&quot;/>&lt;/scala>&lt;/xsl:if>&lt;xsl:if test=&quot;piano&quot;>&lt;piano>&lt;xsl:value-of select=&quot;piano&quot;/>&lt;/piano>&lt;/xsl:if>&lt;xsl:if test=&quot;indirizzoEsteso&quot;>&lt;indirizzoEsteso>&lt;xsl:value-of select=&quot;indirizzoEsteso&quot;/>&lt;/indirizzoEsteso>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceISTATComune&quot;>&lt;codiceISTATComune>&lt;xsl:value-of select=&quot;codiceISTATComune&quot;/>&lt;/codiceISTATComune>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceISTATProvincia&quot;>&lt;codiceISTATProvincia>&lt;xsl:value-of select=&quot;codiceISTATProvincia&quot;/>&lt;/codiceISTATProvincia>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceToponomastica&quot;>&lt;codiceToponomastica>&lt;xsl:value-of select=&quot;codiceToponomastica&quot;/>&lt;/codiceToponomastica>&lt;/xsl:if>&lt;tipologiaSede>&lt;xsl:value-of select=&quot;tipologiaSede&quot;/>&lt;/tipologiaSede>&lt;xsl:if test=&quot;siglaProvincia&quot;>&lt;siglaProvincia>&lt;xsl:value-of select=&quot;siglaProvincia&quot;/>&lt;/siglaProvincia>&lt;/xsl:if>&lt;xsl:if test=&quot;codiceNumeroCivico&quot;>&lt;codiceNumeroCivico>&lt;xsl:value-of select=&quot;codiceNumeroCivico&quot;/>&lt;/codiceNumeroCivico>&lt;/xsl:if>&lt;operatore>&lt;xsl:value-of select=&quot;operatore&quot;/>&lt;/operatore>&lt;xsl:if test=&quot;CODICECOMUNEINPUT&quot;>&lt;CODICECOMUNEINPUT>&lt;xsl:value-of select=&quot;CODICECOMUNEINPUT&quot;/>&lt;/CODICECOMUNEINPUT>&lt;/xsl:if>&lt;/sede>&lt;/xsl:for-each>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/ordine/referente&quot;>&lt;referente>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;created>&lt;xsl:value-of select=&quot;created&quot;/>&lt;/created>&lt;xsl:if test=&quot;lastUpdate&quot;>&lt;lastUpdate>&lt;xsl:value-of select=&quot;lastUpdate&quot;/>&lt;/lastUpdate>&lt;/xsl:if>&lt;operatore>&lt;xsl:value-of select=&quot;operatore&quot;/>&lt;/operatore>&lt;xsl:if test=&quot;progressivoReferente&quot;>&lt;progressivoReferente>&lt;xsl:value-of select=&quot;progressivoReferente&quot;/>&lt;/progressivoReferente>&lt;/xsl:if>&lt;tipoReferenteOrdine>&lt;xsl:value-of select=&quot;tipoReferenteOrdine&quot;/>&lt;/tipoReferenteOrdine>&lt;xsl:if test=&quot;qualificaReferente&quot;>&lt;qualificaReferente>&lt;xsl:value-of select=&quot;qualificaReferente&quot;/>&lt;/qualificaReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;cognomeReferente&quot;>&lt;cognomeReferente>&lt;xsl:value-of select=&quot;cognomeReferente&quot;/>&lt;/cognomeReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;nomeReferente&quot;>&lt;nomeReferente>&lt;xsl:value-of select=&quot;nomeReferente&quot;/>&lt;/nomeReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;telefonoFissoReferente&quot;>&lt;telefonoFissoReferente>&lt;xsl:value-of select=&quot;telefonoFissoReferente&quot;/>&lt;/telefonoFissoReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;telefonoMobileReferente&quot;>&lt;telefonoMobileReferente>&lt;xsl:value-of select=&quot;telefonoMobileReferente&quot;/>&lt;/telefonoMobileReferente>&lt;/xsl:if>&lt;xsl:if test=&quot;emailReferente&quot;>&lt;emailReferente>&lt;xsl:value-of select=&quot;emailReferente&quot;/>&lt;/emailReferente>&lt;/xsl:if>&lt;/referente>&lt;/xsl:for-each>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaAccesso&quot;>&lt;tipologiaAccesso>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaAccesso&quot;/>&lt;/tipologiaAccesso>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaQualita&quot;>&lt;tipologiaQualita>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaQualita&quot;/>&lt;/tipologiaQualita>&lt;/xsl:if>&lt;offerta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/offerta&quot;/>&lt;/offerta>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceSLAAssurance&quot;>&lt;codiceSLAAssurance>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceSLAAssurance&quot;/>&lt;/codiceSLAAssurance>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DPS&quot;>&lt;DPS>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DPS&quot;/>&lt;/DPS>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/totaleOrdiniPacchetto&quot;>&lt;totaleOrdiniPacchetto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/totaleOrdiniPacchetto&quot;/>&lt;/totaleOrdiniPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/distretto&quot;>&lt;distretto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/distretto&quot;/>&lt;/distretto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numeroFittizio&quot;>&lt;numeroFittizio>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numeroFittizio&quot;/>&lt;/numeroFittizio>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numeroTelefonico&quot;>&lt;numeroTelefonico>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numeroTelefonico&quot;/>&lt;/numeroTelefonico>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDRisorsaNOW&quot;>&lt;IDRisorsaNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDRisorsaNOW&quot;/>&lt;/IDRisorsaNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOMDonating&quot;>&lt;codificaOLOAGCOMDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOMDonating&quot;/>&lt;/codificaOLOAGCOMDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOMDonor&quot;>&lt;codificaOLOAGCOMDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLOAGCOMDonor&quot;/>&lt;/codificaOLOAGCOMDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codificaOLONOWDonating&quot;>&lt;codificaOLONOWDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLONOWDonating&quot;/>&lt;/codificaOLONOWDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codificaOLONOWDonor&quot;>&lt;codificaOLONOWDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codificaOLONOWDonor&quot;/>&lt;/codificaOLONOWDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaScenario&quot;>&lt;tipologiaScenario>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaScenario&quot;/>&lt;/tipologiaScenario>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/tipologiaLinea&quot;>&lt;tipologiaLinea>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/tipologiaLinea&quot;/>&lt;/tipologiaLinea>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/numTelPrincipale&quot;>&lt;numTelPrincipale>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/numTelPrincipale&quot;/>&lt;/numTelPrincipale>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codiceFatturazioneJPUB&quot;>&lt;codiceFatturazioneJPUB>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codiceFatturazioneJPUB&quot;/>&lt;/codiceFatturazioneJPUB>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/IDPacchettoNOW&quot;>&lt;IDPacchettoNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/IDPacchettoNOW&quot;/>&lt;/IDPacchettoNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/codicePacchettoNOW&quot;>&lt;codicePacchettoNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/codicePacchettoNOW&quot;/>&lt;/codicePacchettoNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/operatoreRete&quot;>&lt;operatoreRete>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/operatoreRete&quot;/>&lt;/operatoreRete>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ordine/DACOpereSpeciali&quot;>&lt;DACOpereSpeciali>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ordine/DACOpereSpeciali&quot;/>&lt;/DACOpereSpeciali>&lt;/xsl:if>&lt;/ordine>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;xsl:if test=&quot;$ParseXmlRichiesta/dataControlliFormali&quot;>&lt;dataControlliFormali>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/dataControlliFormali&quot;/>&lt;/dataControlliFormali>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/totaleRichiesteRilevPac&quot;>&lt;totaleRichiesteRilevPac>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/totaleRichiesteRilevPac&quot;/>&lt;/totaleRichiesteRilevPac>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDContratto&quot;>&lt;IDContratto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDContratto&quot;/>&lt;/IDContratto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/ISTATComune&quot;>&lt;ISTATComune>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/ISTATComune&quot;/>&lt;/ISTATComune>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/localita&quot;>&lt;localita>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/localita&quot;/>&lt;/localita>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/offerta&quot;>&lt;offerta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/offerta&quot;/>&lt;/offerta>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/flagNaked&quot;>&lt;flagNaked>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/flagNaked&quot;/>&lt;/flagNaked>&lt;/xsl:if>&lt;IDRichiestaLocalizzatore>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRichiestaLocalizzatore&quot;/>&lt;/IDRichiestaLocalizzatore>&lt;xsl:if test=&quot;$ParseXmlRichiesta/testMode&quot;>&lt;testMode>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/testMode&quot;/>&lt;/testMode>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/DAD&quot;>&lt;DAD>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/DAD&quot;/>&lt;/DAD>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDFasciaOraria&quot;>&lt;IDFasciaOraria>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDFasciaOraria&quot;/>&lt;/IDFasciaOraria>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDOfferta&quot;>&lt;IDOfferta>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDOfferta&quot;/>&lt;/IDOfferta>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/DRO&quot;>&lt;DRO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/DRO&quot;/>&lt;/DRO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDNotifica&quot;>&lt;IDNotifica>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDNotifica&quot;/>&lt;/IDNotifica>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLOAGCOMDonating&quot;>&lt;codificaOLOAGCOMDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLOAGCOMDonating&quot;/>&lt;/codificaOLOAGCOMDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLOAGCOMDonor&quot;>&lt;codificaOLOAGCOMDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLOAGCOMDonor&quot;/>&lt;/codificaOLOAGCOMDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLONOWDonating&quot;>&lt;codificaOLONOWDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLONOWDonating&quot;/>&lt;/codificaOLONOWDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLONOWDonor&quot;>&lt;codificaOLONOWDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLONOWDonor&quot;/>&lt;/codificaOLONOWDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/numeroTelefonico&quot;>&lt;numeroTelefonico>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/numeroTelefonico&quot;/>&lt;/numeroTelefonico>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/tipologiaScenario&quot;>&lt;tipologiaScenario>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipologiaScenario&quot;/>&lt;/tipologiaScenario>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/DAC&quot;>&lt;DAC>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/DAC&quot;/>&lt;/DAC>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/progressivoNotificaDTU&quot;>&lt;progressivoNotificaDTU>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/progressivoNotificaDTU&quot;/>&lt;/progressivoNotificaDTU>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codificaOLOAGCOMRic&quot;>&lt;codificaOLOAGCOMRic>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codificaOLOAGCOMRic&quot;/>&lt;/codificaOLOAGCOMRic>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDNotificaDonor&quot;>&lt;IDNotificaDonor>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDNotificaDonor&quot;/>&lt;/IDNotificaDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDNotificaDonating&quot;>&lt;IDNotificaDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDNotificaDonating&quot;/>&lt;/IDNotificaDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/esito&quot;>&lt;esito>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/esito&quot;/>&lt;/esito>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceCausaleInterno&quot;>&lt;codiceCausaleInterno>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceCausaleInterno&quot;/>&lt;/codiceCausaleInterno>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/dataEspletamentoDONOR&quot;>&lt;dataEspletamentoDONOR>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/dataEspletamentoDONOR&quot;/>&lt;/dataEspletamentoDONOR>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceTrasformazione&quot;>&lt;codiceTrasformazione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceTrasformazione&quot;/>&lt;/codiceTrasformazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/flagOpereSpeciali&quot;>&lt;flagOpereSpeciali>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/flagOpereSpeciali&quot;/>&lt;/flagOpereSpeciali>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDRisorsaCorrelato&quot;>&lt;IDRisorsaCorrelato>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRisorsaCorrelato&quot;/>&lt;/IDRisorsaCorrelato>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDRichiestaOLOGenerante&quot;>&lt;IDRichiestaOLOGenerante>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDRichiestaOLOGenerante&quot;/>&lt;/IDRichiestaOLOGenerante>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/tipoComunicazioneNP&quot;>&lt;tipoComunicazioneNP>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipoComunicazioneNP&quot;/>&lt;/tipoComunicazioneNP>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/servizioOrigine&quot;>&lt;servizioOrigine>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/servizioOrigine&quot;/>&lt;/servizioOrigine>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceSTS&quot;>&lt;codiceSTS>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceSTS&quot;/>&lt;/codiceSTS>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/caratteristica&quot;>&lt;caratteristica>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/caratteristica&quot;/>&lt;/caratteristica>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceRisorsaDonating&quot;>&lt;codiceRisorsaDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceRisorsaDonating&quot;/>&lt;/codiceRisorsaDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceRisorsaDonating2&quot;>&lt;codiceRisorsaDonating2>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceRisorsaDonating2&quot;/>&lt;/codiceRisorsaDonating2>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/cowCodeOLO&quot;>&lt;cowCodeOLO>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/cowCodeOLO&quot;/>&lt;/cowCodeOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/cowCodeOLO2&quot;>&lt;cowCodeOLO2>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/cowCodeOLO2&quot;/>&lt;/cowCodeOLO2>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceSessione&quot;>&lt;codiceSessione>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceSessione&quot;/>&lt;/codiceSessione>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceSessione2&quot;>&lt;codiceSessione2>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceSessione2&quot;/>&lt;/codiceSessione2>&lt;/xsl:if>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/DNAggiuntivo&quot;>&lt;DNAggiuntivo>&lt;xsl:value-of select=&quot;.&quot;/>&lt;/DNAggiuntivo>&lt;/xsl:for-each>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDPreventivo&quot;>&lt;IDPreventivo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDPreventivo&quot;/>&lt;/IDPreventivo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDConsuntivo&quot;>&lt;IDConsuntivo>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDConsuntivo&quot;/>&lt;/IDConsuntivo>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/noteAltreLavorazioni&quot;>&lt;noteAltreLavorazioni>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/noteAltreLavorazioni&quot;/>&lt;/noteAltreLavorazioni>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codicePacchettoNOW&quot;>&lt;codicePacchettoNOW>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codicePacchettoNOW&quot;/>&lt;/codicePacchettoNOW>&lt;/xsl:if>&lt;xsl:for-each select=&quot;$ParseXmlRichiesta/assetTarget&quot;>&lt;assetTarget>&lt;IDAsset>&lt;xsl:value-of select=&quot;IDAsset&quot;/>&lt;/IDAsset>&lt;flagInLavorazione>&lt;xsl:value-of select=&quot;flagInLavorazione&quot;/>&lt;/flagInLavorazione>&lt;/assetTarget>&lt;/xsl:for-each>&lt;xsl:if test=&quot;$ParseXmlRichiesta/operatoreRete&quot;>&lt;operatoreRete>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/operatoreRete&quot;/>&lt;/operatoreRete>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/transactionIDLocator&quot;>&lt;transactionIDLocator>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/transactionIDLocator&quot;/>&lt;/transactionIDLocator>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/flagNumAggiuntive&quot;>&lt;flagNumAggiuntive>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/flagNumAggiuntive&quot;/>&lt;/flagNumAggiuntive>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/IDAnagraficaCausaleGUI&quot;>&lt;IDAnagraficaCausaleGUI>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/IDAnagraficaCausaleGUI&quot;/>&lt;/IDAnagraficaCausaleGUI>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceRifiutoDonating&quot;>&lt;codiceRifiutoDonating>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceRifiutoDonating&quot;/>&lt;/codiceRifiutoDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/DACFile&quot;>&lt;DACFile>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/DACFile&quot;/>&lt;/DACFile>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/tipologiaSottolav&quot;>&lt;tipologiaSottolav>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/tipologiaSottolav&quot;/>&lt;/tipologiaSottolav>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/codiceRifiuto&quot;>&lt;codiceRifiuto>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/codiceRifiuto&quot;/>&lt;/codiceRifiuto>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/routingNumber&quot;>&lt;routingNumber>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/routingNumber&quot;/>&lt;/routingNumber>&lt;/xsl:if>&lt;xsl:if test=&quot;$ParseXmlRichiesta/progressivoEmissioneDTU&quot;>&lt;progressivoEmissioneDTU>&lt;xsl:value-of select=&quot;$ParseXmlRichiesta/progressivoEmissioneDTU&quot;/>&lt;/progressivoEmissioneDTU>&lt;/xsl:if>&lt;/ns:RichiestaElement>&lt;xsl:choose>&lt;xsl:when test=&quot;$Start/tns:StrutturaRichiesta != &amp;quot;REGOLATORIO&amp;quot;&quot;>&lt;tns:Notifica>&lt;xsl:choose>&lt;xsl:when test=&quot;$Start/tns:StrutturaRichiesta = &amp;quot;NGA&amp;quot;&quot;>&lt;tns:RICHIESTA_NGA>&lt;xsl:copy-of select=&quot;$ParseNGA&quot;/>&lt;/tns:RICHIESTA_NGA>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:RICHIESTA_XDSL>&lt;xsl:copy-of select=&quot;$ParseXDSL&quot;/>&lt;/tns:RICHIESTA_XDSL>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/tns:Notifica>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;/tns:ParseSchemaResponseStruttura>&lt;/xsl:template>&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.internal.end"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:internalactivities="http://ns.tibco.com/bw/core/internalactivity" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/core/internalactivity#//End"/>
+                                    <value xsi:type="internalactivities:End"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/parsexml&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ParseSchema/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Start&quot;/>&lt;xsl:param name=&quot;Intestazione&quot;/>&lt;xsl:param name=&quot;NamespaceNGA&quot;/>&lt;xsl:template name=&quot;ParseNGA-input&quot; match=&quot;/&quot;>&lt;tns:xmlString>&lt;xsl:value-of select=&quot;concat($Intestazione, $NamespaceNGA, substring-after($Start/tns1:StringaNotifica, &amp;quot;>&amp;quot;))&quot;/>&lt;/tns:xmlString>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="ParseNGA-input" name="ParseNGA"
+                    outputVariable="ParseNGA"
+                    tibex:xpdlId="99122671-d83f-4c1f-a154-7449747b49ef" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="StartToParseXml1"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="ParseNGAToJDBCQuery"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/parsexml&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ParseSchema/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Start&quot;/>&lt;xsl:param name=&quot;Intestazione&quot;/>&lt;xsl:param name=&quot;NamespaceNGA&quot;/>&lt;xsl:template name=&quot;ParseNGA-input&quot; match=&quot;/&quot;>&lt;tns:xmlString>&lt;xsl:value-of select=&quot;concat($Intestazione, $NamespaceNGA, substring-after($Start/tns1:StringaNotifica, &amp;quot;>&amp;quot;))&quot;/>&lt;/tns:xmlString>&lt;/xsl:template>&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.xml.parsexml"
+                            version="6.0.0.20121128"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:nga="http://xsd.telecomitalia.it/crm/xdsl/nga"
+                            xmlns:palettexml="http://ns.tibco.com/bw/palette/xmlpalette" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/xmlpalette#//ParseXml"/>
+                                    <value inputStyle="text"
+                                    outputElementQName="nga:RICHIESTA"
+                                    validateOutput="true" xsi:type="palettexml:ParseXml"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/parsexml&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ParseSchema/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Start&quot;/>&lt;xsl:param name=&quot;Intestazione&quot;/>&lt;xsl:param name=&quot;NamespaceXDSL&quot;/>&lt;xsl:template name=&quot;ParseXDSL-input&quot; match=&quot;/&quot;>&lt;tns:xmlString>&lt;xsl:value-of select=&quot;concat($Intestazione, $NamespaceXDSL, substring-after($Start/tns1:StringaNotifica, &amp;quot;>&amp;quot;))&quot;/>&lt;/tns:xmlString>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="ParseXDSL-input" name="ParseXDSL"
+                    outputVariable="ParseXDSL"
+                    tibex:xpdlId="a2446ed7-31f3-4c30-8eb6-d983eec96273" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="StartToParseXml2"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="ParseXml2ToEnd"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/parsexml&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ParseSchema/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Start&quot;/>&lt;xsl:param name=&quot;Intestazione&quot;/>&lt;xsl:param name=&quot;NamespaceXDSL&quot;/>&lt;xsl:template name=&quot;ParseXDSL-input&quot; match=&quot;/&quot;>&lt;tns:xmlString>&lt;xsl:value-of select=&quot;concat($Intestazione, $NamespaceXDSL, substring-after($Start/tns1:StringaNotifica, &amp;quot;>&amp;quot;))&quot;/>&lt;/tns:xmlString>&lt;/xsl:template>&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.xml.parsexml"
+                            version="6.0.0.20121128"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:order="http://xsd.telecomitalia.it/crm/xdsl/order"
+                            xmlns:palettexml="http://ns.tibco.com/bw/palette/xmlpalette" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/xmlpalette#//ParseXml"/>
+                                    <value inputStyle="text"
+                                    outputElementQName="order:RICHIESTA"
+                                    validateOutput="true" xsi:type="palettexml:ParseXml"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+8c628e08-ba7f-4a3b-ab45-3a797b04b1df+input&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ParseSchema/&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Start&quot;/>&lt;xsl:template name=&quot;JDBCQuery-input&quot; match=&quot;/&quot;>&lt;tns:jdbcQueryActivityInput>&lt;ID_RICH_OLO>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($Start/tns1:IDRichiestaOLO)&quot;>&lt;xsl:value-of select=&quot;$Start/tns1:IDRichiestaOLO&quot;/>&lt;/xsl:when>&lt;xsl:otherwise>&lt;xsl:attribute name=&quot;xsi:nil&quot;>true&lt;/xsl:attribute>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/ID_RICH_OLO>&lt;/tns:jdbcQueryActivityInput>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="JDBCQuery-input" name="JDBCQuery"
+                    outputVariable="JDBCQuery"
+                    tibex:xpdlId="8c628e08-ba7f-4a3b-ab45-3a797b04b1df" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="ParseXml2ToEnd"/>
+                        <bpws:target linkName="ParseNGAToJDBCQuery"/>
+                        <bpws:target linkName="StartToJDBCQuery"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="JDBCQueryToEnd"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+8c628e08-ba7f-4a3b-ab45-3a797b04b1df+input&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ParseSchema/&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Start&quot;/>&lt;xsl:template name=&quot;JDBCQuery-input&quot; match=&quot;/&quot;>&lt;tns:jdbcQueryActivityInput>&lt;ID_RICH_OLO>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($Start/tns1:IDRichiestaOLO)&quot;>&lt;xsl:value-of select=&quot;$Start/tns1:IDRichiestaOLO&quot;/>&lt;/xsl:when>&lt;xsl:otherwise>&lt;xsl:attribute name=&quot;xsi:nil&quot;>true&lt;/xsl:attribute>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/ID_RICH_OLO>&lt;/tns:jdbcQueryActivityInput>&lt;/xsl:template>&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.jdbc.JDBCQuery"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:jdbcPalette="http://ns.tibco.com/bw/palette/jdbc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <attributeBindings
+                                bindingType="moduleProperty"
+                                eAttributeName="timeout" processProperty="Timeout"/>
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/jdbc#//JDBCQueryActivity"/>
+                                    <value maxRows="100"
+                                    sharedResourceProperty="jdbcProperty"
+                                    sqlStatement="SELECT CONTENUTO_TRACC&#xa;FROM RICH_ORDN_COMUNIC_TRACC&#xa;WHERE ID_RICH_OLO = ?&#xa;ORDER BY TIMSTP_TRACC DESC" xsi:type="jdbcPalette:JDBCQueryActivity">
+                                    <PreparedParameters
+                                    DataType="12"
+                                    DataTypeDisplayValue="VARCHAR" ParameterName="ID_RICH_OLO"/>
+                                    <columnMetadata
+                                    columnName="CONTENUTO_TRACC"
+                                    dataType="2005" typeName="CLOB"/>
+                                    </value>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="substring-after(tib:substring-before-last($JDBCQuery/Record[1]/CONTENUTO_TRACC, &quot;&lt;/request:strutturaRichiesta>]]>&quot;), 'xsi:type=&quot;casedataV1:Richiesta&quot;>')"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"
+                    inputVariable="Tracciamento"
+                    name="TracciamentoAssign"
+                    outputVariable="Tracciamento"
+                    tibex:xpdlId="270b7fa9-fe61-4e83-9294-617c7b9d1de0" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="JDBCQueryToEnd"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="TracciamentoAssignToParseXmlRichiesta"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="substring-after(tib:substring-before-last($JDBCQuery/Record[1]/CONTENUTO_TRACC, &quot;&lt;/request:strutturaRichiesta>]]>&quot;), 'xsi:type=&quot;casedataV1:Richiesta&quot;>')" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.bwassign"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//BWAssign"/>
+                                    <value
+                                    processVariable="Tracciamento" xsi:type="generalactivities:BWAssign"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/parsexml&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ReplaceAllString/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Intestazione&quot;/>&lt;xsl:param name=&quot;AperturaTag&quot;/>&lt;xsl:param name=&quot;ChiusuraTag&quot;/>&lt;xsl:param name=&quot;Tracciamento&quot;/>&lt;xsl:template name=&quot;ParseXmlRichiesta-input&quot; match=&quot;/&quot;>&lt;tns:xmlString>&lt;xsl:value-of select=&quot;concat($Intestazione, $AperturaTag, $Tracciamento, $ChiusuraTag)&quot;/>&lt;/tns:xmlString>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="ParseXmlRichiesta-input"
+                    name="ParseXmlRichiesta"
+                    outputVariable="ParseXmlRichiesta"
+                    tibex:xpdlId="d764014b-935a-47ba-b09c-620275a5001e" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="TracciamentoAssignToParseXmlRichiesta"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="ParseXmlToEnd"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/parsexml&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ReplaceAllString/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Intestazione&quot;/>&lt;xsl:param name=&quot;AperturaTag&quot;/>&lt;xsl:param name=&quot;ChiusuraTag&quot;/>&lt;xsl:param name=&quot;Tracciamento&quot;/>&lt;xsl:template name=&quot;ParseXmlRichiesta-input&quot; match=&quot;/&quot;>&lt;tns:xmlString>&lt;xsl:value-of select=&quot;concat($Intestazione, $AperturaTag, $Tracciamento, $ChiusuraTag)&quot;/>&lt;/tns:xmlString>&lt;/xsl:template>&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.xml.parsexml"
+                            version="6.0.0.20121128"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:casedata="http://NOW.it.telecomitalia.it/casedata"
+                            xmlns:palettexml="http://ns.tibco.com/bw/palette/xmlpalette" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/xmlpalette#//ParseXml"/>
+                                    <value inputStyle="text"
+                                    outputElementQName="casedata:RichiestaElement"
+                                    validateOutput="true" xsi:type="palettexml:ParseXml"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+        </bpws:flow>
+    </bpws:scope>
+</bpws:process>

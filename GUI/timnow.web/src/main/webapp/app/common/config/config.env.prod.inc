@@ -1,0 +1,1 @@
+ .constant('BASEPATH', 'rest/')

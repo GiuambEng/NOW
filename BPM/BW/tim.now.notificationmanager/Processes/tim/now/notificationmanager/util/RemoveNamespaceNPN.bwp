@@ -1,0 +1,923 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpws:process exitOnStandardFault="no"
+    name="tim.now.notificationmanager.util.RemoveNamespaceNPN"
+    suppressJoinFailure="yes"
+    targetNamespace="http://xmlns.example.com/20160919171456"
+    xmlns:bpws="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+    xmlns:info="http://www.tibco.com/bw/process/info"
+    xmlns:ns="http://xmlns.example.com/20160919171456PLT"
+    xmlns:ns0="http://www.tibco.com/pe/EngineTypes"
+    xmlns:ns1="http://www.tim.com/NOW/wsdl/abstract/RemoveNamespace"
+    xmlns:ns2="http://www.tim.com/NOW/xsd/GenericLogger"
+    xmlns:ns3="http://www.tibco.com/namespaces/tnt/plugins/transformxml"
+    xmlns:ns4="http://www.tibco.com/namespaces/tnt/plugins/renderxml"
+    xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+    xmlns:sca-bpel="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"
+    xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"
+    xmlns:tibprop="http://ns.tibco.com/bw/property"
+    xmlns:tns="http://xsd.telecomitalia.it/crm/npn" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <tibex:Types>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/EngineTypes"
+            xmlns:tns="http://www.tibco.com/pe/EngineTypes" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ErrorReport">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="FullClass" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Class" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="FaultDetail">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ActivityName" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ProcessContext">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="JobId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessInstanceId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0"
+                        name="CustomJobId" type="xs:string"/>
+                    <!--xs:element name="RestartedFromCheckpoint" form="unqualified" block="extension restriction substitution" type="xs:boolean"/-->
+                    <!--xs:element minOccurs="0" maxOccurs="unbounded" name="TrackingInfo" form="unqualified" block="extension restriction substitution" type="xs:string"/-->
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="anydata">
+                <xs:sequence>
+                    <xs:any namespace="##any" processContents="lax"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ErrorReport" type="tns:ErrorReport"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="FaultDetail" type="tns:FaultDetail"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ProcessContext" type="tns:ProcessContext"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="CorrelationValue" type="xs:string"/>
+        </xs:schema>
+        <schema attributeFormDefault="unqualified"
+            elementFormDefault="unqualified"
+            targetNamespace="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions"
+            version="" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions">
+            <complexType name="ActivityExceptionType">
+                <sequence>
+                    <element name="msg" type="string"/>
+                    <element minOccurs="0" name="msgCode" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="ActivityException" type="tns:ActivityExceptionType"/>
+            <complexType name="ActivityTimedOutExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType"/>
+                </complexContent>
+            </complexType>
+            <element name="ActivityTimedOutException" type="tns:ActivityTimedOutExceptionType"/>
+        </schema>
+        <xsd:schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/transformxml"
+            xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/transformxml" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:complexType name="bytesInputType">
+                <xsd:sequence>
+                    <xsd:element ref="tns:xmlBytesIn"/>
+                    <xsd:element minOccurs="0" ref="tns:stylesheet"/>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0" ref="tns:parameter"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="errorType">
+                <xsd:sequence>
+                    <xsd:element name="message" type="xsd:string"/>
+                    <xsd:element name="location" type="xsd:string"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="outputType">
+                <xsd:sequence>
+                    <xsd:element name="xmlOutput" type="xsd:base64Binary"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="parameterType">
+                <xsd:sequence>
+                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="value" type="xsd:string"/>
+                    <xsd:element name="isXMLDocument" type="xsd:boolean"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="textInputType">
+                <xsd:sequence>
+                    <xsd:element ref="tns:xmlString"/>
+                    <xsd:element minOccurs="0" ref="tns:stylesheet"/>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0" ref="tns:parameter"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="treeInputType">
+                <xsd:sequence>
+                    <xsd:element ref="tns:xmlTree"/>
+                    <xsd:element minOccurs="0" ref="tns:stylesheet"/>
+                    <xsd:element maxOccurs="unbounded" minOccurs="0" ref="tns:parameter"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:complexType name="treeOutputType">
+                <xsd:sequence>
+                    <xsd:any namespace="##any" processContents="strict"/>
+                </xsd:sequence>
+            </xsd:complexType>
+            <xsd:element name="bytesInput" type="tns:bytesInputType"/>
+            <xsd:element name="engine" type="xsd:string"/>
+            <xsd:element name="error" type="tns:errorType"/>
+            <xsd:element name="inputStyle" type="xsd:string"/>
+            <xsd:element name="parameter" type="tns:parameterType"/>
+            <xsd:element name="stylesheet" type="xsd:string"/>
+            <xsd:element name="textInput" type="tns:textInputType"/>
+            <xsd:element name="treeInput" type="tns:treeInputType"/>
+            <xsd:element name="treeOutput" type="tns:treeOutputType"/>
+            <xsd:element name="xmlBytes" type="tns:outputType"/>
+            <xsd:element name="xmlBytesIn" type="xsd:base64Binary"/>
+            <xsd:element name="xmlInput" type="xsd:base64Binary"/>
+            <xsd:element name="xmlString" type="xsd:string"/>
+            <xsd:element name="xmlTree">
+                <xsd:complexType>
+                    <xsd:sequence>
+                        <xsd:any namespace="##any" processContents="strict"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+            </xsd:element>
+        </xsd:schema>
+        <xsd:schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/renderxml"
+            xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/renderxml" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <xsd:element name="byteEncoding" type="xsd:string"/>
+            <xsd:element name="cdataSections" type="xsd:string"/>
+            <xsd:element name="renderAsText" type="xsd:boolean"/>
+            <xsd:element name="renderDefaultPrefix" type="xsd:string"/>
+            <xsd:element name="term">
+                <xsd:complexType>
+                    <xsd:attribute name="ref" type="xsd:IDREF"/>
+                </xsd:complexType>
+            </xsd:element>
+            <xsd:element name="textEncoding" type="xsd:string"/>
+            <xsd:element name="validateInput" type="xsd:boolean"/>
+            <xsd:element name="writeXsiTypes" type="xsd:boolean"/>
+            <xsd:element name="xmlBytes" type="xsd:base64Binary"/>
+            <xsd:element name="xmlString" type="xsd:string"/>
+        </xsd:schema>
+        <wsdl:definitions
+            targetNamespace="http://xmlns.example.com/20160919171456PLT"
+            xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+            xmlns:ptyp="http://www.tim.com/NOW/wsdl/abstract/RemoveNamespace"
+            xmlns:tns="http://xmlns.example.com/20160919171456PLT"
+            xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+            xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <plnk:partnerLinkType name="partnerLinkType">
+                <plnk:role name="use" portType="ptyp:RemoveNamespaceNPNPortType"/>
+            </plnk:partnerLinkType>
+            <wsdl:import namespace="http://www.tim.com/NOW/wsdl/abstract/RemoveNamespace"/>
+        </wsdl:definitions>
+    </tibex:Types>
+    <tibex:ProcessInfo callable="false" createdBy="Bigboss"
+        createdOn="Mon Sep 19 17:14:56 CEST 2016" description=""
+        extraErrorVars="false" modifiers="public"
+        productVersion="6.3.2 V30 2016-04-28" scalable="true"
+        singleton="true" stateless="false" type="IT"/>
+    <tibex:ProcessInterface context="" input="" output=""/>
+    <tibex:ProcessTemplateConfigurations/>
+    <notation:Diagram measurementUnit="Pixel" type="BWProcess"
+        xmlns:bwnotation="http://tns.tibco.com/bw/runtime/BWNotation"
+        xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <children type="2001">
+            <children type="5001"/>
+            <children type="3001">
+                <children type="4001">
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="40011"/>
+                    <children type="3006">
+                        <styles xsi:type="notation:DrawerStyle"/>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <styles xsi:type="bwnotation:BackgroundStyle"/>
+                        <styles xsi:type="bwnotation:ResizingStyle"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@partnerLinks/@children.0"/>
+                    <layoutConstraint xsi:type="notation:Bounds"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <children type="3002">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3003">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3004">
+                <children type="4018">
+                    <children type="3018">
+                        <children type="4020">
+                            <children type="3020">
+                                <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint x="3"
+                                    xsi:type="notation:Bounds" y="126"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint x="526"
+                                    xsi:type="notation:Bounds" y="126"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.2"/>
+                                    <layoutConstraint x="106"
+                                    xsi:type="notation:Bounds" y="126"/>
+                                    </children>
+                                    <children type="4002 bw.xml.transformxml">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.3"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="326"
+                                    xsi:type="notation:Bounds" y="126"/>
+                                    </children>
+                                    <children type="4002 bw.xml.renderxml">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.4"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="220"
+                                    xsi:type="notation:Bounds" y="35"/>
+                                    </children>
+                                    <children type="4002 bw.xml.renderxml">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.5"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="220"
+                                    xsi:type="notation:Bounds" y="222"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.6"/>
+                                    <layoutConstraint x="435"
+                                    xsi:type="notation:Bounds" y="126"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    <layoutConstraint height="343"
+                                    width="659" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity"/>
+                            <layoutConstraint height="272" width="662" xsi:type="notation:Bounds"/>
+                        </children>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <element href="//0/@process/@activity"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@activity"/>
+                    <layoutConstraint height="296" width="662" x="1"
+                        xsi:type="notation:Bounds" y="1"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+            <element href="//0/@process"/>
+            <layoutConstraint height="419" width="1004" xsi:type="notation:Bounds"/>
+        </children>
+        <styles xsi:type="notation:DiagramStyle"/>
+        <element href="//0"/>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.6" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.1"/>
+            <bendpoints points="[25, -1, -71, 0]$[72, 0, -24, 1]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.2"/>
+            <bendpoints points="[25, -12, -65, 31]$[66, -31, -24, 12]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.5" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.3"/>
+            <bendpoints points="[25, 12, -66, -32]$[67, 32, -24, -12]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.4"/>
+            <bendpoints points="[25, 10, -82, -33]$[83, 33, -24, -10]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.5"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.5"/>
+            <bendpoints points="[25, -10, -81, 34]$[82, -34, -24, 10]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.6"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.6"/>
+            <bendpoints points="[25, 0, -66, 0]$[67, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+    </notation:Diagram>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="../../../../../Service%20Descriptors/NotificationManager/RemoveNamespace.wsdl" namespace="http://www.tim.com/NOW/wsdl/abstract/RemoveNamespace"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/GenericLogger"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema"
+        location="../../../../../Schemas/SchemaOLO/NP_N.xsd" namespace=""/>
+    <bpws:partnerLinks>
+        <bpws:partnerLink myRole="use" name="RemoveNamespaceNPNPortType"
+            partnerLinkType="ns:partnerLinkType" sca-bpel:ignore="false" sca-bpel:service="RemoveNamespaceNPNPortType"/>
+    </bpws:partnerLinks>
+    <bpws:variables>
+        <bpws:variable element="ns0:ProcessContext"
+            name="_processContext" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:RemoveNamespaceNPNRequest"
+            name="RemoveNamespaceNPNIn" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:RemoveNamespaceNPNResponse"
+            name="RemoveNamespaceNPNOut-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns2:CW_BUS_MESSAGE"
+            name="LOG_Input-input" sca-bpel:internal="true"/>
+        <bpws:variable name="logger_name" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LoggerName" type="xsd:string"/>
+        <bpws:variable name="log_level" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LogLevel" type="xsd:string"/>
+        <bpws:variable element="ns3:textInput"
+            name="RevomeNamespaceTransform-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:xmlString"
+            name="RevomeNamespaceTransform" sca-bpel:internal="true"/>
+        <bpws:variable element="Annullamento"
+            name="AnnullamentoRenderXml-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns4:xmlString"
+            name="AnnullamentoRenderXml" sca-bpel:internal="true"/>
+        <bpws:variable element="Prenotifica_Donating"
+            name="Prenotifica_DonatingRenderXml-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns4:xmlString"
+            name="Prenotifica_DonatingRenderXml" sca-bpel:internal="true"/>
+        <bpws:variable element="ns2:CW_BUS_MESSAGE"
+            name="LOG_Output-input" sca-bpel:internal="true"/>
+        <bpws:variable name="Namespace" type="xsd:string">
+            <bpws:from>
+                <bpws:literal><![CDATA[<Richiesta>]]></bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable name="CodaNamespace" type="xsd:string">
+            <bpws:from>
+                <bpws:literal><![CDATA[</Richiesta>]]></bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+    </bpws:variables>
+    <bpws:extensions>
+        <bpws:extension mustUnderstand="no" namespace="http://www.eclipse.org/gmf/runtime/1.0.2/notation"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bw/process/info"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca/200912"/>
+        <bpws:extension mustUnderstand="no" namespace="http://ns.tibco.com/bw/property"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bpel/2007/extensions"/>
+    </bpws:extensions>
+    <bpws:scope name="scope">
+        <bpws:flow name="flow">
+            <bpws:links>
+                <bpws:link name="StartToLOG_Input" tibex:linkType="SUCCESS"/>
+                <bpws:link name="RevomeNamespaceTransformToCallProcess" tibex:linkType="SUCCESS"/>
+                <bpws:link name="LOG_InputToRenderXml" tibex:linkType="SUCCESSWITHCONDITION"/>
+                <bpws:link name="LOG_InputToRenderXml1" tibex:linkType="SUCCESSWITHNOCONDITION"/>
+                <bpws:link name="RenderXmlToRevomeNamespaceTransform" tibex:linkType="SUCCESS"/>
+                <bpws:link name="RenderXml1ToRevomeNamespaceTransform" tibex:linkType="SUCCESS"/>
+                <bpws:link name="CallProcessToEnd" tibex:linkType="SUCCESS"/>
+            </bpws:links>
+            <bpws:receive createInstance="yes" name="Start"
+                operation="RemoveNamespaceNPN"
+                partnerLink="RemoveNamespaceNPNPortType"
+                portType="ns1:RemoveNamespaceNPNPortType"
+                tibex:xpdlId="d99308e4-43a9-43fc-aa2b-1a6224b4b281" variable="RemoveNamespaceNPNIn">
+                <bpws:sources>
+                    <bpws:source linkName="StartToLOG_Input"/>
+                </bpws:sources>
+            </bpws:receive>
+            <bpws:reply name="End" operation="RemoveNamespaceNPN"
+                partnerLink="RemoveNamespaceNPNPortType"
+                portType="ns1:RemoveNamespaceNPNPortType"
+                tibex:xpdlId="a1aa226f-82d1-4c8b-8a81-d72b5c2315db" variable="RemoveNamespaceNPNOut-input">
+                <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://www.tim.com/NOW/wsdl/abstract/RemoveNamespace" xmlns:tns1="http://www.tim.com/NOW/xsd/RemoveNamespace" version="2.0"&gt;&lt;xsl:param name="RevomeNamespaceTransform"/&gt;&lt;xsl:param name="Namespace"/&gt;&lt;xsl:param name="CodaNamespace"/&gt;&lt;xsl:template name="RemoveNamespaceNPNOut-input" match="/"&gt;&lt;tns:RemoveNamespaceNPNResponse&gt;&lt;Output&gt;&lt;tns1:NotificaXMLString&gt;&lt;xsl:value-of select="concat($Namespace, &amp;quot;&amp;#xA;&amp;quot;, $RevomeNamespaceTransform, &amp;quot;&amp;#xA;&amp;quot;, $CodaNamespace)"/&gt;&lt;/tns1:NotificaXMLString&gt;&lt;/Output&gt;&lt;/tns:RemoveNamespaceNPNResponse&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                <tibex:inputBindings>
+                    <tibex:partBinding
+                        expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/wsdl/abstract/RemoveNamespace&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/RemoveNamespace&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RevomeNamespaceTransform&quot;/>&#xa;    &lt;xsl:param name=&quot;Namespace&quot;/>&#xa;    &lt;xsl:param name=&quot;CodaNamespace&quot;/>&#xa;    &lt;xsl:template name=&quot;RemoveNamespaceNPNOut-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns1:NotificaXMLString>&#xa;            &lt;xsl:value-of select=&quot;concat($Namespace, &amp;quot;&amp;#xA;&amp;quot;, $RevomeNamespaceTransform, &amp;quot;&amp;#xA;&amp;quot;, $CodaNamespace)&quot;/>&#xa;        &lt;/tns1:NotificaXMLString>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                </tibex:inputBindings>
+                <bpws:targets>
+                    <bpws:target linkName="CallProcessToEnd"/>
+                </bpws:targets>
+            </bpws:reply>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;logger_name&quot;/>&lt;xsl:param name=&quot;log_level&quot;/>&lt;xsl:param name=&quot;RemoveNamespaceNPNIn&quot;/>&lt;xsl:template name=&quot;LOG_Input-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.application&amp;quot;&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPNPortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:Message>&lt;xsl:value-of select=&quot;concat(&amp;quot;Notifica in input: &amp;quot;, tib:render-xml($RemoveNamespaceNPNIn/Input, true(), true()))&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$logger_name&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$log_level&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;tns:ActiveLoggerServices>&lt;tns:Envelope>&lt;tns:Identifier>&lt;tns:ServiceName>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.util&amp;quot;&quot;/>&lt;/tns:ServiceName>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:Source>&lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&lt;/tns:Source>&lt;tns:EventType>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN_SUB-PROCESS&amp;quot;&quot;/>&lt;/tns:EventType>&lt;tns:trackID>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&lt;/tns:trackID>&lt;/tns:Identifier>&lt;tns:track_position>&lt;xsl:value-of select=&quot;&amp;quot;IN&amp;quot;&quot;/>&lt;/tns:track_position>&lt;tns:Timestamp>&lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&lt;/tns:Timestamp>&lt;/tns:Envelope>&lt;tns:Playload/>&lt;/tns:ActiveLoggerServices>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="LOG_Input-input" name="LOG_Input"
+                    tibex:xpdlId="8cea754d-bede-484a-8b28-3d571e8da1c3"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="StartToLOG_Input"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="LOG_InputToRenderXml">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="exists($RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento)" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[exists($RemoveNamespaceNPNIn.Input/tns:Annullamento)]]></bpws:transitionCondition>
+                        </bpws:source>
+                        <bpws:source linkName="LOG_InputToRenderXml1">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="##otherwise##" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[##otherwise##]]></bpws:transitionCondition>
+                        </bpws:source>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RemoveNamespaceNPNIn.Input&quot;/>&#xa;    &lt;xsl:param name=&quot;logger_name&quot;/>&#xa;    &lt;xsl:param name=&quot;log_level&quot;/>&#xa;    &lt;xsl:template name=&quot;LOG_Input-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:CW_BUS_MESSAGE>&#xa;            &lt;tns:GenericLogger>&#xa;                &lt;tns:Application>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.application&amp;quot;&quot;/>&#xa;                &lt;/tns:Application>&#xa;                &lt;tns:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&#xa;                &lt;/tns:Process>&#xa;                &lt;tns:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPNPortType&amp;quot;&quot;/>&#xa;                &lt;/tns:Service>&#xa;                &lt;tns:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&#xa;                &lt;/tns:Operation>&#xa;                &lt;tns:Message>&#xa;                    &lt;xsl:value-of select=&quot;concat(&amp;quot;Notifica in input: &amp;quot;, tib:render-xml($RemoveNamespaceNPNIn.Input, true(), true()))&quot;/>&#xa;                &lt;/tns:Message>&#xa;                &lt;tns:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$logger_name&quot;/>&#xa;                &lt;/tns:LoggerName>&#xa;                &lt;tns:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$log_level&quot;/>&#xa;                &lt;/tns:LogLevel>&#xa;                &lt;tns:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                &lt;/tns:LogJMS>&#xa;            &lt;/tns:GenericLogger>&#xa;            &lt;tns:ActiveLoggerServices>&#xa;                &lt;tns:Envelope>&#xa;                    &lt;tns:Identifier>&#xa;                        &lt;tns:ServiceName>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.util&amp;quot;&quot;/>&#xa;                        &lt;/tns:ServiceName>&#xa;                        &lt;tns:Operation>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&#xa;                        &lt;/tns:Operation>&#xa;                        &lt;tns:Source>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&#xa;                        &lt;/tns:Source>&#xa;                        &lt;tns:EventType>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN_SUB-PROCESS&amp;quot;&quot;/>&#xa;                        &lt;/tns:EventType>&#xa;                        &lt;tns:trackID>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&#xa;                        &lt;/tns:trackID>&#xa;                    &lt;/tns:Identifier>&#xa;                    &lt;tns:track_position>&#xa;                        &lt;xsl:value-of select=&quot;&amp;quot;IN&amp;quot;&quot;/>&#xa;                    &lt;/tns:track_position>&#xa;                    &lt;tns:Timestamp>&#xa;                        &lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&#xa;                    &lt;/tns:Timestamp>&#xa;                &lt;/tns:Envelope>&#xa;                &lt;tns:Playload/>&#xa;            &lt;/tns:ActiveLoggerServices>&#xa;        &lt;/tns:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        moduleRef="tim.now.shared_library" spawn="true"
+                        subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/transformxml&quot; xmlns:tns1=&quot;http://xsd.telecomitalia.it/crm/npn&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;Prenotifica_DonatingRenderXml&quot;/>&lt;xsl:param name=&quot;RemoveNamespaceNPNIn&quot;/>&lt;xsl:param name=&quot;AnnullamentoRenderXml&quot;/>&lt;xsl:template name=&quot;RevomeNamespaceTransform-input&quot; match=&quot;/&quot;>&lt;tns:textInput>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn/Input/tns1:Richiesta/tns1:Annullamento)&quot;>&lt;tns:xmlString>&lt;xsl:value-of select=&quot;$AnnullamentoRenderXml&quot;/>&lt;/tns:xmlString>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:xmlString>&lt;xsl:value-of select=&quot;$Prenotifica_DonatingRenderXml&quot;/>&lt;/tns:xmlString>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/tns:textInput>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="RevomeNamespaceTransform-input"
+                    name="RevomeNamespaceTransform"
+                    outputVariable="RevomeNamespaceTransform"
+                    tibex:xpdlId="0c4c2d80-0c8d-4978-93c4-3a177f4e5d58" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="RenderXmlToRevomeNamespaceTransform"/>
+                        <bpws:target linkName="RenderXml1ToRevomeNamespaceTransform"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="RevomeNamespaceTransformToCallProcess"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/transformxml&quot; xmlns:tns1=&quot;http://xsd.telecomitalia.it/crm/npn&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RemoveNamespaceNPNIn.Input&quot;/>&#xa;    &lt;xsl:param name=&quot;Prenotifica_DonatingRenderXml&quot;/>&#xa;    &lt;xsl:param name=&quot;AnnullamentoRenderXml&quot;/>&#xa;    &lt;xsl:template name=&quot;RevomeNamespaceTransform-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:textInput>&#xa;            &lt;xsl:choose>&#xa;                &lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn.Input/tns1:Annullamento)&quot;>&#xa;                    &lt;tns:xmlString>&#xa;                        &lt;xsl:value-of select=&quot;$AnnullamentoRenderXml&quot;/>&#xa;                    &lt;/tns:xmlString>&#xa;                &lt;/xsl:when>&#xa;                &lt;xsl:otherwise>&#xa;                    &lt;tns:xmlString>&#xa;                        &lt;xsl:value-of select=&quot;$Prenotifica_DonatingRenderXml&quot;/>&#xa;                    &lt;/tns:xmlString>&#xa;                &lt;/xsl:otherwise>&#xa;            &lt;/xsl:choose>&#xa;        &lt;/tns:textInput>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.xml.transformxml"
+                            version="6.0.0.20121128"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:palettexml="http://ns.tibco.com/bw/palette/xmlpalette" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/xmlpalette#//TransformXml"/>
+                                    <value inputOutputStyle="text"
+                                    stylesheet="Resources/tim/now/notificationmanager/RemoveNamespace.xslt"
+                                    xsi:type="palettexml:TransformXml" xsltEngine="TIBCO GenXDM XSLT 2.0"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://xsd.telecomitalia.it/crm/npn&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;RemoveNamespaceNPNIn&quot;/>&lt;xsl:template name=&quot;AnnullamentoRenderXml-input&quot; match=&quot;/&quot;>&lt;Annullamento>&lt;TipoComunicazione>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:TipoComunicazione&quot;/>&lt;/TipoComunicazione>&lt;CodiceOrdine>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:CodiceOrdine&quot;/>&lt;/CodiceOrdine>&lt;DataOrdine>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:DataOrdine&quot;/>&lt;/DataOrdine>&lt;DirectoryNumber>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:DirectoryNumber&quot;/>&lt;/DirectoryNumber>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:TipoLinea&quot;>&lt;TipoLinea>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:TipoLinea&quot;/>&lt;/TipoLinea>&lt;/xsl:if>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:Note&quot;>&lt;Note>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:Note&quot;/>&lt;/Note>&lt;/xsl:if>&lt;DataInvioMessaggio>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:DataInvioMessaggio&quot;/>&lt;/DataInvioMessaggio>&lt;IdentificativoOperatoreDonor>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:IdentificativoOperatoreDonor&quot;/>&lt;/IdentificativoOperatoreDonor>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:NomeCliente&quot;>&lt;NomeCliente>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:NomeCliente&quot;/>&lt;/NomeCliente>&lt;/xsl:if>&lt;CognomeCliente_RagioneSociale>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:CognomeCliente_RagioneSociale&quot;/>&lt;/CognomeCliente_RagioneSociale>&lt;TelefonoReferenteRichiedente>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:TelefonoReferenteRichiedente&quot;/>&lt;/TelefonoReferenteRichiedente>&lt;EmailReferenteRichiedente>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:EmailReferenteRichiedente&quot;/>&lt;/EmailReferenteRichiedente>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:Correlazioni)&quot;>&lt;Correlazioni>&lt;IdentificativoCorrelazioni>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:Correlazioni/tns:IdentificativoCorrelazioni&quot;/>&lt;/IdentificativoCorrelazioni>&lt;TotaleRichieste>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:Correlazioni/tns:TotaleRichieste&quot;/>&lt;/TotaleRichieste>&lt;/Correlazioni>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;CodiceOpRecipient>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:CodiceOpRecipient&quot;/>&lt;/CodiceOpRecipient>&lt;DataAttesaConsegnaServizio>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:DataAttesaConsegnaServizio&quot;/>&lt;/DataAttesaConsegnaServizio>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:CodiceProgetto&quot;>&lt;CodiceProgetto>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:CodiceProgetto&quot;/>&lt;/CodiceProgetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:FlagNPNumerazioniAggiuntive&quot;>&lt;FlagNPNumerazioniAggiuntive>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:FlagNPNumerazioniAggiuntive&quot;/>&lt;/FlagNPNumerazioniAggiuntive>&lt;/xsl:if>&lt;CodiceSegreto>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:CodiceSegreto&quot;/>&lt;/CodiceSegreto>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:NPAggiuntive)&quot;>&lt;NPAggiuntive>&lt;xsl:for-each select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Annullamento/tns:NPAggiuntive/tns:NumAggiuntivaPortata&quot;>&lt;NumAggiuntivaPortata>&lt;xsl:value-of select=&quot;.&quot;/>&lt;/NumAggiuntivaPortata>&lt;/xsl:for-each>&lt;/NPAggiuntive>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;/Annullamento>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="AnnullamentoRenderXml-input"
+                    name="AnnullamentoRenderXml"
+                    outputVariable="AnnullamentoRenderXml"
+                    tibex:xpdlId="e8a263b3-d4d5-4949-9bdd-1c2f9cd41cbb" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="LOG_InputToRenderXml"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="RenderXmlToRevomeNamespaceTransform"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://xsd.telecomitalia.it/crm/npn&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RemoveNamespaceNPNIn.Input&quot;/>&#xa;    &lt;xsl:template name=&quot;AnnullamentoRenderXml-input&quot; match=&quot;/&quot;>&#xa;        &lt;Annullamento>&#xa;            &lt;TipoComunicazione>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:TipoComunicazione&quot;/>&#xa;            &lt;/TipoComunicazione>&#xa;            &lt;CodiceOrdine>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:CodiceOrdine&quot;/>&#xa;            &lt;/CodiceOrdine>&#xa;            &lt;DataOrdine>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:DataOrdine&quot;/>&#xa;            &lt;/DataOrdine>&#xa;            &lt;DirectoryNumber>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:DirectoryNumber&quot;/>&#xa;            &lt;/DirectoryNumber>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:TipoLinea&quot;>&#xa;                &lt;TipoLinea>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:TipoLinea&quot;/>&#xa;                &lt;/TipoLinea>&#xa;            &lt;/xsl:if>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:Note&quot;>&#xa;                &lt;Note>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:Note&quot;/>&#xa;                &lt;/Note>&#xa;            &lt;/xsl:if>&#xa;            &lt;DataInvioMessaggio>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:DataInvioMessaggio&quot;/>&#xa;            &lt;/DataInvioMessaggio>&#xa;            &lt;IdentificativoOperatoreDonor>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:IdentificativoOperatoreDonor&quot;/>&#xa;            &lt;/IdentificativoOperatoreDonor>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:NomeCliente&quot;>&#xa;                &lt;NomeCliente>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:NomeCliente&quot;/>&#xa;                &lt;/NomeCliente>&#xa;            &lt;/xsl:if>&#xa;            &lt;CognomeCliente_RagioneSociale>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:CognomeCliente_RagioneSociale&quot;/>&#xa;            &lt;/CognomeCliente_RagioneSociale>&#xa;            &lt;TelefonoReferenteRichiedente>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:TelefonoReferenteRichiedente&quot;/>&#xa;            &lt;/TelefonoReferenteRichiedente>&#xa;            &lt;EmailReferenteRichiedente>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:EmailReferenteRichiedente&quot;/>&#xa;            &lt;/EmailReferenteRichiedente>&#xa;            &lt;xsl:choose>&#xa;                &lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:Correlazioni)&quot;>&#xa;                    &lt;Correlazioni>&#xa;                        &lt;IdentificativoCorrelazioni>&#xa;                            &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:Correlazioni/tns:IdentificativoCorrelazioni&quot;/>&#xa;                        &lt;/IdentificativoCorrelazioni>&#xa;                        &lt;TotaleRichieste>&#xa;                            &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:Correlazioni/tns:TotaleRichieste&quot;/>&#xa;                        &lt;/TotaleRichieste>&#xa;                    &lt;/Correlazioni>&#xa;                &lt;/xsl:when>&#xa;                &lt;xsl:otherwise/>&#xa;            &lt;/xsl:choose>&#xa;            &lt;CodiceOpRecipient>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:CodiceOpRecipient&quot;/>&#xa;            &lt;/CodiceOpRecipient>&#xa;            &lt;DataAttesaConsegnaServizio>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:DataAttesaConsegnaServizio&quot;/>&#xa;            &lt;/DataAttesaConsegnaServizio>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:CodiceProgetto&quot;>&#xa;                &lt;CodiceProgetto>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:CodiceProgetto&quot;/>&#xa;                &lt;/CodiceProgetto>&#xa;            &lt;/xsl:if>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:FlagNPNumerazioniAggiuntive&quot;>&#xa;                &lt;FlagNPNumerazioniAggiuntive>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:FlagNPNumerazioniAggiuntive&quot;/>&#xa;                &lt;/FlagNPNumerazioniAggiuntive>&#xa;            &lt;/xsl:if>&#xa;            &lt;CodiceSegreto>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:CodiceSegreto&quot;/>&#xa;            &lt;/CodiceSegreto>&#xa;            &lt;xsl:choose>&#xa;                &lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:NPAggiuntive)&quot;>&#xa;                    &lt;NPAggiuntive>&#xa;                        &lt;xsl:for-each select=&quot;$RemoveNamespaceNPNIn.Input/tns:Annullamento/tns:NPAggiuntive/tns:NumAggiuntivaPortata&quot;>&#xa;                            &lt;NumAggiuntivaPortata>&#xa;                                &lt;xsl:value-of select=&quot;.&quot;/>&#xa;                            &lt;/NumAggiuntivaPortata>&#xa;                        &lt;/xsl:for-each>&#xa;                    &lt;/NPAggiuntive>&#xa;                &lt;/xsl:when>&#xa;                &lt;xsl:otherwise/>&#xa;            &lt;/xsl:choose>&#xa;        &lt;/Annullamento>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.xml.renderxml"
+                            version="6.0.0.20121128"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:palettexml="http://ns.tibco.com/bw/palette/xmlpalette" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/xmlpalette#//RenderXml"/>
+                                    <value encoding="UTF-8"
+                                    inputElementQName="Annullamento"
+                                    outputStyle="text"
+                                    validateInput="true" xsi:type="palettexml:RenderXml"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://xsd.telecomitalia.it/crm/npn&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;RemoveNamespaceNPNIn&quot;/>&lt;xsl:template name=&quot;Prenotifica_DonatingRenderXml-input&quot; match=&quot;/&quot;>&lt;Prenotifica_Donating>&lt;TipoComunicazione>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:TipoComunicazione&quot;/>&lt;/TipoComunicazione>&lt;CodiceOrdine>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:CodiceOrdine&quot;/>&lt;/CodiceOrdine>&lt;DataOrdine>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:DataOrdine&quot;/>&lt;/DataOrdine>&lt;DirectoryNumber>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:DirectoryNumber&quot;/>&lt;/DirectoryNumber>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:TipoLinea&quot;>&lt;TipoLinea>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:TipoLinea&quot;/>&lt;/TipoLinea>&lt;/xsl:if>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:Note&quot;>&lt;Note>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:Note&quot;/>&lt;/Note>&lt;/xsl:if>&lt;DataInvioMessaggio>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:DataInvioMessaggio&quot;/>&lt;/DataInvioMessaggio>&lt;IdentificativoOperatoreDonor>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:IdentificativoOperatoreDonor&quot;/>&lt;/IdentificativoOperatoreDonor>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:NomeCliente&quot;>&lt;NomeCliente>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:NomeCliente&quot;/>&lt;/NomeCliente>&lt;/xsl:if>&lt;CognomeCliente_RagioneSociale>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:CognomeCliente_RagioneSociale&quot;/>&lt;/CognomeCliente_RagioneSociale>&lt;TelefonoReferenteRichiedente>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:TelefonoReferenteRichiedente&quot;/>&lt;/TelefonoReferenteRichiedente>&lt;EmailReferenteRichiedente>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:EmailReferenteRichiedente&quot;/>&lt;/EmailReferenteRichiedente>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:Correlazioni)&quot;>&lt;Correlazioni>&lt;IdentificativoCorrelazioni>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:Correlazioni/tns:IdentificativoCorrelazioni&quot;/>&lt;/IdentificativoCorrelazioni>&lt;TotaleRichieste>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:Correlazioni/tns:TotaleRichieste&quot;/>&lt;/TotaleRichieste>&lt;/Correlazioni>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;CodiceOpRecipient>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:CodiceOpRecipient&quot;/>&lt;/CodiceOpRecipient>&lt;DataAttesaConsegnaServizio>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:DataAttesaConsegnaServizio&quot;/>&lt;/DataAttesaConsegnaServizio>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:CodiceProgetto&quot;>&lt;CodiceProgetto>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:CodiceProgetto&quot;/>&lt;/CodiceProgetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:FlagNPNumerazioniAggiuntive&quot;>&lt;FlagNPNumerazioniAggiuntive>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:FlagNPNumerazioniAggiuntive&quot;/>&lt;/FlagNPNumerazioniAggiuntive>&lt;/xsl:if>&lt;CodiceSegreto>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:CodiceSegreto&quot;/>&lt;/CodiceSegreto>&lt;IdentificativoOperatoreDonating>&lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:IdentificativoOperatoreDonating&quot;/>&lt;/IdentificativoOperatoreDonating>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:NPAggiuntive)&quot;>&lt;NPAggiuntive>&lt;xsl:for-each select=&quot;$RemoveNamespaceNPNIn/Input/tns:Richiesta/tns:Prenotifica_Donating/tns:NPAggiuntive/tns:NumAggiuntivaPortata&quot;>&lt;NumAggiuntivaPortata>&lt;xsl:value-of select=&quot;.&quot;/>&lt;/NumAggiuntivaPortata>&lt;/xsl:for-each>&lt;/NPAggiuntive>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;/Prenotifica_Donating>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="Prenotifica_DonatingRenderXml-input"
+                    name="Prenotifica_DonatingRenderXml"
+                    outputVariable="Prenotifica_DonatingRenderXml"
+                    tibex:xpdlId="af76ccc5-5e1a-4838-92d4-b45a22f63935" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="LOG_InputToRenderXml1"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="RenderXml1ToRevomeNamespaceTransform"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://xsd.telecomitalia.it/crm/npn&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RemoveNamespaceNPNIn.Input&quot;/>&#xa;    &lt;xsl:template name=&quot;Prenotifica_DonatingRenderXml-input&quot; match=&quot;/&quot;>&#xa;        &lt;Prenotifica_Donating>&#xa;            &lt;TipoComunicazione>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:TipoComunicazione&quot;/>&#xa;            &lt;/TipoComunicazione>&#xa;            &lt;CodiceOrdine>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:CodiceOrdine&quot;/>&#xa;            &lt;/CodiceOrdine>&#xa;            &lt;DataOrdine>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:DataOrdine&quot;/>&#xa;            &lt;/DataOrdine>&#xa;            &lt;DirectoryNumber>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:DirectoryNumber&quot;/>&#xa;            &lt;/DirectoryNumber>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:TipoLinea&quot;>&#xa;                &lt;TipoLinea>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:TipoLinea&quot;/>&#xa;                &lt;/TipoLinea>&#xa;            &lt;/xsl:if>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:Note&quot;>&#xa;                &lt;Note>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:Note&quot;/>&#xa;                &lt;/Note>&#xa;            &lt;/xsl:if>&#xa;            &lt;DataInvioMessaggio>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:DataInvioMessaggio&quot;/>&#xa;            &lt;/DataInvioMessaggio>&#xa;            &lt;IdentificativoOperatoreDonor>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:IdentificativoOperatoreDonor&quot;/>&#xa;            &lt;/IdentificativoOperatoreDonor>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:NomeCliente&quot;>&#xa;                &lt;NomeCliente>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:NomeCliente&quot;/>&#xa;                &lt;/NomeCliente>&#xa;            &lt;/xsl:if>&#xa;            &lt;CognomeCliente_RagioneSociale>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:CognomeCliente_RagioneSociale&quot;/>&#xa;            &lt;/CognomeCliente_RagioneSociale>&#xa;            &lt;TelefonoReferenteRichiedente>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:TelefonoReferenteRichiedente&quot;/>&#xa;            &lt;/TelefonoReferenteRichiedente>&#xa;            &lt;EmailReferenteRichiedente>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:EmailReferenteRichiedente&quot;/>&#xa;            &lt;/EmailReferenteRichiedente>&#xa;            &lt;xsl:choose>&#xa;                &lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:Correlazioni)&quot;>&#xa;                    &lt;Correlazioni>&#xa;                        &lt;IdentificativoCorrelazioni>&#xa;                            &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:Correlazioni/tns:IdentificativoCorrelazioni&quot;/>&#xa;                        &lt;/IdentificativoCorrelazioni>&#xa;                        &lt;TotaleRichieste>&#xa;                            &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:Correlazioni/tns:TotaleRichieste&quot;/>&#xa;                        &lt;/TotaleRichieste>&#xa;                    &lt;/Correlazioni>&#xa;                &lt;/xsl:when>&#xa;                &lt;xsl:otherwise/>&#xa;            &lt;/xsl:choose>&#xa;            &lt;CodiceOpRecipient>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:CodiceOpRecipient&quot;/>&#xa;            &lt;/CodiceOpRecipient>&#xa;            &lt;DataAttesaConsegnaServizio>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:DataAttesaConsegnaServizio&quot;/>&#xa;            &lt;/DataAttesaConsegnaServizio>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:CodiceProgetto&quot;>&#xa;                &lt;CodiceProgetto>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:CodiceProgetto&quot;/>&#xa;                &lt;/CodiceProgetto>&#xa;            &lt;/xsl:if>&#xa;            &lt;xsl:if test=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:FlagNPNumerazioniAggiuntive&quot;>&#xa;                &lt;FlagNPNumerazioniAggiuntive>&#xa;                    &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:FlagNPNumerazioniAggiuntive&quot;/>&#xa;                &lt;/FlagNPNumerazioniAggiuntive>&#xa;            &lt;/xsl:if>&#xa;            &lt;CodiceSegreto>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:CodiceSegreto&quot;/>&#xa;            &lt;/CodiceSegreto>&#xa;            &lt;IdentificativoOperatoreDonating>&#xa;                &lt;xsl:value-of select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:IdentificativoOperatoreDonating&quot;/>&#xa;            &lt;/IdentificativoOperatoreDonating>&#xa;            &lt;xsl:choose>&#xa;                &lt;xsl:when test=&quot;exists($RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:NPAggiuntive)&quot;>&#xa;                    &lt;NPAggiuntive>&#xa;                        &lt;xsl:for-each select=&quot;$RemoveNamespaceNPNIn.Input/tns:Prenotifica_Donating/tns:NPAggiuntive/tns:NumAggiuntivaPortata&quot;>&#xa;                            &lt;NumAggiuntivaPortata>&#xa;                                &lt;xsl:value-of select=&quot;.&quot;/>&#xa;                            &lt;/NumAggiuntivaPortata>&#xa;                        &lt;/xsl:for-each>&#xa;                    &lt;/NPAggiuntive>&#xa;                &lt;/xsl:when>&#xa;                &lt;xsl:otherwise/>&#xa;            &lt;/xsl:choose>&#xa;        &lt;/Prenotifica_Donating>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.xml.renderxml"
+                            version="6.0.0.20121128"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:palettexml="http://ns.tibco.com/bw/palette/xmlpalette" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/xmlpalette#//RenderXml"/>
+                                    <value encoding="UTF-8"
+                                    inputElementQName="Prenotifica_Donating"
+                                    outputStyle="text"
+                                    validateInput="true" xsi:type="palettexml:RenderXml"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;logger_name&quot;/>&lt;xsl:param name=&quot;log_level&quot;/>&lt;xsl:param name=&quot;RevomeNamespaceTransform&quot;/>&lt;xsl:template name=&quot;LOG_Output-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.application&amp;quot;&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPNPortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:Message>&lt;xsl:value-of select=&quot;concat(&amp;quot;Notifica in output: &amp;quot;, $RevomeNamespaceTransform)&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$logger_name&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$log_level&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="LOG_Output-input" name="LOG_Output"
+                    tibex:xpdlId="bc71a452-90a7-48ec-8d93-9248af64261b"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="RevomeNamespaceTransformToCallProcess"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="CallProcessToEnd"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;logger_name&quot;/>&lt;xsl:param name=&quot;log_level&quot;/>&lt;xsl:param name=&quot;RevomeNamespaceTransform&quot;/>&lt;xsl:template name=&quot;LOG_Output-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.application&amp;quot;&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPNPortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;RemoveNamespaceNPN&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:Message>&lt;xsl:value-of select=&quot;concat(&amp;quot;Notifica in output: &amp;quot;, $RevomeNamespaceTransform)&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$logger_name&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$log_level&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        moduleRef="tim.now.shared_library" spawn="true"
+                        subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+        </bpws:flow>
+    </bpws:scope>
+</bpws:process>

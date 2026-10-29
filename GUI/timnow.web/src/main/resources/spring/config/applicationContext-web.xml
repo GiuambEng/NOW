@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+						   http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+						   http://www.springframework.org/schema/context
+						   http://www.springframework.org/schema/context/spring-context-4.2.xsd
+						   http://www.springframework.org/schema/aop 
+						   http://www.springframework.org/schema/aop/spring-aop-4.2.xsd">
+
+<!-- ========================= Resolver DEFINITIONS ========================= -->
+ 
+    <!-- Activates various annotations to be detected in bean classes -->
+    <context:annotation-config/>
+
+    <!-- Scans the classpath for annotated components that will be auto-registered as Spring beans.
+        For example @Controller and @Service. Make sure to set the correct base-package-->
+    <context:component-scan base-package="com.nttdata.tim.now.web">
+    	<context:exclude-filter expression="org.springframework.stereotype.Controller" type="annotation" />
+    </context:component-scan>
+
+	<!-- AOP configuration -->
+    <aop:config proxy-target-class="true"/>
+    
+	<!-- Object mapper configuration with jackson -->    
+    <bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" />
+
+    <!-- DOZER configuration -->
+    <bean id="mapper" class="org.dozer.DozerBeanMapper">
+	  <property name="mappingFiles">
+	    <list>
+	      <value>dozer/config/mapping.core.xml</value>
+	      <value>dozer/config/mapping.web.xml</value>
+	      <value>dozer/config/converter.web.xml</value>
+	    </list>
+	  </property>
+	</bean>
+
+	<!-- Dozer helper configuration -->
+	<bean name="dozerHelper" class="com.nttdata.tim.now.util.data.DozerHelper">
+		<property name="mapper" ref="mapper" />
+	</bean>
+
+	<!-- Registra il PropertyPlaceholderConfigurer che rende visibili le properties 
+		nel contesto spring e permette di leggere i valori utilizzando l'annotation 
+		@Value o utilizzando l'astrazione Enviromnent-->
+	<context:property-placeholder location="file:${timnow.config.path}/config.properties,file:${timnow.config.path}/configauth.properties"/>
+	
+	<!-- AuthenticationFilter. -->
+	<bean id="authenticationFilter" class="com.nttdata.tim.now.web.filter.AuthenticationFilter">
+		<property name="usernameAttribute" value="${header.var.username}"/>
+	</bean>
+<!-- 	Registra il listener per il solo logout - non automatico a sessione scaduta -->	
+<!-- <bean id="userLogoutListener" class="com.nttdata.tim.now.web.listener.UserLogoutListener" /> -->
+	
+</beans>

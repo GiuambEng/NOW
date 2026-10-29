@@ -1,0 +1,23 @@
+-----------------------
+-- FEA_42907
+-----------------------
+
+CREATE TABLE APPUSER.ANA_MIGR_GUI_ULLSLU 
+   (	
+	ID                        NUMBER              NOT NULL, 
+	NOME_FILE                 VARCHAR2(4000 BYTE) NOT NULL,
+	ID_FILE_PROCSO_INPUT      NUMBER,
+	NUMERO_RECORD             NUMBER,
+	ID_STATO_ELAB_STAG        NUMBER              NOT NULL,
+	DESCRIZIONE_ERRORE        VARCHAR2(4000 BYTE),
+	ID_OPERATORE              VARCHAR2(4000 BYTE) NOT NULL,
+	DATA_INSERIMENTO          TIMESTAMP(6)        NOT NULL,
+	DATA_AGGIORNAMENTO        TIMESTAMP(6)
+   );
+
+   
+-- per popolare il campo ID
+CREATE SEQUENCE  APPUSER.SEQ_ID_ANA_MIGR_GUI_ULLSLU; 
+
+
+

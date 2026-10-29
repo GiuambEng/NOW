@@ -1,0 +1,872 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpws:process exitOnStandardFault="no"
+    name="tim.now.bpmintegration.bpm_check.VerificaCodiceOLO"
+    suppressJoinFailure="yes"
+    targetNamespace="http://xmlns.example.com/20161124145702"
+    xmlns:bpws="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+    xmlns:info="http://www.tibco.com/bw/process/info"
+    xmlns:ns="http://xmlns.example.com/20161124145702PLT"
+    xmlns:ns0="http://www.tibco.com/pe/EngineTypes"
+    xmlns:ns1="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/"
+    xmlns:ns2="http://www.tim.com/NOW/xsd/ControlliAmmessi/"
+    xmlns:ns3="http://www.tibco.com/namespaces/tnt/plugins/jdbc+acf30360-ed48-449b-8758-e82d28330d94+input"
+    xmlns:ns4="http://www.tibco.com/namespaces/tnt/plugins/jdbc+acf30360-ed48-449b-8758-e82d28330d94+output"
+    xmlns:ns5="http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+input"
+    xmlns:ns6="http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+output"
+    xmlns:ns7="http://www.tim.com/NOW/xsd/GenericLogger"
+    xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+    xmlns:sca-bpel="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"
+    xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"
+    xmlns:tibprop="http://ns.tibco.com/bw/property" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <tibex:Types>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/EngineTypes"
+            xmlns:tns="http://www.tibco.com/pe/EngineTypes" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ErrorReport">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="FullClass" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Class" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="FaultDetail">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ActivityName" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ProcessContext">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="JobId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessInstanceId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0"
+                        name="CustomJobId" type="xs:string"/>
+                    <!--xs:element name="RestartedFromCheckpoint" form="unqualified" block="extension restriction substitution" type="xs:boolean"/-->
+                    <!--xs:element minOccurs="0" maxOccurs="unbounded" name="TrackingInfo" form="unqualified" block="extension restriction substitution" type="xs:string"/-->
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="anydata">
+                <xs:sequence>
+                    <xs:any namespace="##any" processContents="lax"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ErrorReport" type="tns:ErrorReport"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="FaultDetail" type="tns:FaultDetail"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ProcessContext" type="tns:ProcessContext"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="CorrelationValue" type="xs:string"/>
+        </xs:schema>
+        <schema attributeFormDefault="unqualified"
+            elementFormDefault="unqualified"
+            targetNamespace="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions"
+            version="" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions">
+            <complexType name="ActivityExceptionType">
+                <sequence>
+                    <element name="msg" type="string"/>
+                    <element minOccurs="0" name="msgCode" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="ActivityException" type="tns:ActivityExceptionType"/>
+            <complexType name="ActivityTimedOutExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType"/>
+                </complexContent>
+            </complexType>
+            <element name="ActivityTimedOutException" type="tns:ActivityTimedOutExceptionType"/>
+            <complexType name="DuplicateKeyExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType">
+                        <sequence>
+                            <element name="duplicateKey" type="string"/>
+                            <element minOccurs="0" name="previousJobID" type="string"/>
+                        </sequence>
+                    </extension>
+                </complexContent>
+            </complexType>
+            <element name="DuplicateKeyException" type="tns:DuplicateKeyExceptionType"/>
+        </schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+acf30360-ed48-449b-8758-e82d28330d94+input"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+acf30360-ed48-449b-8758-e82d28330d94+input">
+            <element name="jdbcQueryActivityInput">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="1" minOccurs="1"
+                            name="ID_FILE" nillable="true" type="decimal"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="ServerTimeZone" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="timeout" type="long"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="maxRows" type="long"/>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+acf30360-ed48-449b-8758-e82d28330d94+output"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+acf30360-ed48-449b-8758-e82d28330d94+output">
+            <element name="resultSet">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="unbounded" minOccurs="0" name="Record">
+                            <complexType>
+                                <sequence>
+                                    <element maxOccurs="1" minOccurs="1"
+                                    name="NOME_FILE" type="string"/>
+                                    <element maxOccurs="1" minOccurs="0"
+                                    name="CODFC_OLO_AGCOM"
+                                    nillable="false" type="string"/>
+                                </sequence>
+                            </complexType>
+                        </element>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+input"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+input">
+            <element name="jdbcQueryActivityInput">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="1" minOccurs="1"
+                            name="CODFC_OLO_AGCOM" nillable="true" type="string"/>
+                        <element maxOccurs="1" minOccurs="1"
+                            name="COD_OLO" nillable="true" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="ServerTimeZone" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="timeout" type="long"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="maxRows" type="long"/>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+output"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+output">
+            <element name="resultSet">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="unbounded" minOccurs="0" name="Record">
+                            <complexType>
+                                <sequence>
+                                    <element maxOccurs="1" minOccurs="1"
+                                    name="COD_OLO" type="string"/>
+                                    <element maxOccurs="1" minOccurs="1"
+                                    name="CODFC_OLO_AGCOM" type="string"/>
+                                </sequence>
+                            </complexType>
+                        </element>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <wsdl:definitions
+            targetNamespace="http://xmlns.example.com/20161124145702PLT"
+            xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+            xmlns:ptyp="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/"
+            xmlns:tns="http://xmlns.example.com/20161124145702PLT"
+            xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+            xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <plnk:partnerLinkType name="partnerLinkType">
+                <plnk:role name="use" portType="ptyp:BPM_CheckPortType"/>
+            </plnk:partnerLinkType>
+            <wsdl:import namespace="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/"/>
+        </wsdl:definitions>
+    </tibex:Types>
+    <tibex:ProcessInfo callable="false" createdBy="RexGi"
+        createdOn="Thu Nov 24 14:57:02 CET 2016" description=""
+        extraErrorVars="false" modifiers="public"
+        productVersion="6.3.2 V30 2016-04-28" scalable="true"
+        singleton="true" stateless="false" type="IT"/>
+    <tibex:ProcessInterface context="" input="" output=""/>
+    <tibex:ProcessTemplateConfigurations/>
+    <notation:Diagram measurementUnit="Pixel" type="BWProcess"
+        xmlns:bwnotation="http://tns.tibco.com/bw/runtime/BWNotation"
+        xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <children type="2001">
+            <children type="5001"/>
+            <children type="3001">
+                <children type="4001">
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="4017">
+                        <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                        <layoutConstraint xsi:type="notation:Bounds"/>
+                    </children>
+                    <children type="40011"/>
+                    <children type="3006">
+                        <styles xsi:type="notation:DrawerStyle"/>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <styles xsi:type="bwnotation:BackgroundStyle"/>
+                        <styles xsi:type="bwnotation:ResizingStyle"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@partnerLinks/@children.0"/>
+                    <layoutConstraint xsi:type="notation:Bounds"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <children type="3002">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3003">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3004">
+                <children type="4018">
+                    <children type="3018">
+                        <children type="4020">
+                            <children type="3020">
+                                <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint x="32"
+                                    xsi:type="notation:Bounds" y="64"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint x="673"
+                                    xsi:type="notation:Bounds" y="64"/>
+                                    </children>
+                                    <children type="4002 bw.jdbc.JDBCQuery">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.2"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="160"
+                                    xsi:type="notation:Bounds" y="64"/>
+                                    </children>
+                                    <children type="4002 bw.jdbc.JDBCQuery">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.3"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="273"
+                                    xsi:type="notation:Bounds" y="64"/>
+                                    </children>
+                                    <children type="4002 bw.generalactivities.bwassign">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.4"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="539"
+                                    xsi:type="notation:Bounds" y="64"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.5"/>
+                                    <layoutConstraint x="403"
+                                    xsi:type="notation:Bounds" y="64"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    <layoutConstraint height="477"
+                                    width="816" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity"/>
+                            <layoutConstraint height="477" width="819" xsi:type="notation:Bounds"/>
+                        </children>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <element href="//0/@process/@activity"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@activity"/>
+                    <layoutConstraint height="501" width="819" x="1"
+                        xsi:type="notation:Bounds" y="1"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+            <element href="//0/@process"/>
+            <layoutConstraint height="553" width="1161" xsi:type="notation:Bounds"/>
+        </children>
+        <styles xsi:type="notation:DiagramStyle"/>
+        <element href="//0"/>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.1"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.2"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.5"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.3"/>
+            <bendpoints points="[25, 11, -124, -58]$[125, 58, -24, -11]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.5" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.4"/>
+            <bendpoints points="[25, 0, -81, 0]$[82, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+    </notation:Diagram>
+    <tibex:NamespaceRegistry enabled="true">
+        <tibex:namespaceItem
+            namespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+input" prefix="tns"/>
+        <tibex:namespaceItem
+            namespace="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/" prefix="tns2"/>
+        <tibex:namespaceItem
+            namespace="http://www.w3.org/2001/XMLSchema-instance" prefix="xsi"/>
+        <tibex:namespaceItem
+            namespace="http://www.tim.com/NOW/xsd/ControlliAmmessi/" prefix="tns1"/>
+    </tibex:NamespaceRegistry>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="../../../../../Service%20Descriptors/BPM_Check/BPM_CheckService.wsdl" namespace="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/ControlliAmmessi/"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/GenericLogger"/>
+    <bpws:partnerLinks>
+        <bpws:partnerLink myRole="use" name="BPM_CheckPortType"
+            partnerLinkType="ns:partnerLinkType" sca-bpel:ignore="false" sca-bpel:service="BPM_CheckPortType"/>
+    </bpws:partnerLinks>
+    <bpws:variables>
+        <bpws:variable element="ns0:ProcessContext"
+            name="_processContext" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:VerificaCodiceOLORequest"
+            name="VerificaCodiceOLOIn" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:VerificaCodiceOLOResponse"
+            name="VerificaCodiceOLOOutput-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns2:Verifica_Codice_OLO_Response" name="VerificaCodiceOLOResponse"/>
+        <bpws:variable element="ns3:jdbcQueryActivityInput"
+            name="SelectNomeFile-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns4:resultSet" name="SelectNomeFile" sca-bpel:internal="true"/>
+        <bpws:variable name="jdbcProperty" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            sca-bpel:sharedResourceType="{http://xsd.tns.tibco.com/amf/models/sharedresource/jdbc}JdbcDataSource" type="xsd:string">
+            <bpws:from>
+                <bpws:literal>JDBC.JDBCConnectionResource</bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+        <bpws:variable element="ns5:jdbcQueryActivityInput"
+            name="SelectNomeOLO-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns6:resultSet" name="SelectNomeOLO" sca-bpel:internal="true"/>
+        <bpws:variable element="ns7:CW_BUS_MESSAGE"
+            name="LOG_NomeFile_NomeOLO-input" sca-bpel:internal="true"/>
+        <bpws:variable name="logger_name" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LoggerName" type="xsd:string"/>
+        <bpws:variable name="log_level" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LogLevel" type="xsd:string"/>
+        <bpws:variable name="TimeoutJDBC" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Process/TimerJDBC/TimeoutJDBC" type="xsd:int"/>
+    </bpws:variables>
+    <bpws:extensions>
+        <bpws:extension mustUnderstand="no" namespace="http://www.eclipse.org/gmf/runtime/1.0.2/notation"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bw/process/info"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca/200912"/>
+        <bpws:extension mustUnderstand="no" namespace="http://ns.tibco.com/bw/property"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bpel/2007/extensions"/>
+    </bpws:extensions>
+    <bpws:scope name="scope">
+        <bpws:flow name="flow">
+            <bpws:links>
+                <bpws:link name="StartToEnd" tibex:linkType="SUCCESS"/>
+                <bpws:link name="JDBCQueryToVerificaCodiceOLOOutput" tibex:linkType="SUCCESS"/>
+                <bpws:link name="AssignToVerificaCodiceOLOOutput" tibex:linkType="SUCCESS"/>
+                <bpws:link
+                    name="CallProcessToVerificaCodiceOLOResponseAssign" tibex:linkType="SUCCESS"/>
+                <bpws:link name="SelectNomeOLOToLOG_NomeFile_NomeOLO" tibex:linkType="SUCCESS"/>
+            </bpws:links>
+            <bpws:receive createInstance="yes"
+                name="VerificaCodiceOLOIn" operation="VerificaCodiceOLO"
+                partnerLink="BPM_CheckPortType"
+                portType="ns1:BPM_CheckPortType"
+                tibex:xpdlId="ed5f9108-8fbc-48b1-a3bf-e0a70858b541" variable="VerificaCodiceOLOIn">
+                <bpws:sources>
+                    <bpws:source linkName="StartToEnd"/>
+                </bpws:sources>
+            </bpws:receive>
+            <bpws:reply name="VerificaCodiceOLOOutput"
+                operation="VerificaCodiceOLO"
+                partnerLink="BPM_CheckPortType"
+                portType="ns1:BPM_CheckPortType"
+                tibex:xpdlId="a85d9ae9-fcb0-4d35-93da-e64163804322" variable="VerificaCodiceOLOOutput-input">
+                <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns2="http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/" xmlns:tns1="http://www.tim.com/NOW/xsd/ControlliAmmessi/" version="2.0"&gt;
+    &lt;xsl:param name="VerificaCodiceOLOResponse"/&gt;
+    &lt;xsl:template name="VerificaCodiceOLOOutput-input" match="/"&gt;
+        &lt;tns2:VerificaCodiceOLOResponse&gt;
+            &lt;parameters&gt;
+                &lt;tns2:VerificaCodiceOLOResponse&gt;
+                    &lt;xsl:copy-of select="$VerificaCodiceOLOResponse/tns1:Esito"/&gt;
+                &lt;/tns2:VerificaCodiceOLOResponse&gt;
+            &lt;/parameters&gt;
+        &lt;/tns2:VerificaCodiceOLOResponse&gt;
+    &lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                <tibex:inputBindings>
+                    <tibex:partBinding
+                        expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaCodiceOLOResponse&quot;/>&#xa;    &lt;xsl:template name=&quot;VerificaCodiceOLOOutput-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns2:VerificaCodiceOLOResponse>&#xa;            &lt;xsl:copy-of select=&quot;$VerificaCodiceOLOResponse/tns1:Esito&quot;/>&#xa;        &lt;/tns2:VerificaCodiceOLOResponse>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                </tibex:inputBindings>
+                <bpws:targets>
+                    <bpws:target linkName="AssignToVerificaCodiceOLOOutput"/>
+                </bpws:targets>
+            </bpws:reply>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns3=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+acf30360-ed48-449b-8758-e82d28330d94+input&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaCodiceOLOIn&quot;/>&#xa;    &lt;xsl:template name=&quot;SelectNomeFile-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns3:jdbcQueryActivityInput>&#xa;            &lt;ID_FILE>&#xa;                &lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:IDFile&quot;/>&#xa;            &lt;/ID_FILE>&#xa;        &lt;/tns3:jdbcQueryActivityInput>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="SelectNomeFile-input"
+                    name="SelectNomeFile"
+                    outputVariable="SelectNomeFile"
+                    tibex:xpdlId="acf30360-ed48-449b-8758-e82d28330d94" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="StartToEnd"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="JDBCQueryToVerificaCodiceOLOOutput"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns3=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+acf30360-ed48-449b-8758-e82d28330d94+input&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaCodiceOLOIn.parameters&quot;/>&#xa;    &lt;xsl:template name=&quot;SelectNomeFile-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns3:jdbcQueryActivityInput>&#xa;            &lt;ID_FILE>&#xa;                &lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn.parameters/tns1:IDFile&quot;/>&#xa;            &lt;/ID_FILE>&#xa;        &lt;/tns3:jdbcQueryActivityInput>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.jdbc.JDBCQuery"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:jdbcPalette="http://ns.tibco.com/bw/palette/jdbc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <attributeBindings
+                                bindingType="moduleProperty"
+                                eAttributeName="timeout" processProperty="TimeoutJDBC"/>
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/jdbc#//JDBCQueryActivity"/>
+                                    <value maxRows="100"
+                                    sharedResourceProperty="jdbcProperty"
+                                    sqlStatement="SELECT NOME_FILE,CODFC_OLO_AGCOM&#xa;&#x9;FROM FILE_PROCSTO&#xa;&#x9;WHERE ID_FILE = ?" xsi:type="jdbcPalette:JDBCQueryActivity">
+                                    <PreparedParameters DataType="2"
+                                    DataTypeDisplayValue="NUMERIC" ParameterName="ID_FILE"/>
+                                    <columnMetadata
+                                    columnName="NOME_FILE"
+                                    dataType="12" typeName="VARCHAR2"/>
+                                    <columnMetadata
+                                    columnName="CODFC_OLO_AGCOM"
+                                    dataType="12"
+                                    status="OptionalElement" typeName="VARCHAR2"/>
+                                    </value>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+input&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;VerificaCodiceOLOIn&quot;/>&lt;xsl:template name=&quot;SelectNomeOLO-input&quot; match=&quot;/&quot;>&lt;tns:jdbcQueryActivityInput>&lt;xsl:choose>&lt;xsl:when test=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;REGOLATORIO&amp;quot; or&amp;#xD;&amp;#xA;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;FIBERSTREAM&amp;quot; or $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;NPG&amp;quot; or $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:Offerta = ('UBBSEMIGPON','UBBFULLGPON','SEMIGPON1BPNRR','FULLGPON1BPNRR')&quot;>&lt;CODFC_OLO_AGCOM>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLOAGCOM)&quot;>&lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLOAGCOM&quot;/>&lt;/xsl:when>&lt;xsl:otherwise>&lt;xsl:attribute name=&quot;xsi:nil&quot;>true&lt;/xsl:attribute>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/CODFC_OLO_AGCOM>&lt;/xsl:when>&lt;xsl:otherwise>&lt;CODFC_OLO_AGCOM xsi:nil=&quot;true&quot;/>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;xsl:choose>&lt;xsl:when test=&quot;string-length($VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLO)>0 and ($VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;XDSL&amp;quot; or $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;NGA&amp;quot;) and not($VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:Offerta = ('UBBSEMIGPON','UBBFULLGPON','SEMIGPON1BPNRR','FULLGPON1BPNRR'))&quot;>&lt;COD_OLO>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLO)&quot;>&lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLO&quot;/>&lt;/xsl:when>&lt;xsl:otherwise>&lt;xsl:attribute name=&quot;xsi:nil&quot;>true&lt;/xsl:attribute>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/COD_OLO>&lt;/xsl:when>&lt;xsl:otherwise>&lt;COD_OLO xsi:nil=&quot;true&quot;/>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/tns:jdbcQueryActivityInput>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="SelectNomeOLO-input"
+                    name="SelectNomeOLO" outputVariable="SelectNomeOLO"
+                    tibex:xpdlId="fa4f7c48-acaa-4568-b35d-6dbdc983a61c" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="JDBCQueryToVerificaCodiceOLOOutput"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="SelectNomeOLOToLOG_NomeFile_NomeOLO"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+fa4f7c48-acaa-4568-b35d-6dbdc983a61c+input&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; xmlns:xsi=&quot;http://www.w3.org/2001/XMLSchema-instance&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaCodiceOLOIn.parameters&quot;/>&#xa;    &lt;xsl:template name=&quot;SelectNomeOLO-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:jdbcQueryActivityInput>&#xa;            &lt;xsl:choose>&#xa;                &lt;xsl:when test=&quot;$VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;REGOLATORIO&amp;quot; or&amp;#xD;&amp;#xA;$VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;FIBERSTREAM&amp;quot; or $VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;NPG&amp;quot; or $VerificaCodiceOLOIn.parameters/tns1:Offerta = ('UBBSEMIGPON','UBBFULLGPON','SEMIGPON1BPNRR','FULLGPON1BPNRR')&quot;>&#xa;                    &lt;CODFC_OLO_AGCOM>&#xa;                        &lt;xsl:choose>&#xa;                            &lt;xsl:when test=&quot;exists($VerificaCodiceOLOIn.parameters/tns1:CodiceOLOAGCOM)&quot;>&#xa;                                &lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn.parameters/tns1:CodiceOLOAGCOM&quot;/>&#xa;                            &lt;/xsl:when>&#xa;                            &lt;xsl:otherwise>&#xa;                                &lt;xsl:attribute name=&quot;xsi:nil&quot;>true&lt;/xsl:attribute>&#xa;                            &lt;/xsl:otherwise>&#xa;                        &lt;/xsl:choose>&#xa;                    &lt;/CODFC_OLO_AGCOM>&#xa;                &lt;/xsl:when>&#xa;                &lt;xsl:otherwise>&#xa;                    &lt;CODFC_OLO_AGCOM xsi:nil=&quot;true&quot;/>&#xa;                &lt;/xsl:otherwise>&#xa;            &lt;/xsl:choose>&#xa;            &lt;xsl:choose>&#xa;                &lt;xsl:when test=&quot;string-length($VerificaCodiceOLOIn.parameters/tns1:CodiceOLO)>0 and ($VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;XDSL&amp;quot; or $VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;NGA&amp;quot;) and not($VerificaCodiceOLOIn.parameters/tns1:Offerta = ('UBBSEMIGPON','UBBFULLGPON','SEMIGPON1BPNRR','FULLGPON1BPNRR'))&quot;>&#xa;                    &lt;COD_OLO>&#xa;                        &lt;xsl:choose>&#xa;                            &lt;xsl:when test=&quot;exists($VerificaCodiceOLOIn.parameters/tns1:CodiceOLO)&quot;>&#xa;                                &lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn.parameters/tns1:CodiceOLO&quot;/>&#xa;                            &lt;/xsl:when>&#xa;                            &lt;xsl:otherwise>&#xa;                                &lt;xsl:attribute name=&quot;xsi:nil&quot;>true&lt;/xsl:attribute>&#xa;                            &lt;/xsl:otherwise>&#xa;                        &lt;/xsl:choose>&#xa;                    &lt;/COD_OLO>&#xa;                &lt;/xsl:when>&#xa;                &lt;xsl:otherwise>&#xa;                    &lt;COD_OLO xsi:nil=&quot;true&quot;/>&#xa;                &lt;/xsl:otherwise>&#xa;            &lt;/xsl:choose>&#xa;        &lt;/tns:jdbcQueryActivityInput>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.jdbc.JDBCQuery"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:jdbcPalette="http://ns.tibco.com/bw/palette/jdbc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <attributeBindings
+                                bindingType="moduleProperty"
+                                eAttributeName="timeout" processProperty="TimeoutJDBC"/>
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/jdbc#//JDBCQueryActivity"/>
+                                    <value maxRows="100"
+                                    sharedResourceProperty="jdbcProperty"
+                                    sqlStatement="SELECT COD_OLO, CODFC_OLO_AGCOM&#xa;  FROM OLO&#xa;  WHERE CODFC_OLO_AGCOM = ? OR COD_OLO=?" xsi:type="jdbcPalette:JDBCQueryActivity">
+                                    <PreparedParameters
+                                    DataType="12"
+                                    DataTypeDisplayValue="VARCHAR" ParameterName="CODFC_OLO_AGCOM"/>
+                                    <PreparedParameters
+                                    DataType="12"
+                                    DataTypeDisplayValue="VARCHAR" ParameterName="COD_OLO"/>
+                                    <columnMetadata
+                                    columnName="COD_OLO"
+                                    dataType="12" typeName="VARCHAR2"/>
+                                    <columnMetadata
+                                    columnName="CODFC_OLO_AGCOM"
+                                    dataType="12" typeName="VARCHAR2"/>
+                                    </value>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;VerificaCodiceOLOIn&quot;/>&lt;xsl:param name=&quot;SelectNomeFile&quot;/>&lt;xsl:param name=&quot;SelectNomeOLO&quot;/>&lt;xsl:template name=&quot;VerificaCodiceOLOResponse&quot; match=&quot;/&quot;>&lt;xsl:choose>&lt;xsl:when test=&quot;not(exists($SelectNomeFile/Record)) or not(exists($SelectNomeOLO/Record))&quot;>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;xsl:if test=&quot;string-length($SelectNomeFile/Record[1]/CODFC_OLO_AGCOM)&quot;>&lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&lt;tns1:CodiceOlodaFile>&lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&lt;/tns1:CodiceOlodaFile>&lt;/xsl:if>&lt;/xsl:if>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:when>&lt;xsl:when test=&quot;starts-with($SelectNomeFile/Record[1]/NOME_FILE, 'MIGRAZIONE_ULL_SLU')&quot;>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:when>&lt;xsl:when test=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:Offerta='CPS' and $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:Lavorazione='PRENOTIFICADISATTIVAZIONECPS' and $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLOAGCOM='TLC' and starts-with($SelectNomeFile/Record[1]/NOME_FILE, 'WIN')&quot;>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:when>&lt;xsl:when test=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;REGOLATORIO&amp;quot; or $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;FIBERSTREAM&amp;quot;&quot;>&lt;xsl:choose>&lt;xsl:when test=&quot;starts-with($SelectNomeFile/Record[1]/NOME_FILE, $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLOAGCOM) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;N_&amp;quot;, $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLOAGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;R_&amp;quot;, $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLOAGCOM))  or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;FBS_&amp;quot;, $VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:CodiceOLOAGCOM))&quot;>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&lt;tns1:CodiceOlodaFile>&lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&lt;/tns1:CodiceOlodaFile>&lt;/xsl:if>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:when>&lt;xsl:otherwise>&lt;xsl:choose>&lt;xsl:when test=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;NPG&amp;quot;&quot;>&lt;xsl:choose>&lt;xsl:when test=&quot;starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;R_NP_&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;N_NP_&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;T3_R_NP_&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;T3_N_NP_&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM))&quot;>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&lt;tns1:CodiceOlodaFile>&lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&lt;/tns1:CodiceOlodaFile>&lt;/xsl:if>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:when>&lt;xsl:when test=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:StrutturaRichiesta = &amp;quot;NGA&amp;quot;&quot;>&lt;xsl:choose>&lt;xsl:when test=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:Offerta=('UBBSEMIGPON','UBBFULLGPON','SEMIGPON1BPNRR','FULLGPON1BPNRR') and (starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;GPON&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;NEWGPON&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)))&quot;>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:when>&lt;xsl:when test=&quot;not($VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:Offerta=('UBBSEMIGPON','UBBFULLGPON','SEMIGPON1BPNRR','FULLGPON1BPNRR')) and starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;nga_&amp;quot;, $SelectNomeOLO/Record[1]/COD_OLO))&quot;>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&lt;tns1:CodiceOlodaFile>&lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&lt;/tns1:CodiceOlodaFile>&lt;/xsl:if>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:when>&lt;xsl:otherwise>&lt;xsl:choose>&lt;xsl:when test=&quot;starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;adsl_&amp;quot;, $SelectNomeOLO/Record[1]/COD_OLO))&quot;>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns1:Verifica_Codice_OLO_Response>&lt;tns1:Esito>&lt;tns1:Codice>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns1:Codice>&lt;tns1:Descrizione>&lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&lt;/tns1:Descrizione>&lt;/tns1:Esito>&lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&lt;tns1:CodiceOlodaFile>&lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&lt;/tns1:CodiceOlodaFile>&lt;/xsl:if>&lt;/tns1:Verifica_Codice_OLO_Response>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="VerificaCodiceOLOResponse"
+                    name="VerificaCodiceOLOResponseAssign"
+                    outputVariable="VerificaCodiceOLOResponse"
+                    tibex:xpdlId="0ddeeffc-0074-4de5-b6f0-96e39039be53" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="CallProcessToVerificaCodiceOLOResponseAssign"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="AssignToVerificaCodiceOLOOutput"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaCodiceOLOIn.parameters&quot;/>&#xa;    &lt;xsl:param name=&quot;SelectNomeFile&quot;/>&#xa;    &lt;xsl:param name=&quot;SelectNomeOLO&quot;/>&#xa;    &lt;xsl:template name=&quot;VerificaCodiceOLOResponse&quot; match=&quot;/&quot;>&#xa;        &lt;xsl:choose>&#xa;            &lt;xsl:when test=&quot;not(exists($SelectNomeFile/Record)) or not(exists($SelectNomeOLO/Record))&quot;>&#xa;                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                    &lt;tns1:Esito>&#xa;                        &lt;tns1:Codice>&#xa;                            &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                        &lt;/tns1:Codice>&#xa;                        &lt;tns1:Descrizione>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&#xa;                        &lt;/tns1:Descrizione>&#xa;                    &lt;/tns1:Esito>&#xa;                    &lt;xsl:if test=&quot;string-length($SelectNomeFile/Record[1]/CODFC_OLO_AGCOM)&quot;>&#xa;                        &lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&#xa;                            &lt;tns1:CodiceOlodaFile>&#xa;                                &lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&#xa;                            &lt;/tns1:CodiceOlodaFile>&#xa;                        &lt;/xsl:if>&#xa;                    &lt;/xsl:if>&#xa;                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:when test=&quot;starts-with($SelectNomeFile/Record[1]/NOME_FILE, 'MIGRAZIONE_ULL_SLU')&quot;>&#xa;                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                    &lt;tns1:Esito>&#xa;                        &lt;tns1:Codice>&#xa;                            &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                        &lt;/tns1:Codice>&#xa;                        &lt;tns1:Descrizione>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                        &lt;/tns1:Descrizione>&#xa;                    &lt;/tns1:Esito>&#xa;                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:when test=&quot;$VerificaCodiceOLOIn.parameters/tns1:Offerta='CPS' and $VerificaCodiceOLOIn.parameters/tns1:Lavorazione='PRENOTIFICADISATTIVAZIONECPS' and $VerificaCodiceOLOIn.parameters/tns1:CodiceOLOAGCOM='TLC' and starts-with($SelectNomeFile/Record[1]/NOME_FILE, 'WIN')&quot;>&#xa;                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                    &lt;tns1:Esito>&#xa;                        &lt;tns1:Codice>&#xa;                            &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                        &lt;/tns1:Codice>&#xa;                        &lt;tns1:Descrizione>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                        &lt;/tns1:Descrizione>&#xa;                    &lt;/tns1:Esito>&#xa;                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:when test=&quot;$VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;REGOLATORIO&amp;quot; or $VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;FIBERSTREAM&amp;quot;&quot;>&#xa;                &lt;xsl:choose>&#xa;                    &lt;xsl:when test=&quot;starts-with($SelectNomeFile/Record[1]/NOME_FILE, $VerificaCodiceOLOIn.parameters/tns1:CodiceOLOAGCOM) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;N_&amp;quot;, $VerificaCodiceOLOIn.parameters/tns1:CodiceOLOAGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;R_&amp;quot;, $VerificaCodiceOLOIn.parameters/tns1:CodiceOLOAGCOM))  or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;FBS_&amp;quot;, $VerificaCodiceOLOIn.parameters/tns1:CodiceOLOAGCOM))&quot;>&#xa;                        &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;tns1:Esito>&#xa;                                &lt;tns1:Codice>&#xa;                                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                                &lt;/tns1:Codice>&#xa;                                &lt;tns1:Descrizione>&#xa;                                    &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                                &lt;/tns1:Descrizione>&#xa;                            &lt;/tns1:Esito>&#xa;                        &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                    &lt;/xsl:when>&#xa;                    &lt;xsl:otherwise>&#xa;                        &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;tns1:Esito>&#xa;                                &lt;tns1:Codice>&#xa;                                    &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                                &lt;/tns1:Codice>&#xa;                                &lt;tns1:Descrizione>&#xa;                                    &lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&#xa;                                &lt;/tns1:Descrizione>&#xa;                            &lt;/tns1:Esito>&#xa;                            &lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&#xa;                                &lt;tns1:CodiceOlodaFile>&#xa;                                    &lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&#xa;                                &lt;/tns1:CodiceOlodaFile>&#xa;                            &lt;/xsl:if>&#xa;                        &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                    &lt;/xsl:otherwise>&#xa;                &lt;/xsl:choose>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:otherwise>&#xa;                &lt;xsl:choose>&#xa;                    &lt;xsl:when test=&quot;$VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;NPG&amp;quot;&quot;>&#xa;                        &lt;xsl:choose>&#xa;                            &lt;xsl:when test=&quot;starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;R_NP_&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;N_NP_&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;T3_R_NP_&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;T3_N_NP_&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM))&quot;>&#xa;                                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                                    &lt;tns1:Esito>&#xa;                                        &lt;tns1:Codice>&#xa;                                            &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                                        &lt;/tns1:Codice>&#xa;                                        &lt;tns1:Descrizione>&#xa;                                            &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                                        &lt;/tns1:Descrizione>&#xa;                                    &lt;/tns1:Esito>&#xa;                                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;/xsl:when>&#xa;                            &lt;xsl:otherwise>&#xa;                                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                                    &lt;tns1:Esito>&#xa;                                        &lt;tns1:Codice>&#xa;                                            &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                                        &lt;/tns1:Codice>&#xa;                                        &lt;tns1:Descrizione>&#xa;                                            &lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&#xa;                                        &lt;/tns1:Descrizione>&#xa;                                    &lt;/tns1:Esito>&#xa;                                    &lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&#xa;                                        &lt;tns1:CodiceOlodaFile>&#xa;                                            &lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&#xa;                                        &lt;/tns1:CodiceOlodaFile>&#xa;                                    &lt;/xsl:if>&#xa;                                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;/xsl:otherwise>&#xa;                        &lt;/xsl:choose>&#xa;                    &lt;/xsl:when>&#xa;                    &lt;xsl:when test=&quot;$VerificaCodiceOLOIn.parameters/tns1:StrutturaRichiesta = &amp;quot;NGA&amp;quot;&quot;>&#xa;                        &lt;xsl:choose>&#xa;                            &lt;xsl:when test=&quot;$VerificaCodiceOLOIn.parameters/tns1:Offerta=('UBBSEMIGPON','UBBFULLGPON','SEMIGPON1BPNRR','FULLGPON1BPNRR') and (starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;GPON&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)) or starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;NEWGPON&amp;quot;, $SelectNomeOLO/Record[1]/CODFC_OLO_AGCOM)))&quot;>&#xa;                                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                                    &lt;tns1:Esito>&#xa;                                        &lt;tns1:Codice>&#xa;                                            &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                                        &lt;/tns1:Codice>&#xa;                                        &lt;tns1:Descrizione>&#xa;                                            &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                                        &lt;/tns1:Descrizione>&#xa;                                    &lt;/tns1:Esito>&#xa;                                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;/xsl:when>&#xa;                            &lt;xsl:when test=&quot;not($VerificaCodiceOLOIn.parameters/tns1:Offerta=('UBBSEMIGPON','UBBFULLGPON','SEMIGPON1BPNRR','FULLGPON1BPNRR')) and starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;nga_&amp;quot;, $SelectNomeOLO/Record[1]/COD_OLO))&quot;>&#xa;                                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                                    &lt;tns1:Esito>&#xa;                                        &lt;tns1:Codice>&#xa;                                            &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                                        &lt;/tns1:Codice>&#xa;                                        &lt;tns1:Descrizione>&#xa;                                            &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                                        &lt;/tns1:Descrizione>&#xa;                                    &lt;/tns1:Esito>&#xa;                                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;/xsl:when>&#xa;                            &lt;xsl:otherwise>&#xa;                                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                                    &lt;tns1:Esito>&#xa;                                        &lt;tns1:Codice>&#xa;                                            &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                                        &lt;/tns1:Codice>&#xa;                                        &lt;tns1:Descrizione>&#xa;                                            &lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&#xa;                                        &lt;/tns1:Descrizione>&#xa;                                    &lt;/tns1:Esito>&#xa;                                    &lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&#xa;                                        &lt;tns1:CodiceOlodaFile>&#xa;                                            &lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&#xa;                                        &lt;/tns1:CodiceOlodaFile>&#xa;                                    &lt;/xsl:if>&#xa;                                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;/xsl:otherwise>&#xa;                        &lt;/xsl:choose>&#xa;                    &lt;/xsl:when>&#xa;                    &lt;xsl:otherwise>&#xa;                        &lt;xsl:choose>&#xa;                            &lt;xsl:when test=&quot;starts-with($SelectNomeFile/Record[1]/NOME_FILE, concat(&amp;quot;adsl_&amp;quot;, $SelectNomeOLO/Record[1]/COD_OLO))&quot;>&#xa;                                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                                    &lt;tns1:Esito>&#xa;                                        &lt;tns1:Codice>&#xa;                                            &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                                        &lt;/tns1:Codice>&#xa;                                        &lt;tns1:Descrizione>&#xa;                                            &lt;xsl:value-of select=&quot;&amp;quot;OK&amp;quot;&quot;/>&#xa;                                        &lt;/tns1:Descrizione>&#xa;                                    &lt;/tns1:Esito>&#xa;                                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;/xsl:when>&#xa;                            &lt;xsl:otherwise>&#xa;                                &lt;tns1:Verifica_Codice_OLO_Response>&#xa;                                    &lt;tns1:Esito>&#xa;                                        &lt;tns1:Codice>&#xa;                                            &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                                        &lt;/tns1:Codice>&#xa;                                        &lt;tns1:Descrizione>&#xa;                                            &lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&#xa;                                        &lt;/tns1:Descrizione>&#xa;                                    &lt;/tns1:Esito>&#xa;                                    &lt;xsl:if test=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;>&#xa;                                        &lt;tns1:CodiceOlodaFile>&#xa;                                            &lt;xsl:value-of select=&quot;$SelectNomeFile/Record[1]/CODFC_OLO_AGCOM&quot;/>&#xa;                                        &lt;/tns1:CodiceOlodaFile>&#xa;                                    &lt;/xsl:if>&#xa;                                &lt;/tns1:Verifica_Codice_OLO_Response>&#xa;                            &lt;/xsl:otherwise>&#xa;                        &lt;/xsl:choose>&#xa;                    &lt;/xsl:otherwise>&#xa;                &lt;/xsl:choose>&#xa;            &lt;/xsl:otherwise>&#xa;        &lt;/xsl:choose>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.bwassign"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//BWAssign"/>
+                                    <value
+                                    processVariable="VerificaCodiceOLOResponse" xsi:type="generalactivities:BWAssign"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns3=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;logger_name&quot;/>&#xa;    &lt;xsl:param name=&quot;log_level&quot;/>&#xa;    &lt;xsl:param name=&quot;VerificaCodiceOLOIn&quot;/>&#xa;    &lt;xsl:param name=&quot;SelectNomeFile&quot;/>&#xa;    &lt;xsl:param name=&quot;SelectNomeOLO&quot;/>&#xa;    &lt;xsl:template name=&quot;LOG_NomeFile_NomeOLO-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns3:CW_BUS_MESSAGE>&#xa;            &lt;tns3:GenericLogger>&#xa;                &lt;tns3:Application>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;tim.now.checkservice.application&amp;quot;&quot;/>&#xa;                &lt;/tns3:Application>&#xa;                &lt;tns3:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;VerificaCodiceOLO&amp;quot;&quot;/>&#xa;                &lt;/tns3:Process>&#xa;                &lt;tns3:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;BPM_CheckPortType&amp;quot;&quot;/>&#xa;                &lt;/tns3:Service>&#xa;                &lt;tns3:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;VerificaCodiceOLO&amp;quot;&quot;/>&#xa;                &lt;/tns3:Operation>&#xa;                &lt;xsl:if test=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:IDRichiesta&quot;>&#xa;                    &lt;tns3:BusinessID>&#xa;                        &lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:IDRichiesta&quot;/>&#xa;                    &lt;/tns3:BusinessID>&#xa;                &lt;/xsl:if>&#xa;                &lt;tns3:Message>&#xa;                    &lt;xsl:value-of select=&quot;concat(&amp;quot;Estratti record - SelectNomeFile: &amp;quot;, tib:concat-sequence-format($SelectNomeFile/Record, &amp;quot;|&amp;quot;, true()), &amp;quot; - SelectNomeOLO: &amp;quot;, tib:concat-sequence-format($SelectNomeOLO/Record, &amp;quot;|&amp;quot;, true()))&quot;/>&#xa;                &lt;/tns3:Message>&#xa;                &lt;tns3:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$logger_name&quot;/>&#xa;                &lt;/tns3:LoggerName>&#xa;                &lt;tns3:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$log_level&quot;/>&#xa;                &lt;/tns3:LogLevel>&#xa;                &lt;tns3:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                &lt;/tns3:LogJMS>&#xa;            &lt;/tns3:GenericLogger>&#xa;            &lt;tns3:ActiveLoggerServices>&#xa;                &lt;tns3:Envelope>&#xa;                    &lt;tns3:Identifier>&#xa;                        &lt;tns3:ServiceName>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;tim.now.checkservice.bpm_check&amp;quot;&quot;/>&#xa;                        &lt;/tns3:ServiceName>&#xa;                        &lt;tns3:Operation>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;VerificaCodiceOLO&amp;quot;&quot;/>&#xa;                        &lt;/tns3:Operation>&#xa;                        &lt;tns3:Source>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&#xa;                        &lt;/tns3:Source>&#xa;                        &lt;xsl:if test=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:IDRichiesta&quot;>&#xa;                            &lt;tns3:BusinessID>&#xa;                                &lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn/parameters/tns2:VerificaCodiceOLO/tns1:IDRichiesta&quot;/>&#xa;                            &lt;/tns3:BusinessID>&#xa;                        &lt;/xsl:if>&#xa;                        &lt;tns3:EventType>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;VerificaCodiceOLO_SUB-PROCESS&amp;quot;&quot;/>&#xa;                        &lt;/tns3:EventType>&#xa;                    &lt;/tns3:Identifier>&#xa;                    &lt;tns3:track_position>&#xa;                        &lt;xsl:value-of select=&quot;&amp;quot;IN&amp;quot;&quot;/>&#xa;                    &lt;/tns3:track_position>&#xa;                    &lt;tns3:Timestamp>&#xa;                        &lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&#xa;                    &lt;/tns3:Timestamp>&#xa;                &lt;/tns3:Envelope>&#xa;            &lt;/tns3:ActiveLoggerServices>&#xa;        &lt;/tns3:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="LOG_NomeFile_NomeOLO-input"
+                    name="LOG_NomeFile_NomeOLO"
+                    tibex:xpdlId="9c9f4446-64b9-4b54-9f1f-99222481e13f"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="SelectNomeOLOToLOG_NomeFile_NomeOLO"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="CallProcessToVerificaCodiceOLOResponseAssign"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding coercion=""
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns3=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/ControlliAmmessi/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/wsdl/abstract/BPM_CheckService/&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;VerificaCodiceOLOIn.parameters&quot;/>&#xa;    &lt;xsl:param name=&quot;logger_name&quot;/>&#xa;    &lt;xsl:param name=&quot;log_level&quot;/>&#xa;    &lt;xsl:param name=&quot;SelectNomeFile&quot;/>&#xa;    &lt;xsl:param name=&quot;SelectNomeOLO&quot;/>&#xa;    &lt;xsl:template name=&quot;LOG_NomeFile_NomeOLO-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns3:CW_BUS_MESSAGE>&#xa;            &lt;tns3:GenericLogger>&#xa;                &lt;tns3:Application>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;tim.now.checkservice.application&amp;quot;&quot;/>&#xa;                &lt;/tns3:Application>&#xa;                &lt;tns3:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;VerificaCodiceOLO&amp;quot;&quot;/>&#xa;                &lt;/tns3:Process>&#xa;                &lt;tns3:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;BPM_CheckPortType&amp;quot;&quot;/>&#xa;                &lt;/tns3:Service>&#xa;                &lt;tns3:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;VerificaCodiceOLO&amp;quot;&quot;/>&#xa;                &lt;/tns3:Operation>&#xa;                &lt;xsl:if test=&quot;$VerificaCodiceOLOIn.parameters/tns1:IDRichiesta&quot;>&#xa;                    &lt;tns3:BusinessID>&#xa;                        &lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn.parameters/tns1:IDRichiesta&quot;/>&#xa;                    &lt;/tns3:BusinessID>&#xa;                &lt;/xsl:if>&#xa;                &lt;tns3:Message>&#xa;                    &lt;xsl:value-of select=&quot;concat(&amp;quot;Estratti record - SelectNomeFile: &amp;quot;, tib:concat-sequence-format($SelectNomeFile/Record, &amp;quot;|&amp;quot;, true()), &amp;quot; - SelectNomeOLO: &amp;quot;, tib:concat-sequence-format($SelectNomeOLO/Record, &amp;quot;|&amp;quot;, true()))&quot;/>&#xa;                &lt;/tns3:Message>&#xa;                &lt;tns3:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$logger_name&quot;/>&#xa;                &lt;/tns3:LoggerName>&#xa;                &lt;tns3:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$log_level&quot;/>&#xa;                &lt;/tns3:LogLevel>&#xa;                &lt;tns3:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                &lt;/tns3:LogJMS>&#xa;            &lt;/tns3:GenericLogger>&#xa;            &lt;tns3:ActiveLoggerServices>&#xa;                &lt;tns3:Envelope>&#xa;                    &lt;tns3:Identifier>&#xa;                        &lt;tns3:ServiceName>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;tim.now.checkservice.bpm_check&amp;quot;&quot;/>&#xa;                        &lt;/tns3:ServiceName>&#xa;                        &lt;tns3:Operation>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;VerificaCodiceOLO&amp;quot;&quot;/>&#xa;                        &lt;/tns3:Operation>&#xa;                        &lt;tns3:Source>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&#xa;                        &lt;/tns3:Source>&#xa;                        &lt;xsl:if test=&quot;$VerificaCodiceOLOIn.parameters/tns1:IDRichiesta&quot;>&#xa;                            &lt;tns3:BusinessID>&#xa;                                &lt;xsl:value-of select=&quot;$VerificaCodiceOLOIn.parameters/tns1:IDRichiesta&quot;/>&#xa;                            &lt;/tns3:BusinessID>&#xa;                        &lt;/xsl:if>&#xa;                        &lt;tns3:EventType>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;VerificaCodiceOLO_SUB-PROCESS&amp;quot;&quot;/>&#xa;                        &lt;/tns3:EventType>&#xa;                    &lt;/tns3:Identifier>&#xa;                    &lt;tns3:track_position>&#xa;                        &lt;xsl:value-of select=&quot;&amp;quot;IN&amp;quot;&quot;/>&#xa;                    &lt;/tns3:track_position>&#xa;                    &lt;tns3:Timestamp>&#xa;                        &lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&#xa;                    &lt;/tns3:Timestamp>&#xa;                &lt;/tns3:Envelope>&#xa;            &lt;/tns3:ActiveLoggerServices>&#xa;        &lt;/tns3:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        moduleRef="tim.now.shared_library" spawn="true"
+                        subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+        </bpws:flow>
+    </bpws:scope>
+</bpws:process>

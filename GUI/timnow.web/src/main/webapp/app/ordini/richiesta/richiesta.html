@@ -1,0 +1,263 @@
+
+<div class="content-section">
+    <section class="form-heading">
+        <h1>Nuova richiesta per Ordine ( N. {{data.ordineOlo}} )</h1>
+    </section>
+    <div class="tab-wrapper">
+        <a class="nav-back" ng-click="changeState()">indietro</a>
+    </div>
+    <form ng-submit="richiestaOrdineForm.$valid && submitRichiesta()" class="form-container" name="richiestaOrdineForm" novalidate>
+        <section class="form-process">
+            <div class="row">
+                <div class="col-xs-6 form-horizontal paddL0">
+                    <div class="form-group" ng-class="{ 'has-error' : richiestaOrdineForm.causale_richiesta.$invalid && !richiestaOrdineForm.causale_richiesta.$pristine }">
+                        <label class="col-xs-5 control-label">Tipo Lavorazione<sup>*</sup></label>
+                        <div class="col-xs-7" ng-if="!richiestaCrashed">
+                            <div class="selectParent">
+                              <select ng-options="item.richiesta as item.richiestaLabel for item in recuperarichieste"
+                                class="selectmenu SB-width form-control"
+                                name="causale_richiesta"
+                                ng-model="data.causale_richiesta"
+                                ng-change="svuotaRichiesta()"
+                                required>
+                              </select>
+                            
+                                <div role="alert">
+                                    <span ng-if="richiestaOrdineForm.causale_richiesta.$invalid && !richiestaOrdineForm.causale_richiesta.$pristine" class="help-block help-width">Seleziona un'opzione</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-7" ng-if="richiestaCrashed">
+                        {{data.causale_richiesta}}
+                    </div>
+                    </div>
+                    <div class="form-group" ng-class="{ 'has-error' : richiestaOrdineForm.codice_richiesta.$invalid && !richiestaOrdineForm.codice_richiesta.$pristine }">
+                        <label class="col-xs-5 control-label">Codice richiesta<sup>*</sup></label>
+                        <div class="col-xs-7">
+                            <input
+                                    type="text"
+                                    name="codice_richiesta"
+                                    class="form-control SB-width"
+                                    ng-model="data.codice_richiesta"
+                                    ng-maxlength="{{lunghezzaCodiceOrdine}}"
+                                    required>
+                            <div role="alert">
+                                <span ng-if="richiestaOrdineForm.codice_richiesta.$error.required && !richiestaOrdineForm.codice_richiesta.$pristine" class="help-block help-width">Compila questo campo</span>
+                                <span ng-if="richiestaOrdineForm.codice_richiesta.$error.maxlength" class="help-block help-width">Inserire al massimo {{lunghezzaCodiceOrdine}} caratteri</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group"
+                         ng-class="{ 'has-error' : richiestaOrdineForm.riscontro_codice_sessione.$invalid && !richiestaOrdineForm.riscontro_codice_sessione.$pristine }"
+                         ng-if="order.richiestaCrashed"
+                    >
+                        <label class="col-xs-5 control-label">Riscontro Codice Sessione<sup>*</sup></label>
+                        <div class="col-xs-7">
+                            <div class="selectParent">
+                                <select
+                                        class="selectmenu SB-width form-control"
+                                        name="riscontro_codice_sessione"
+                                        ng-model="data.riscontroCodiceSessione"
+                                        ng-change="cambiaRiscontro()"
+                                        required>
+                                    <option value="OK">OK</option>
+                                    <option value="KO">KO</option>
+                                </select>
+                                <div role="alert">
+                                    <span ng-if="richiestaOrdineForm.riscontro_codice_sessione.$invalid && !richiestaOrdineForm.riscontro_codice_sessione.$pristine" class="help-block help-width">Seleziona un'opzione</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group"
+                         ng-class="{ 'has-error' : richiestaOrdineForm.causale_rifiuto.$invalid && !richiestaOrdineForm.causale_rifiuto.$pristine }"
+                        ng-if="order.ambitoServizioRecipient == 'REGOLATORIO' && data.riscontroCodiceSessione == 'KO'"
+                    >
+                        <label class="col-xs-5 control-label">Causale Rifiuto<sup>*</sup></label>
+                        <div class="col-xs-7">
+                            <div class="selectParent">
+                                <select
+                                        class="selectmenu SB-width form-control"
+                                        name="causale_rifiuto"
+                                        ng-model="data.causaleRifiuto"
+                                        required>
+                                    <option value="1">1</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <div role="alert">
+                                    <span ng-if="richiestaOrdineForm.causale_rifiuto.$invalid && !richiestaOrdineForm.causale_rifiuto.$pristine" class="help-block help-width">Seleziona un'opzione</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group"
+                         ng-if="(data.riscontroCodiceSessione == 'KO') && (data.codiceMotivoRifiuto)"
+                         ng-class="{ 'has-error' : richiestaOrdineForm.codiceMotivoRifiuto.$invalid && !richiestaOrdineForm.codiceMotivoRifiuto.$pristine }">
+                        <label class="col-xs-5 control-label">Codice Motivo Rifiuto </label>
+                        <div class="col-xs-7 selected-item">
+
+                            <input	type="text"
+                                      class="form-control SB-width"
+                                      name="codiceMotivoRifiuto"
+                                      ng-model="data.codiceMotivoRifiuto"
+                                      required
+                                      disabled
+                            >
+                            <button
+                                    type="button"
+                                    class="close buttonDeleteSelection"
+                                    aria-label="Cancella Selezione"
+                                    ng-click="cambiaRiscontro()"
+                            >
+                                <span aria-hidden="true"><img src="assets/css/i/close.png" alt="close"></span>
+                            </button>
+                            <div role="alert">
+                                <span ng-if="richiestaOrdineForm.codiceMotivoRifiuto.$invalid && !richiestaOrdineForm.codiceMotivoRifiuto.$pristine" class="help-block help-width">Seleziona un Codice Errore</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group"
+                         ng-if="(data.riscontroCodiceSessione == 'KO') && (data.motivoRifiuto)">
+                        <label class="col-xs-5 control-label">Motivo Rifiuto </label>
+                        <div class="col-xs-7 selected-item">
+                            {{ data.motivoRifiuto }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-6 form-horizontal paddL0">
+                    <div class="form-group">
+                        <label class="col-xs-5 control-label">OAO</label>
+                        <div class="col-xs-7 selected-item">
+                            {{ data.oao }}
+                        </div>
+                    </div>
+                    <!-- RU_1150 -->
+                    <div class="form-group">
+                        <label class="col-xs-5 control-label" ng-if="[MAP_OFFERTE.GPON_SEMI.id, MAP_OFFERTE.GPON_FULL.id, MAP_OFFERTE.GPON_FULL_PNRR.id, MAP_OFFERTE.GPON_SEMI_PNRR.id].indexOf(order.idOfferta) == -1">Codice Ordine TI</label>
+                        <label class="col-xs-5 control-label" ng-if="[MAP_OFFERTE.GPON_SEMI.id, MAP_OFFERTE.GPON_FULL.id, MAP_OFFERTE.FIBERSTREAM.id, MAP_OFFERTE.GPON_FULL_PNRR.id, MAP_OFFERTE.GPON_SEMI_PNRR.id].indexOf(order.idOfferta) > -1">Codice Ordine Fornitore</label>
+                        <div class="col-xs-7 selected-item">
+                            {{ data.codice_ordine_ti }}
+                        </div>
+                    </div>
+                    <!-- RU_1525 -->
+                    <div class="form-group">
+                        <label class="col-xs-5 control-label" ng-if="[MAP_OFFERTE.FIBERSTREAM.id].indexOf(order.idOfferta) > -1">Caratterizzazione Area:</label>
+                        <div class="col-xs-7 selected-item">
+                            {{ data.caratterizzazioneArea }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="col-xs-5 control-label">Codice Ordine OAO</label>
+                        <div class="col-xs-7 selected-item">
+                            {{ data.ordineOlo }}
+                        </div>
+                    </div>
+                    <!-- RU_1150 -->
+                    <div class="form-group" ng-class="{ 'has-error' : richiestaOrdineForm.noteOperatore.$invalid && !richiestaOrdineForm.noteOperatore.$pristine }">
+                        <label class="col-xs-5 control-label">Note da operatore</label>
+                        <div class="col-xs-7">
+                            <textarea name="noteOperatore" cols="30" rows="5" class="form-control" 
+                              ng-disabled="[MAP_OFFERTE.GPON_SEMI.id, MAP_OFFERTE.GPON_FULL.id, MAP_OFFERTE.GPON_FULL_PNRR.id, MAP_OFFERTE.GPON_SEMI_PNRR.id].indexOf(order.idOfferta) > -1"
+                              ng-model="data.note_da_operatore" ng-maxlength="255" ></textarea>
+                             <div role="alert">
+				                <span ng-if="richiestaOrdineForm.noteOperatore.$error.maxlength" class="help-block help-width">Inserire al massimo 255 caratteri</span>
+				            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-xs-6 form-horizontal paddL0">
+                	<div class="form-group"
+                         ng-if="data.causale_richiesta == 'RIMODULAZIONEDAC'"
+                         ng-class="{ 'has-error' : ((richiestaOrdineForm.dac.$invalid && !richiestaOrdineForm.dac.$pristine) || dacMessaggioErrore) }">
+                        <label class="col-xs-5 control-label">DAC<sup>*</sup></label>
+                        <div class="col-xs-7">
+                            <input  type="text"
+                                    name="dac"
+                                    class="form-control SB-width selectDate"
+                                    ng-click="openDAC()"
+                                    uib-datepicker-popup="dd/MM/yyyy"
+                                    ng-model="dataTemp.dac"
+                                    required
+                                    is-open="popup_dac.opened"
+                                    datepicker-options="option"
+                                    close-text="Chiudi"
+                                    alt-input-formats="altInputFormats">
+                             <span ng-if="richiestaOrdineForm.dac.$invalid && !richiestaOrdineForm.dac.$pristine" class="help-block help-width">Compila questo campo</span>
+                    		 <span ng-if="dacMessaggioErrore" class="help-block help-width" style="margin-top: 35px;">{{dacMessaggioErrore}}</span>
+                        </div>
+                    </div>
+                    <!-- RU_1479 -->
+                    <div class="form-group"
+                         ng-if="(data.causale_richiesta == 'DESOSPENSIONE' || data.causale_richiesta == 'RIMODULAZIONEDAD') && !isOrdineFWaEolo"
+                         ng-class="{ 'has-error' : richiestaOrdineForm.dad.$invalid && !richiestaOrdineForm.dad.$pristine }">
+                        <label class="col-xs-5 control-label">DAD<sup>*</sup></label>
+                        <div class="col-xs-7">
+                            <input  type="text"
+                                    name="dad"
+                                    class="form-control SB-width selectDate"
+                                    ng-click="openDAD()"
+                                    uib-datepicker-popup="dd/MM/yyyy"
+                                    ng-model="dataTemp.dad"
+                                    ng-required="data.causale_richiesta == 'DESOSPENSIONE' || data.causale_richiesta == 'RIMODULAZIONEDAD'"
+                                    is-open="popup_dad.opened"
+                                    datepicker-options="option"
+                                    close-text="Chiudi"
+                                    alt-input-formats="altInputFormats">
+                        </div>
+                    </div>
+                    <!-- RU_1479 -->
+                    <div class="form-group"
+                         ng-if="(data.causale_richiesta == 'DESOSPENSIONE' || data.causale_richiesta == 'RIMODULAZIONEDAD') && !isOrdineFWaEolo"
+                         ng-class="{ 'has-error' : richiestaOrdineForm.fascia_oraria.$invalid && !richiestaOrdineForm.fascia_oraria.$pristine }">
+                        <label class="col-xs-5 control-label">Fascia oraria<sup>*</sup></label>
+                        <div class="col-xs-7">
+                            <div class="selectParent">
+                                <select class="form-control selectmenu SB-width"
+                                        name="fascia_oraria"
+                                        ng-model="data.fascia_oraria"
+                                        ng-required="data.causale_richiesta == 'DESOSPENSIONE' || data.causale_richiesta == 'RIMODULAZIONEDAD'">
+                                    <option value="" selected="">Selezionare</option>
+                                    <option ng-repeat="(key,value) in time_slot" value="{{ key }}">{{value}}</option>
+                                </select>
+                                <span ng-if="richiestaOrdineForm.fascia_oraria.$invalid && !richiestaOrdineForm.fascia_oraria.$pristine" class="help-block help-width">Compila questo campo</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="col-xs-6 form-horizontal paddL0" ng-if="data.causale_richiesta == 'DESOSPENSIONE' || data.causale_richiesta == 'RIMODULAZIONEDAD'">
+                 	<!-- RU_1150 -->
+                 	<div class="form-group" ng-class="{ 'has-error' : richiestaOrdineForm.note_altre_lavorazioni.$invalid && !richiestaOrdineForm.note_altre_lavorazioni.$pristine }">
+                        <label class="col-xs-5 control-label">Note Altre Lavorazioni</label>
+                        <div class="col-xs-7">
+                            <textarea name="note_altre_lavorazioni" cols="30" rows="2" class="form-control"
+                              ng-disabled="[MAP_OFFERTE.GPON_SEMI.id, MAP_OFFERTE.GPON_FULL.id, MAP_OFFERTE.GPON_FULL_PNRR.id, MAP_OFFERTE.GPON_SEMI_PNRR.id].indexOf(order.idOfferta) > -1"	
+                              ng-model="data.note_altre_lavorazioni" ng-maxlength="50"></textarea>
+                             <div role="alert">
+				                <span ng-if="richiestaOrdineForm.note_altre_lavorazioni.$error.maxlength" class="help-block help-width">Inserire al massimo 50 caratteri</span>
+				            </div>
+                        </div>
+                    </div>
+	             </div>
+            </div>
+
+            <!-- SM_10519 -->
+            <div ng-if="data.causale_richiesta == 'DESOSPENSIONE'" 
+				ng-include="'app/ordini/richiesta/referenti/referenti-desospensione.html'">
+			</div>
+			<div ng-if="data.causale_richiesta == 'RIMODULAZIONEDAD'" 
+				ng-include="'app/ordini/richiesta/referenti/referenti-rimodulazioneDad.html'">
+			</div>
+            
+            <div class="col-xs-12 madatory-field paddL0">
+                <i>*Campo obbligatorio</i>
+            </div>
+        </section>
+        <section class="form-button">
+            <button class="btn btn-disabled" type="button" ng-click="confermaAnnulla()">Annulla</button>
+            <span ng-show="attesaRispostaChiamata || !caricaDac"><img src="assets/i/loading.gif" /></span>
+            <button class="btn blue-btn" type="submit" ng-click="valida(richiestaOrdineForm)" ng-disabled="attesaRispostaChiamata || !caricaDac">avanti</button>
+        </section>
+    </form>
+</div>

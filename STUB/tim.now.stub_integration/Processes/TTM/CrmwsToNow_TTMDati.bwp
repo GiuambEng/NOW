@@ -1,0 +1,763 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpws:process exitOnStandardFault="no" name="TTM.CrmwsToNow_TTMDati"
+    suppressJoinFailure="yes"
+    targetNamespace="http://xmlns.example.com/20170210144128"
+    xmlns:bpws="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+    xmlns:info="http://www.tibco.com/bw/process/info"
+    xmlns:ns="http://www.tibco.com/pe/EngineTypes"
+    xmlns:ns0="http://xmlns.example.com/20170210144128PLT"
+    xmlns:ns1="http://xmlns.example.com/1481813326693"
+    xmlns:ns2="http://www.tibco.com/pe/WriteToLogActivitySchema"
+    xmlns:ns3="http://www.tibco.com/namespaces/tnt/plugins/jdbc+e710c88b-f512-4da7-8049-df8017e3f45e+input"
+    xmlns:ns4="http://www.tibco.com/namespaces/tnt/plugins/jdbc+e710c88b-f512-4da7-8049-df8017e3f45e+output"
+    xmlns:ns5="http://xsd.telecomitalia.it/CRMWS/NOWTTM"
+    xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+    xmlns:sca-bpel="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"
+    xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"
+    xmlns:tibprop="http://ns.tibco.com/bw/property" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <tibex:Types>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/EngineTypes"
+            xmlns:tns="http://www.tibco.com/pe/EngineTypes" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ErrorReport">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="FullClass" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Class" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="FaultDetail">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ActivityName" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ProcessContext">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="JobId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessInstanceId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0"
+                        name="CustomJobId" type="xs:string"/>
+                    <!--xs:element name="RestartedFromCheckpoint" form="unqualified" block="extension restriction substitution" type="xs:boolean"/-->
+                    <!--xs:element minOccurs="0" maxOccurs="unbounded" name="TrackingInfo" form="unqualified" block="extension restriction substitution" type="xs:string"/-->
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="anydata">
+                <xs:sequence>
+                    <xs:any namespace="##any" processContents="lax"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ErrorReport" type="tns:ErrorReport"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="FaultDetail" type="tns:FaultDetail"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ProcessContext" type="tns:ProcessContext"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="CorrelationValue" type="xs:string"/>
+        </xs:schema>
+        <schema attributeFormDefault="unqualified"
+            elementFormDefault="unqualified"
+            targetNamespace="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions"
+            version="" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions">
+            <complexType name="ActivityExceptionType">
+                <sequence>
+                    <element name="msg" type="string"/>
+                    <element minOccurs="0" name="msgCode" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="ActivityException" type="tns:ActivityExceptionType"/>
+            <complexType name="ActivityTimedOutExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType"/>
+                </complexContent>
+            </complexType>
+            <element name="ActivityTimedOutException" type="tns:ActivityTimedOutExceptionType"/>
+        </schema>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/WriteToLogActivitySchema"
+            xmlns:tns="http://www.tibco.com/pe/WriteToLogActivitySchema" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType name="LogParametersType">
+                <xs:sequence>
+                    <xs:element form="unqualified" minOccurs="0"
+                        name="msgCode" type="xs:string"/>
+                    <xs:element form="unqualified" minOccurs="0"
+                        name="loggerName" type="xs:string"/>
+                    <xs:element form="unqualified" minOccurs="0"
+                        name="logLevel" type="xs:string"/>
+                    <xs:element form="unqualified" name="message" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element name="ActivityInput" type="tns:LogParametersType"/>
+        </xs:schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+e710c88b-f512-4da7-8049-df8017e3f45e+input"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+e710c88b-f512-4da7-8049-df8017e3f45e+input">
+            <element name="jdbcQueryActivityInput">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="1" minOccurs="1"
+                            name="ID_RISORSA" nillable="true" type="string"/>
+                        <element maxOccurs="1" minOccurs="1"
+                            name="TIPO_SERV" nillable="true" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="ServerTimeZone" type="string"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="timeout" type="long"/>
+                        <element maxOccurs="1" minOccurs="0"
+                            name="maxRows" type="long"/>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <schema
+            targetNamespace="http://www.tibco.com/namespaces/tnt/plugins/jdbc+e710c88b-f512-4da7-8049-df8017e3f45e+output"
+            xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.tibco.com/namespaces/tnt/plugins/jdbc+e710c88b-f512-4da7-8049-df8017e3f45e+output">
+            <element name="resultSet">
+                <complexType>
+                    <sequence>
+                        <element maxOccurs="unbounded" minOccurs="0" name="Record">
+                            <complexType>
+                                <sequence>
+                                    <element maxOccurs="1" minOccurs="0"
+                                    name="ID_RISORSA"
+                                    nillable="false" type="string"/>
+                                    <element maxOccurs="1" minOccurs="0"
+                                    name="CODE_STATO"
+                                    nillable="false" type="string"/>
+                                    <element maxOccurs="1" minOccurs="0"
+                                    name="DESC_ESITO"
+                                    nillable="false" type="string"/>
+                                    <element maxOccurs="1" minOccurs="0"
+                                    name="DES" nillable="false" type="string"/>
+                                    <element maxOccurs="1" minOccurs="0"
+                                    name="CODICE_ESITO"
+                                    nillable="false" type="string"/>
+                                    <element maxOccurs="1" minOccurs="0"
+                                    name="COD_GEST" nillable="false" type="string"/>
+                                </sequence>
+                            </complexType>
+                        </element>
+                    </sequence>
+                </complexType>
+            </element>
+        </schema>
+        <wsdl:definitions
+            targetNamespace="http://xmlns.example.com/20170210144128PLT"
+            xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+            xmlns:ptyp="http://xmlns.example.com/1481813326693"
+            xmlns:tns="http://xmlns.example.com/20170210144128PLT"
+            xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+            xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <plnk:partnerLinkType name="partnerLinkType">
+                <plnk:role name="use" portType="ptyp:crmwsDataServiceNow"/>
+            </plnk:partnerLinkType>
+            <wsdl:import namespace="http://xmlns.example.com/1481813326693"/>
+        </wsdl:definitions>
+    </tibex:Types>
+    <tibex:ProcessInfo callable="false" createdBy="SantangeloAr"
+        createdOn="Fri Feb 10 14:41:28 CET 2017" description=""
+        modifiers="public" productVersion="6.3.2 HF4 V43 2017-01-13"
+        scalable="true" singleton="true" stateless="false" type="IT"/>
+    <tibex:ProcessInterface context="" input="" output=""/>
+    <tibex:ProcessTemplateConfigurations/>
+    <notation:Diagram measurementUnit="Pixel" type="BWProcess"
+        xmlns:bwnotation="http://tns.tibco.com/bw/runtime/BWNotation"
+        xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <children type="2001">
+            <children type="5001"/>
+            <children type="3001">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <children type="3002">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3003">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3004">
+                <children type="4018">
+                    <children type="3018">
+                        <children type="4020">
+                            <children type="3020">
+                                <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint x="-8"
+                                    xsi:type="notation:Bounds" y="181"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint x="493"
+                                    xsi:type="notation:Bounds" y="181"/>
+                                    </children>
+                                    <children type="4002 bw.generalactivities.log">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.2"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="99"
+                                    xsi:type="notation:Bounds" y="181"/>
+                                    </children>
+                                    <children type="4002 bw.generalactivities.log">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.3"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="362"
+                                    xsi:type="notation:Bounds" y="181"/>
+                                    </children>
+                                    <children type="4002 bw.jdbc.JDBCQuery">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.4"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="207"
+                                    xsi:type="notation:Bounds" y="181"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    <layoutConstraint height="384"
+                                    width="786" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity"/>
+                            <layoutConstraint height="365" width="444"
+                                x="30" xsi:type="notation:Bounds" y="20"/>
+                        </children>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <element href="//0/@process/@activity"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@activity"/>
+                    <layoutConstraint height="409" width="519" xsi:type="notation:Bounds"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+            <element href="//0/@process"/>
+            <layoutConstraint height="460" width="1131" xsi:type="notation:Bounds"/>
+        </children>
+        <styles xsi:type="notation:DiagramStyle"/>
+        <element href="//0"/>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.1"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.2"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.3"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.4"/>
+            <bendpoints
+                points="[0, 25, -286, 25]$[0, 97, -286, 97]$[286, 97, 0, 97]$[286, 25, 0, 25]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.5"/>
+            <bendpoints
+                points="[0, 25, -394, 25]$[0, 130, -394, 130]$[394, 130, 0, 130]$[394, 25, 0, 25]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+    </notation:Diagram>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://xmlns.example.com/1481813326693"/>
+    <bpws:partnerLinks>
+        <bpws:partnerLink myRole="use" name="crmwsDataServiceNow"
+            partnerLinkType="ns0:partnerLinkType"
+            sca-bpel:ignore="false" sca-bpel:service="crmwsDataServiceNow"/>
+    </bpws:partnerLinks>
+    <bpws:variables>
+        <bpws:variable element="ns:ProcessContext"
+            name="_processContext" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:GetResourceRequest"
+            name="GetResourceNowIn" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:GetResourceResponse"
+            name="GetResourceNowOut-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns2:ActivityInput" name="Log-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns2:ActivityInput" name="Log1-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:jdbcQueryActivityInput"
+            name="JDBCQuery-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns4:resultSet" name="JDBCQuery" sca-bpel:internal="true"/>
+        <bpws:variable name="jdbcProperty" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            sca-bpel:sharedResourceType="{http://xsd.tns.tibco.com/amf/models/sharedresource/jdbc}JdbcDataSource" type="xsd:string">
+            <bpws:from>
+                <bpws:literal>JDBC.JDBCConnectionResource</bpws:literal>
+            </bpws:from>
+        </bpws:variable>
+    </bpws:variables>
+    <bpws:extensions>
+        <bpws:extension mustUnderstand="no" namespace="http://www.eclipse.org/gmf/runtime/1.0.2/notation"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bw/process/info"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca/200912"/>
+        <bpws:extension mustUnderstand="no" namespace="http://ns.tibco.com/bw/property"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bpel/2007/extensions"/>
+    </bpws:extensions>
+    <bpws:scope name="scope">
+        <bpws:flow name="flow">
+            <bpws:links>
+                <bpws:link name="GetResourceNowInToGetResourceNowOut" tibex:linkType="SUCCESS"/>
+                <bpws:link name="LogToGetResourceNowOut" tibex:linkType="SUCCESSWITHCONDITION"/>
+                <bpws:link name="Log1ToGetResourceNowOut" tibex:linkType="SUCCESS"/>
+                <bpws:link name="JDBCQueryToLog1" tibex:linkType="SUCCESSWITHCONDITION"/>
+                <bpws:link name="JDBCQueryToGetResourceNowOut" tibex:linkType="SUCCESSWITHNOCONDITION"/>
+                <bpws:link name="LogToGetResourceNowOut1" tibex:linkType="SUCCESSWITHNOCONDITION"/>
+            </bpws:links>
+            <bpws:receive createInstance="yes" name="GetResourceNowIn"
+                operation="GetResourceNow"
+                partnerLink="crmwsDataServiceNow"
+                portType="ns1:crmwsDataServiceNow"
+                tibex:xpdlId="21bd37a5-39e8-4d02-800a-66a328a3f6f3" variable="GetResourceNowIn">
+                <bpws:sources>
+                    <bpws:source linkName="GetResourceNowInToGetResourceNowOut"/>
+                </bpws:sources>
+            </bpws:receive>
+            <bpws:reply name="GetResourceNowOut"
+                operation="GetResourceNow"
+                partnerLink="crmwsDataServiceNow"
+                portType="ns1:crmwsDataServiceNow"
+                tibex:xpdlId="c60787ee-94dc-4930-9b94-4604ffba8299" variable="GetResourceNowOut-input">
+                <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://xmlns.example.com/1481813326693" xmlns:ns="http://xsd.telecomitalia.it/CRMWS/NOWTTM" xmlns:xsd="http://www.w3.org/2001/XMLSchema" version="2.0"&gt;&lt;xsl:param name="JDBCQuery"/&gt;&lt;xsl:param name="GetResourceNowIn"/&gt;&lt;xsl:template name="GetResourceNowOut-input" match="/"&gt;&lt;tns:GetResourceResponse&gt;&lt;GetResourceResp&gt;&lt;xsl:choose&gt;&lt;xsl:when test="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv='BIT_ASIM'"&gt;&lt;ns:ResourceResponse&gt;&lt;testata&gt;&lt;id_risorsa_crmws&gt;&lt;xsl:value-of select="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/id_risorsa"/&gt;&lt;/id_risorsa_crmws&gt;&lt;codice_esito&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/CODICE_ESITO"/&gt;&lt;/codice_esito&gt;&lt;desc_esito&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/DESC_ESITO"/&gt;&lt;/desc_esito&gt;&lt;/testata&gt;&lt;bs_asim_atm_gbe&gt;&lt;vc&gt;&lt;id_vc&gt;&lt;xsl:value-of select="'1'"/&gt;&lt;/id_vc&gt;&lt;/vc&gt;&lt;id_risorsa_richiesta&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/ID_RISORSA"/&gt;&lt;/id_risorsa_richiesta&gt;&lt;codice_olo&gt;&lt;xsl:value-of select="'TLC'"/&gt;&lt;/codice_olo&gt;&lt;code_stato&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/CODE_STATO"/&gt;&lt;/code_stato&gt;&lt;desc_stato&gt;&lt;xsl:value-of select="'DESC_STATO'"/&gt;&lt;/desc_stato&gt;&lt;localita&gt;&lt;xsl:value-of select="'ROMA'"/&gt;&lt;/localita&gt;&lt;code_comm_servizio&gt;&lt;xsl:value-of select="'123'"/&gt;&lt;/code_comm_servizio&gt;&lt;desc_comm_servizio&gt;&lt;xsl:value-of select="'AAA'"/&gt;&lt;/desc_comm_servizio&gt;&lt;code_tipo_servizio&gt;&lt;xsl:value-of select="'1'"/&gt;&lt;/code_tipo_servizio&gt;&lt;desc_tipo_servizio&gt;&lt;xsl:value-of select="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv"/&gt;&lt;/desc_tipo_servizio&gt;&lt;code_linea_splitter&gt;&lt;xsl:value-of select="'2'"/&gt;&lt;/code_linea_splitter&gt;&lt;desc_linea_splitter&gt;&lt;xsl:value-of select="'ABC'"/&gt;&lt;/desc_linea_splitter&gt;&lt;code_tipo_flag_isdn_gnr&gt;&lt;xsl:value-of select="'3'"/&gt;&lt;/code_tipo_flag_isdn_gnr&gt;&lt;desc_tipo_flag_isdn_gnr&gt;&lt;xsl:value-of select="'S'"/&gt;&lt;/desc_tipo_flag_isdn_gnr&gt;&lt;data_ricezione_ordine&gt;&lt;xsl:value-of select="format-dateTime(current-dateTime(),&amp;quot;[D01]/[M01]/[Y0001] [H01]:[m01]:[s01]&amp;quot;)"/&gt;&lt;/data_ricezione_ordine&gt;&lt;xsl:if test="$JDBCQuery/Record[1]/DES"&gt;&lt;data_espletamento&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/DES"/&gt;&lt;/data_espletamento&gt;&lt;/xsl:if&gt;&lt;diffidato&gt;&lt;xsl:value-of select="'SI'"/&gt;&lt;/diffidato&gt;&lt;/bs_asim_atm_gbe&gt;&lt;/ns:ResourceResponse&gt;&lt;/xsl:when&gt;&lt;xsl:when test="starts-with($GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv, 'EASYIP')"&gt;&lt;ns:ResourceResponse&gt;&lt;testata&gt;&lt;id_risorsa_crmws&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/ID_RISORSA"/&gt;&lt;/id_risorsa_crmws&gt;&lt;codice_esito&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/CODICE_ESITO"/&gt;&lt;/codice_esito&gt;&lt;desc_esito&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/DESC_ESITO"/&gt;&lt;/desc_esito&gt;&lt;/testata&gt;&lt;easy_ip&gt;&lt;id_risorsa_richiesta&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/ID_RISORSA"/&gt;&lt;/id_risorsa_richiesta&gt;&lt;codice_olo&gt;&lt;xsl:value-of select="'TLC'"/&gt;&lt;/codice_olo&gt;&lt;code_stato&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/CODE_STATO"/&gt;&lt;/code_stato&gt;&lt;desc_stato&gt;&lt;xsl:value-of select="'DESC_STATO'"/&gt;&lt;/desc_stato&gt;&lt;localita&gt;&lt;xsl:value-of select="'ROMA'"/&gt;&lt;/localita&gt;&lt;code_comm_servizio&gt;&lt;xsl:value-of select="'123'"/&gt;&lt;/code_comm_servizio&gt;&lt;desc_comm_servizio&gt;&lt;xsl:value-of select="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv"/&gt;&lt;/desc_comm_servizio&gt;&lt;code_tipo_servizio&gt;&lt;xsl:value-of select="'1'"/&gt;&lt;/code_tipo_servizio&gt;&lt;desc_tipo_servizio&gt;&lt;xsl:value-of select="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv"/&gt;&lt;/desc_tipo_servizio&gt;&lt;code_linea_splitter&gt;&lt;xsl:value-of select="'2'"/&gt;&lt;/code_linea_splitter&gt;&lt;desc_linea_splitter&gt;&lt;xsl:value-of select="'AAA'"/&gt;&lt;/desc_linea_splitter&gt;&lt;code_tipo_flag_isdn_gnr&gt;&lt;xsl:value-of select="'3'"/&gt;&lt;/code_tipo_flag_isdn_gnr&gt;&lt;desc_tipo_flag_isdn_gnr&gt;&lt;xsl:value-of select="'S'"/&gt;&lt;/desc_tipo_flag_isdn_gnr&gt;&lt;data_ricezione_ordine&gt;&lt;xsl:value-of select="format-dateTime(current-dateTime(),&amp;quot;[D01]/[M01]/[Y0001] [H01]:[m01]:[s01]&amp;quot;)"/&gt;&lt;/data_ricezione_ordine&gt;&lt;xsl:if test="$JDBCQuery/Record[1]/DES"&gt;&lt;data_espletamento&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/DES"/&gt;&lt;/data_espletamento&gt;&lt;/xsl:if&gt;&lt;diffidato&gt;&lt;xsl:value-of select="'SI'"/&gt;&lt;/diffidato&gt;&lt;/easy_ip&gt;&lt;/ns:ResourceResponse&gt;&lt;/xsl:when&gt;&lt;xsl:when test="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv='BIT_FTTX'"&gt;&lt;ns:ResourceResponse&gt;&lt;testata&gt;&lt;id_risorsa_crmws&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/ID_RISORSA"/&gt;&lt;/id_risorsa_crmws&gt;&lt;codice_esito&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/CODICE_ESITO"/&gt;&lt;/codice_esito&gt;&lt;desc_esito&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/DESC_ESITO"/&gt;&lt;/desc_esito&gt;&lt;/testata&gt;&lt;bs_ftth_fttcab&gt;&lt;id_risorsa_richiesta&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/ID_RISORSA"/&gt;&lt;/id_risorsa_richiesta&gt;&lt;codice_olo&gt;&lt;xsl:value-of select="'TLC'"/&gt;&lt;/codice_olo&gt;&lt;code_stato&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/CODE_STATO"/&gt;&lt;/code_stato&gt;&lt;desc_stato&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/DESC_ESITO"/&gt;&lt;/desc_stato&gt;&lt;localita&gt;&lt;xsl:value-of select="'ROMA'"/&gt;&lt;/localita&gt;&lt;code_comm_servizio&gt;&lt;xsl:value-of select="'123'"/&gt;&lt;/code_comm_servizio&gt;&lt;desc_comm_servizio&gt;&lt;xsl:value-of select="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv"/&gt;&lt;/desc_comm_servizio&gt;&lt;code_tipo_servizio&gt;&lt;xsl:value-of select="'1'"/&gt;&lt;/code_tipo_servizio&gt;&lt;desc_tipo_servizio&gt;&lt;xsl:value-of select="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv"/&gt;&lt;/desc_tipo_servizio&gt;&lt;code_tipo_flag_isdn_gnr&gt;&lt;xsl:value-of select="'2'"/&gt;&lt;/code_tipo_flag_isdn_gnr&gt;&lt;desc_tipo_flag_isdn_gnr&gt;&lt;xsl:value-of select="'S'"/&gt;&lt;/desc_tipo_flag_isdn_gnr&gt;&lt;data_ricezione_ordine&gt;&lt;xsl:value-of select="format-dateTime(current-dateTime(),&amp;quot;[D01]/[M01]/[Y0001] [H01]:[m01]:[s01]&amp;quot;)"/&gt;&lt;/data_ricezione_ordine&gt;&lt;xsl:if test="$JDBCQuery/Record[1]/DES"&gt;&lt;data_espletamento&gt;&lt;xsl:value-of select="$JDBCQuery/Record[1]/DES"/&gt;&lt;/data_espletamento&gt;&lt;/xsl:if&gt;&lt;num_user_vlan&gt;&lt;xsl:value-of select="'1'"/&gt;&lt;/num_user_vlan&gt;&lt;user_vlan&gt;&lt;td_kit&gt;&lt;xsl:value-of select="'TD_KIT'"/&gt;&lt;/td_kit&gt;&lt;cos&gt;&lt;xsl:value-of select="&amp;quot;0&amp;quot;"/&gt;&lt;/cos&gt;&lt;/user_vlan&gt;&lt;diffidato&gt;&lt;xsl:value-of select="'SI'"/&gt;&lt;/diffidato&gt;&lt;/bs_ftth_fttcab&gt;&lt;/ns:ResourceResponse&gt;&lt;/xsl:when&gt;&lt;xsl:when test="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv != ('BIT_FTTX','EASYIP','BIT_ASIM','EASYIPUBB')"&gt;&lt;ns:ResourceResponse&gt;&lt;testata&gt;&lt;id_risorsa_crmws&gt;&lt;xsl:value-of select="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/id_risorsa"/&gt;&lt;/id_risorsa_crmws&gt;&lt;codice_esito&gt;&lt;xsl:value-of select="'0'"/&gt;&lt;/codice_esito&gt;&lt;desc_esito&gt;&lt;xsl:value-of select="'Servizio  commercializzato esclusivamente da CRMWS'"/&gt;&lt;/desc_esito&gt;&lt;/testata&gt;&lt;/ns:ResourceResponse&gt;&lt;/xsl:when&gt;&lt;xsl:otherwise&gt;&lt;ns:ResourceResponse&gt;&lt;testata&gt;&lt;id_risorsa_crmws&gt;&lt;xsl:value-of select="$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/id_risorsa"/&gt;&lt;/id_risorsa_crmws&gt;&lt;codice_esito&gt;&lt;xsl:value-of select="'2'"/&gt;&lt;/codice_esito&gt;&lt;desc_esito&gt;&lt;xsl:value-of select="'Risorsa non censita CRMWS'"/&gt;&lt;/desc_esito&gt;&lt;/testata&gt;&lt;/ns:ResourceResponse&gt;&lt;/xsl:otherwise&gt;&lt;/xsl:choose&gt;&lt;/GetResourceResp&gt;&lt;/tns:GetResourceResponse&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                <tibex:inputBindings>
+                    <tibex:partBinding
+                        expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://xmlns.example.com/1481813326693&quot; xmlns:ns=&quot;http://xsd.telecomitalia.it/CRMWS/NOWTTM&quot; xmlns:xsd=&quot;http://www.w3.org/2001/XMLSchema&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;GetResourceNowIn.GetResourceReq&quot;/>&#xa;    &lt;xsl:param name=&quot;JDBCQuery&quot;/>&#xa;    &lt;xsl:template name=&quot;GetResourceNowOut-input&quot; match=&quot;/&quot;>&#xa;        &lt;xsl:choose>&#xa;            &lt;xsl:when test=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv='BIT_ASIM'&quot;>&#xa;                &lt;ns:ResourceResponse>&#xa;                    &lt;testata>&#xa;                        &lt;id_risorsa_crmws>&#xa;                            &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/id_risorsa&quot;/>&#xa;                        &lt;/id_risorsa_crmws>&#xa;                        &lt;codice_esito>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/CODICE_ESITO&quot;/>&#xa;                        &lt;/codice_esito>&#xa;                        &lt;desc_esito>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/DESC_ESITO&quot;/>&#xa;                        &lt;/desc_esito>&#xa;                    &lt;/testata>&#xa;                    &lt;bs_asim_atm_gbe>&#xa;                        &lt;vc>&#xa;                            &lt;id_vc>&#xa;                                &lt;xsl:value-of select=&quot;'1'&quot;/>&#xa;                            &lt;/id_vc>&#xa;                        &lt;/vc>&#xa;                        &lt;id_risorsa_richiesta>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/ID_RISORSA&quot;/>&#xa;                        &lt;/id_risorsa_richiesta>&#xa;                        &lt;codice_olo>&#xa;                            &lt;xsl:value-of select=&quot;'TLC'&quot;/>&#xa;                        &lt;/codice_olo>&#xa;                        &lt;code_stato>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/CODE_STATO&quot;/>&#xa;                        &lt;/code_stato>&#xa;                        &lt;desc_stato>&#xa;                            &lt;xsl:value-of select=&quot;'DESC_STATO'&quot;/>&#xa;                        &lt;/desc_stato>&#xa;                        &lt;localita>&#xa;                            &lt;xsl:value-of select=&quot;'ROMA'&quot;/>&#xa;                        &lt;/localita>&#xa;                        &lt;code_comm_servizio>&#xa;                            &lt;xsl:value-of select=&quot;'123'&quot;/>&#xa;                        &lt;/code_comm_servizio>&#xa;                        &lt;desc_comm_servizio>&#xa;                            &lt;xsl:value-of select=&quot;'AAA'&quot;/>&#xa;                        &lt;/desc_comm_servizio>&#xa;                        &lt;code_tipo_servizio>&#xa;                            &lt;xsl:value-of select=&quot;'1'&quot;/>&#xa;                        &lt;/code_tipo_servizio>&#xa;                        &lt;desc_tipo_servizio>&#xa;                            &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv&quot;/>&#xa;                        &lt;/desc_tipo_servizio>&#xa;                        &lt;code_linea_splitter>&#xa;                            &lt;xsl:value-of select=&quot;'2'&quot;/>&#xa;                        &lt;/code_linea_splitter>&#xa;                        &lt;desc_linea_splitter>&#xa;                            &lt;xsl:value-of select=&quot;'ABC'&quot;/>&#xa;                        &lt;/desc_linea_splitter>&#xa;                        &lt;code_tipo_flag_isdn_gnr>&#xa;                            &lt;xsl:value-of select=&quot;'3'&quot;/>&#xa;                        &lt;/code_tipo_flag_isdn_gnr>&#xa;                        &lt;desc_tipo_flag_isdn_gnr>&#xa;                            &lt;xsl:value-of select=&quot;'S'&quot;/>&#xa;                        &lt;/desc_tipo_flag_isdn_gnr>&#xa;                        &lt;data_ricezione_ordine>&#xa;                            &lt;xsl:value-of select=&quot;format-dateTime(current-dateTime(),&amp;quot;[D01]/[M01]/[Y0001] [H01]:[m01]:[s01]&amp;quot;)&quot;/>&#xa;                        &lt;/data_ricezione_ordine>&#xa;                        &lt;xsl:if test=&quot;$JDBCQuery/Record[1]/DES&quot;>&#xa;                            &lt;data_espletamento>&#xa;                                &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/DES&quot;/>&#xa;                            &lt;/data_espletamento>&#xa;                        &lt;/xsl:if>&#xa;                        &lt;diffidato>&#xa;                            &lt;xsl:value-of select=&quot;'SI'&quot;/>&#xa;                        &lt;/diffidato>&#xa;                    &lt;/bs_asim_atm_gbe>&#xa;                &lt;/ns:ResourceResponse>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:when test=&quot;starts-with($GetResourceNowIn.GetResourceReq/resource/tipo_serv, 'EASYIP')&quot;>&#xa;                &lt;ns:ResourceResponse>&#xa;                    &lt;testata>&#xa;                        &lt;id_risorsa_crmws>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/ID_RISORSA&quot;/>&#xa;                        &lt;/id_risorsa_crmws>&#xa;                        &lt;codice_esito>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/CODICE_ESITO&quot;/>&#xa;                        &lt;/codice_esito>&#xa;                        &lt;desc_esito>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/DESC_ESITO&quot;/>&#xa;                        &lt;/desc_esito>&#xa;                    &lt;/testata>&#xa;                    &lt;easy_ip>&#xa;                        &lt;id_risorsa_richiesta>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/ID_RISORSA&quot;/>&#xa;                        &lt;/id_risorsa_richiesta>&#xa;                        &lt;codice_olo>&#xa;                            &lt;xsl:value-of select=&quot;'TLC'&quot;/>&#xa;                        &lt;/codice_olo>&#xa;                        &lt;code_stato>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/CODE_STATO&quot;/>&#xa;                        &lt;/code_stato>&#xa;                        &lt;desc_stato>&#xa;                            &lt;xsl:value-of select=&quot;'DESC_STATO'&quot;/>&#xa;                        &lt;/desc_stato>&#xa;                        &lt;localita>&#xa;                            &lt;xsl:value-of select=&quot;'ROMA'&quot;/>&#xa;                        &lt;/localita>&#xa;                        &lt;code_comm_servizio>&#xa;                            &lt;xsl:value-of select=&quot;'123'&quot;/>&#xa;                        &lt;/code_comm_servizio>&#xa;                        &lt;desc_comm_servizio>&#xa;                            &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv&quot;/>&#xa;                        &lt;/desc_comm_servizio>&#xa;                        &lt;code_tipo_servizio>&#xa;                            &lt;xsl:value-of select=&quot;'1'&quot;/>&#xa;                        &lt;/code_tipo_servizio>&#xa;                        &lt;desc_tipo_servizio>&#xa;                            &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv&quot;/>&#xa;                        &lt;/desc_tipo_servizio>&#xa;                        &lt;code_linea_splitter>&#xa;                            &lt;xsl:value-of select=&quot;'2'&quot;/>&#xa;                        &lt;/code_linea_splitter>&#xa;                        &lt;desc_linea_splitter>&#xa;                            &lt;xsl:value-of select=&quot;'AAA'&quot;/>&#xa;                        &lt;/desc_linea_splitter>&#xa;                        &lt;code_tipo_flag_isdn_gnr>&#xa;                            &lt;xsl:value-of select=&quot;'3'&quot;/>&#xa;                        &lt;/code_tipo_flag_isdn_gnr>&#xa;                        &lt;desc_tipo_flag_isdn_gnr>&#xa;                            &lt;xsl:value-of select=&quot;'S'&quot;/>&#xa;                        &lt;/desc_tipo_flag_isdn_gnr>&#xa;                        &lt;data_ricezione_ordine>&#xa;                            &lt;xsl:value-of select=&quot;format-dateTime(current-dateTime(),&amp;quot;[D01]/[M01]/[Y0001] [H01]:[m01]:[s01]&amp;quot;)&quot;/>&#xa;                        &lt;/data_ricezione_ordine>&#xa;                        &lt;xsl:if test=&quot;$JDBCQuery/Record[1]/DES&quot;>&#xa;                            &lt;data_espletamento>&#xa;                                &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/DES&quot;/>&#xa;                            &lt;/data_espletamento>&#xa;                        &lt;/xsl:if>&#xa;                        &lt;diffidato>&#xa;                            &lt;xsl:value-of select=&quot;'SI'&quot;/>&#xa;                        &lt;/diffidato>&#xa;                    &lt;/easy_ip>&#xa;                &lt;/ns:ResourceResponse>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:when test=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv='BIT_FTTX'&quot;>&#xa;                &lt;ns:ResourceResponse>&#xa;                    &lt;testata>&#xa;                        &lt;id_risorsa_crmws>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/ID_RISORSA&quot;/>&#xa;                        &lt;/id_risorsa_crmws>&#xa;                        &lt;codice_esito>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/CODICE_ESITO&quot;/>&#xa;                        &lt;/codice_esito>&#xa;                        &lt;desc_esito>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/DESC_ESITO&quot;/>&#xa;                        &lt;/desc_esito>&#xa;                    &lt;/testata>&#xa;                    &lt;bs_ftth_fttcab>&#xa;                        &lt;id_risorsa_richiesta>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/ID_RISORSA&quot;/>&#xa;                        &lt;/id_risorsa_richiesta>&#xa;                        &lt;codice_olo>&#xa;                            &lt;xsl:value-of select=&quot;'TLC'&quot;/>&#xa;                        &lt;/codice_olo>&#xa;                        &lt;code_stato>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/CODE_STATO&quot;/>&#xa;                        &lt;/code_stato>&#xa;                        &lt;desc_stato>&#xa;                            &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/DESC_ESITO&quot;/>&#xa;                        &lt;/desc_stato>&#xa;                        &lt;localita>&#xa;                            &lt;xsl:value-of select=&quot;'ROMA'&quot;/>&#xa;                        &lt;/localita>&#xa;                        &lt;code_comm_servizio>&#xa;                            &lt;xsl:value-of select=&quot;'123'&quot;/>&#xa;                        &lt;/code_comm_servizio>&#xa;                        &lt;desc_comm_servizio>&#xa;                            &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv&quot;/>&#xa;                        &lt;/desc_comm_servizio>&#xa;                        &lt;code_tipo_servizio>&#xa;                            &lt;xsl:value-of select=&quot;'1'&quot;/>&#xa;                        &lt;/code_tipo_servizio>&#xa;                        &lt;desc_tipo_servizio>&#xa;                            &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv&quot;/>&#xa;                        &lt;/desc_tipo_servizio>&#xa;                        &lt;code_tipo_flag_isdn_gnr>&#xa;                            &lt;xsl:value-of select=&quot;'2'&quot;/>&#xa;                        &lt;/code_tipo_flag_isdn_gnr>&#xa;                        &lt;desc_tipo_flag_isdn_gnr>&#xa;                            &lt;xsl:value-of select=&quot;'S'&quot;/>&#xa;                        &lt;/desc_tipo_flag_isdn_gnr>&#xa;                        &lt;data_ricezione_ordine>&#xa;                            &lt;xsl:value-of select=&quot;format-dateTime(current-dateTime(),&amp;quot;[D01]/[M01]/[Y0001] [H01]:[m01]:[s01]&amp;quot;)&quot;/>&#xa;                        &lt;/data_ricezione_ordine>&#xa;                        &lt;xsl:if test=&quot;$JDBCQuery/Record[1]/DES&quot;>&#xa;                            &lt;data_espletamento>&#xa;                                &lt;xsl:value-of select=&quot;$JDBCQuery/Record[1]/DES&quot;/>&#xa;                            &lt;/data_espletamento>&#xa;                        &lt;/xsl:if>&#xa;                        &lt;num_user_vlan>&#xa;                            &lt;xsl:value-of select=&quot;'1'&quot;/>&#xa;                        &lt;/num_user_vlan>&#xa;                        &lt;user_vlan>&#xa;                            &lt;td_kit>&#xa;                                &lt;xsl:value-of select=&quot;'TD_KIT'&quot;/>&#xa;                            &lt;/td_kit>&#xa;                            &lt;cos>&#xa;                                &lt;xsl:value-of select=&quot;&amp;quot;0&amp;quot;&quot;/>&#xa;                            &lt;/cos>&#xa;                        &lt;/user_vlan>&#xa;                        &lt;diffidato>&#xa;                            &lt;xsl:value-of select=&quot;'SI'&quot;/>&#xa;                        &lt;/diffidato>&#xa;                    &lt;/bs_ftth_fttcab>&#xa;                &lt;/ns:ResourceResponse>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:when test=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv != ('BIT_FTTX','EASYIP','BIT_ASIM','EASYIPUBB')&quot;>&#xa;                &lt;ns:ResourceResponse>&#xa;                    &lt;testata>&#xa;                        &lt;id_risorsa_crmws>&#xa;                            &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/id_risorsa&quot;/>&#xa;                        &lt;/id_risorsa_crmws>&#xa;                        &lt;codice_esito>&#xa;                            &lt;xsl:value-of select=&quot;'0'&quot;/>&#xa;                        &lt;/codice_esito>&#xa;                        &lt;desc_esito>&#xa;                            &lt;xsl:value-of select=&quot;'Servizio  commercializzato esclusivamente da CRMWS'&quot;/>&#xa;                        &lt;/desc_esito>&#xa;                    &lt;/testata>&#xa;                &lt;/ns:ResourceResponse>&#xa;            &lt;/xsl:when>&#xa;            &lt;xsl:otherwise>&#xa;                &lt;ns:ResourceResponse>&#xa;                    &lt;testata>&#xa;                        &lt;id_risorsa_crmws>&#xa;                            &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/id_risorsa&quot;/>&#xa;                        &lt;/id_risorsa_crmws>&#xa;                        &lt;codice_esito>&#xa;                            &lt;xsl:value-of select=&quot;'2'&quot;/>&#xa;                        &lt;/codice_esito>&#xa;                        &lt;desc_esito>&#xa;                            &lt;xsl:value-of select=&quot;'Risorsa non censita CRMWS'&quot;/>&#xa;                        &lt;/desc_esito>&#xa;                    &lt;/testata>&#xa;                &lt;/ns:ResourceResponse>&#xa;            &lt;/xsl:otherwise>&#xa;        &lt;/xsl:choose>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                </tibex:inputBindings>
+                <bpws:targets>
+                    <bpws:target linkName="Log1ToGetResourceNowOut"/>
+                    <bpws:target linkName="JDBCQueryToGetResourceNowOut"/>
+                    <bpws:target linkName="LogToGetResourceNowOut1"/>
+                </bpws:targets>
+                <bpws:correlations/>
+            </bpws:reply>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/pe/WriteToLogActivitySchema&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; xmlns:ns=&quot;http://xsd.telecomitalia.it/CRMWS/NOWTTM&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;GetResourceNowIn&quot;/>&lt;xsl:template name=&quot;Log-input&quot; match=&quot;/&quot;>&lt;tns:ActivityInput>&lt;message>&lt;xsl:value-of select=&quot;concat('START STUB TTM DATI    ',tib:render-xml($GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource, true(),true()))&quot;/>&lt;/message>&lt;/tns:ActivityInput>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="Log-input" name="Log"
+                    tibex:xpdlId="1b30c920-83b5-480b-abde-40b8f32d10a0" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="GetResourceNowInToGetResourceNowOut"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="LogToGetResourceNowOut">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="$GetResourceNowIn/GetResourceReq/ns5:ResourceRequest/resource/tipo_serv = ('BIT_ASIM', 'EASYIP', 'BIT_FTTX', 'EASYIPUBB')" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[$GetResourceNowIn.GetResourceReq/resource/tipo_serv = ('BIT_ASIM', 'EASYIP', 'BIT_FTTX', 'EASYIPUBB')]]></bpws:transitionCondition>
+                        </bpws:source>
+                        <bpws:source linkName="LogToGetResourceNowOut1">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="##otherwise##" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[##otherwise##]]></bpws:transitionCondition>
+                        </bpws:source>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/pe/WriteToLogActivitySchema&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; xmlns:ns=&quot;http://xsd.telecomitalia.it/CRMWS/NOWTTM&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;GetResourceNowIn.GetResourceReq&quot;/>&#xa;    &lt;xsl:template name=&quot;Log-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:ActivityInput>&#xa;            &lt;message>&#xa;                &lt;xsl:value-of select=&quot;concat('START STUB TTM DATI    ',tib:render-xml($GetResourceNowIn.GetResourceReq/resource, true(),true()))&quot;/>&#xa;            &lt;/message>&#xa;        &lt;/tns:ActivityInput>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.log"
+                            version="6.0.0.001"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//Log"/>
+                                    <value role="Info"
+                                    suppressJobInfo="true" xsi:type="generalactivities:Log"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/pe/WriteToLogActivitySchema&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;JDBCQuery&quot;/>&lt;xsl:template name=&quot;Log1-input&quot; match=&quot;/&quot;>&lt;tns:ActivityInput>&lt;message>&lt;xsl:value-of select=&quot;tib:render-xml($JDBCQuery/Record[1], true(),true())&quot;/>&lt;/message>&lt;/tns:ActivityInput>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="Log1-input" name="Log1"
+                    tibex:xpdlId="81994629-1b61-41d3-bf55-0d1096b8a6f0" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="JDBCQueryToLog1"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="Log1ToGetResourceNowOut"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/pe/WriteToLogActivitySchema&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;JDBCQuery&quot;/>&lt;xsl:template name=&quot;Log1-input&quot; match=&quot;/&quot;>&lt;tns:ActivityInput>&lt;message>&lt;xsl:value-of select=&quot;tib:render-xml($JDBCQuery/Record[1], true(),true())&quot;/>&lt;/message>&lt;/tns:ActivityInput>&lt;/xsl:template>&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.log"
+                            version="6.0.0.001"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//Log"/>
+                                    <value role="Info"
+                                    suppressJobInfo="true" xsi:type="generalactivities:Log"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+e710c88b-f512-4da7-8049-df8017e3f45e+input&quot; xmlns:ns=&quot;http://xsd.telecomitalia.it/CRMWS/NOWTTM&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;GetResourceNowIn&quot;/>&lt;xsl:template name=&quot;JDBCQuery-input&quot; match=&quot;/&quot;>&lt;tns:jdbcQueryActivityInput>&lt;ID_RISORSA>&lt;xsl:value-of select=&quot;$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/id_risorsa&quot;/>&lt;/ID_RISORSA>&lt;TIPO_SERV>&lt;xsl:value-of select=&quot;$GetResourceNowIn/GetResourceReq/ns:ResourceRequest/resource/tipo_serv&quot;/>&lt;/TIPO_SERV>&lt;/tns:jdbcQueryActivityInput>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="JDBCQuery-input" name="JDBCQuery"
+                    outputVariable="JDBCQuery"
+                    tibex:xpdlId="e710c88b-f512-4da7-8049-df8017e3f45e" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="LogToGetResourceNowOut"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="JDBCQueryToLog1">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="count($JDBCQuery/Record)>0" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[count($JDBCQuery/Record)>0]]></bpws:transitionCondition>
+                        </bpws:source>
+                        <bpws:source linkName="JDBCQueryToGetResourceNowOut">
+                            <tibex:DesignExpression>
+                                <tibex:expression
+                                    expression="##otherwise##" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                            </tibex:DesignExpression>
+                            <bpws:transitionCondition><![CDATA[##otherwise##]]></bpws:transitionCondition>
+                        </bpws:source>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tibco.com/namespaces/tnt/plugins/jdbc+e710c88b-f512-4da7-8049-df8017e3f45e+input&quot; xmlns:ns=&quot;http://xsd.telecomitalia.it/CRMWS/NOWTTM&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;GetResourceNowIn.GetResourceReq&quot;/>&#xa;    &lt;xsl:template name=&quot;JDBCQuery-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:jdbcQueryActivityInput>&#xa;            &lt;ID_RISORSA>&#xa;                &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/id_risorsa&quot;/>&#xa;            &lt;/ID_RISORSA>&#xa;            &lt;TIPO_SERV>&#xa;                &lt;xsl:value-of select=&quot;$GetResourceNowIn.GetResourceReq/resource/tipo_serv&quot;/>&#xa;            &lt;/TIPO_SERV>&#xa;        &lt;/tns:jdbcQueryActivityInput>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.jdbc.JDBCQuery"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:jdbcPalette="http://ns.tibco.com/bw/palette/jdbc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/jdbc#//JDBCQueryActivity"/>
+                                    <value maxRows="100"
+                                    sharedResourceProperty="jdbcProperty"
+                                    sqlStatement="SELECT ID_RISORSA, CODE_STATO, DESC_ESITO, DES, CODICE_ESITO,&#xd;&#xa;  COD_GEST&#xd;&#xa;  FROM STUB_RESPONSE_CRMWS_TO_NOW_TTM&#xd;&#xa;  WHERE ID_RISORSA = ? and TIPO_SERV=?"
+                                    timeout="10" xsi:type="jdbcPalette:JDBCQueryActivity">
+                                    <PreparedParameters
+                                    DataType="12"
+                                    DataTypeDisplayValue="VARCHAR" ParameterName="ID_RISORSA"/>
+                                    <PreparedParameters
+                                    DataType="12"
+                                    DataTypeDisplayValue="VARCHAR" ParameterName="TIPO_SERV"/>
+                                    <columnMetadata
+                                    columnName="ID_RISORSA"
+                                    dataType="12"
+                                    status="OptionalElement" typeName="VARCHAR2"/>
+                                    <columnMetadata
+                                    columnName="CODE_STATO"
+                                    dataType="12"
+                                    status="OptionalElement" typeName="VARCHAR2"/>
+                                    <columnMetadata
+                                    columnName="DESC_ESITO"
+                                    dataType="12"
+                                    status="OptionalElement" typeName="VARCHAR2"/>
+                                    <columnMetadata columnName="DES"
+                                    dataType="12"
+                                    status="OptionalElement" typeName="VARCHAR2"/>
+                                    <columnMetadata
+                                    columnName="CODICE_ESITO"
+                                    dataType="12"
+                                    status="OptionalElement" typeName="VARCHAR2"/>
+                                    <columnMetadata
+                                    columnName="COD_GEST"
+                                    dataType="12"
+                                    status="OptionalElement" typeName="VARCHAR2"/>
+                                    </value>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+        </bpws:flow>
+    </bpws:scope>
+</bpws:process>

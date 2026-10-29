@@ -1,0 +1,228 @@
+package tim.now.gui_integration_XMLTOEXCEL;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Properties;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.apache.poi.hssf.util.CellRangeAddress;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+@SuppressWarnings("deprecation")
+public class XmlToExcelConverterDynamic {
+
+	private static Workbook workbook;
+	private static int rowNum;
+	private byte[] excelData;
+
+	public byte[] getExcelData() {
+		return excelData;
+	}
+
+	public void setExcelData(byte[] excelData) {
+		this.excelData = excelData;
+	}
+
+	public static void main(String[] args) throws Exception {
+
+	}
+
+	public XmlToExcelConverterDynamic() {
+
+	}
+
+	public void getAndReadXml(String xml, String outputRoot, String childRoot,
+			String passedlistofElements, String nameOfFile,
+			String pathOfPropertieFile) throws Exception {
+		if (xml == null || outputRoot == null || passedlistofElements == null) {
+			System.out.println("empty");
+		} else {
+
+			ClassLoader cl = null;
+
+			cl = Thread.currentThread().getContextClassLoader();
+			try {
+				Thread.currentThread().setContextClassLoader(
+						getClass().getClassLoader());
+
+				try {
+					System.out.println("getAndReadXml");
+					String[] listOfElements = passedlistofElements.split(",",
+							-1);
+					System.out.println("Length :" + listOfElements.length);
+					
+					xml.replaceAll("<tns5:" + outputRoot + ">", "");
+					xml.replaceAll("<tns:" + outputRoot + ">", "");
+
+					initXls(listOfElements, pathOfPropertieFile, nameOfFile);
+
+					Sheet sheet = workbook.getSheetAt(0);
+
+					ByteArrayInputStream input = new ByteArrayInputStream(
+							xml.getBytes());
+
+					DocumentBuilderFactory dbFactory = DocumentBuilderFactory
+							.newInstance();
+					dbFactory.setNamespaceAware(true);
+					DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+					Document doc = dBuilder.parse(input);
+
+					Node rootNamespace = doc.getFirstChild();
+
+					System.out.println("name space :- "
+							+ rootNamespace.getNamespaceURI() + " And "
+							+ rootNamespace.getPrefix());
+
+					NodeList Output_root = doc.getElementsByTagNameNS(
+							rootNamespace.getNamespaceURI(), childRoot);
+					for (int j = 0; j < Output_root.getLength(); j++) {
+						Node Output_child = Output_root.item(j);
+
+						if (Output_child.getNodeType() == Node.ELEMENT_NODE) {
+
+							Row row = sheet.createRow(rowNum++);
+							String tempValue = "";
+							for (int k = 0; k < listOfElements.length; k++) {
+
+								Element tempElmt = (Element) Output_child;
+
+								try {
+									if (tempElmt
+											.getElementsByTagNameNS(
+													rootNamespace
+															.getNamespaceURI(),
+													listOfElements[k]).item(0)
+											.getTextContent() == null)
+										continue;
+									else {
+										tempValue = tempElmt
+												.getElementsByTagNameNS(
+														rootNamespace
+																.getNamespaceURI(),
+														listOfElements[k])
+												.item(0).getTextContent();
+
+										Cell cell = row.createCell(k);
+										cell.setCellValue(tempValue);
+									}
+								} catch (Exception e) {
+
+								}
+
+							}
+
+						}
+
+					}
+					int lastrow = sheet.getPhysicalNumberOfRows();
+					Row row2 = sheet.createRow(lastrow + 5);
+
+					sheet.addMergedRegion(new CellRangeAddress(lastrow + 5,
+							lastrow + 8, 3, 18));
+					Cell row2Cell = row2.createCell(3);
+					CellStyle cellStyle = workbook.createCellStyle();
+					cellStyle.setAlignment(CellStyle.ALIGN_CENTER);
+					row2Cell.setCellStyle(cellStyle);
+					// row2Cell.setAlignment();
+					row2.createCell(3)
+							.setCellValue(
+									" « Attenzione: i dati contenuti nel sistema sono classificati Fibercop - Confidenziale e sono soggetti ai vincoli imposti dalla Delibera 152/02/CONS. Nel trattare i dati l'operatore deve attenersi alle disposizioni contenute nel \"Codice di Comportamento per la riservatezza dei dati relativi alla Clientela degli OLO\", nonché a tutte le normative di sicurezza vigenti in Azienda » ");
+					// Clob tempExcelData = (Clob) workbook;
+
+					ByteArrayOutputStream bos = new ByteArrayOutputStream();
+					try {
+						workbook.write(bos);
+					} finally {
+						bos.close();
+					}
+
+					excelData = bos.toByteArray();
+
+					workbook.close();
+
+				} catch (NullPointerException npe) {
+					npe.printStackTrace();
+				}
+
+			} finally {
+				Thread.currentThread().setContextClassLoader(cl);
+			}
+
+		}
+		// return excelData;
+	}
+
+	/**
+	 * Initializes the POI workbook and writes the header row
+	 */
+	private static void initXls(String[] listOfHeader,
+			String pathOfPropertieFile, String nameOfFile) {
+
+		// first check name of list is modified
+
+		workbook = new XSSFWorkbook();
+
+		CellStyle style = workbook.createCellStyle();
+		Font boldFont = workbook.createFont();
+		boldFont.setBold(true);
+		style.setFont(boldFont);
+		style.setAlignment(CellStyle.ALIGN_CENTER);
+
+		Sheet sheet = workbook.createSheet();
+
+		rowNum = 0;
+		Row row = sheet.createRow(rowNum++);
+
+		FileReader reader = null;
+		Properties properties = null;
+		try {
+			reader = new FileReader(pathOfPropertieFile);
+			properties = new Properties();
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		try {
+			properties.load(reader);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		for (int k = 0; k < listOfHeader.length; k++) {
+			Cell cell = row.createCell(k);
+			try {
+
+				if (!listOfHeader[k].equals(properties.getProperty((nameOfFile
+						+ "." + listOfHeader[k])))) {
+					cell.setCellValue(properties
+							.getProperty((nameOfFile + "." + listOfHeader[k])));
+				} else {
+					cell.setCellValue(listOfHeader[k]);
+				}
+			} catch (Exception e) {
+				// crm_olo@newName
+			}
+
+			cell.setCellStyle(style);
+		}
+
+	}
+
+}

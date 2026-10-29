@@ -1,0 +1,60 @@
+Operazioni su BDS_1_CASEDATA_ATTRIBTDTTGLSST
+=============================================
+
+Per ogni riga da bonificare, la procedura cerca se esiste gia' l'attributo
+AREA sotto il dettaglio asset (V_DETT_BDS_ID, recuperato da
+BDS_1_CASEDATA_DETTAGLIOASSET con NOMECOMPONENTE='ACCESSOVULAFTTH'):
+
+SELECT ATT.BDS_ID INTO V_ATT_BDS_ID
+  FROM BDS_1_CASEDATA_ATTRIBTDTTGLSST ATT
+ WHERE ATT.DTTGLSST_TTRBTIDTTGLISST_BDSID = V_DETT_BDS_ID
+   AND ATT.NOMEATTRIBUTO = 'AREA';
+
+
+CASO 1 - ATTRIBUTO TROVATO -> UPDATE
+-------------------------------------
+UPDATE BDS_1_CASEDATA_ATTRIBTDTTGLSST
+   SET VALOREATTRIBUTO = V_AREA_DA_SCRIVERE,
+       LASTUPDATE      = SYSTIMESTAMP
+ WHERE BDS_ID = V_ATT_BDS_ID;
+
+Colonna          | Valore              | Da dove
+-----------------|---------------------|---------------------------------------------
+VALOREATTRIBUTO  | V_AREA_DA_SCRIVERE  | NVL(RIGA.AREA, 'NERO') - valore AREA letto dal
+                 |                     | file OPERA (ANALITICO_D_BON_AREA_SEMIVULA.AREA),
+                 |                     | default 'NERO' se null
+LASTUPDATE       | SYSTIMESTAMP        | timestamp corrente
+BDS_ID (where)   | V_ATT_BDS_ID        | BDS_ID dell'attributo trovato dalla SELECT
+
+
+CASO 2 - ATTRIBUTO NON TROVATO (NO_DATA_FOUND) -> INSERT
+----------------------------------------------------------
+INSERT INTO BDS_1_CASEDATA_ATTRIBTDTTGLSST
+   (BDS_ID, DTYPE, IDASSET, CREATED, LASTUPDATE,
+    NOMEATTRIBUTO, VALOREATTRIBUTO,
+    DTTGLSST_TTRBTIDTTGLISST_BDSID)
+VALUES
+   (S_BDS_ID.NEXTVAL, 'AttrDettaglioAsset', RIGA.ID_ASSET,
+    SYSTIMESTAMP, SYSTIMESTAMP,
+    'AREA', V_AREA_DA_SCRIVERE,
+    V_DETT_BDS_ID);
+
+Colonna                          | Valore                | Da dove
+---------------------------------|-----------------------|---------------------------------------------
+BDS_ID                           | S_BDS_ID.NEXTVAL      | sequence tecnica per PK
+DTYPE                            | 'AttrDettaglioAsset'  | costante fissa (discriminatore di tipo)
+IDASSET                          | RIGA.ID_ASSET         | dal cursore su ANALITICO_D_BON_AREA_SEMIVULA
+                                  |                       | (id asset del file OPERA)
+CREATED / LASTUPDATE             | SYSTIMESTAMP          | timestamp corrente
+NOMEATTRIBUTO                    | 'AREA'                | costante fissa
+VALOREATTRIBUTO                  | V_AREA_DA_SCRIVERE    | NVL(RIGA.AREA, 'NERO'), dal file OPERA
+DTTGLSST_TTRBTIDTTGLISST_BDSID   | V_DETT_BDS_ID         | BDS_ID del dettaglio asset (FK tecnica verso
+                                  |                       | DETTAGLIOASSET)
+
+
+COLONNE NON VALORIZZATE
+-------------------------------
+OPERATORE, TIPOLOGIADATO, IDDETTAGLIOASSET, BDS_OWNER_ID,
+DTTGLISST_TTRIBTIDTTGLISST_IDX
+
+

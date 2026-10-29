@@ -1,0 +1,935 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpws:process exitOnStandardFault="no" name="tim.now.esb.RechargesList"
+    suppressJoinFailure="yes"
+    targetNamespace="http://xmlns.example.com/20190729130953"
+    xmlns:bpws="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+    xmlns:info="http://www.tibco.com/bw/process/info"
+    xmlns:ns="http://www.tibco.com/pe/EngineTypes"
+    xmlns:ns0="http://xmlns.example.com/20190729130953PLT"
+    xmlns:ns1="http://www.tim.com/NOW/wsdl/abstract/Recharge/"
+    xmlns:ns2="http://telecomitalia.it/SOA/B2BDynamicResourceMgmtResponse"
+    xmlns:ns3="http://www.tim.com/NOW/xsd/GenericLogger"
+    xmlns:ns4="http://telecomitalia.it/ResourceMgmt/"
+    xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+    xmlns:sca-bpel="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"
+    xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions"
+    xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"
+    xmlns:tibprop="http://ns.tibco.com/bw/property"
+    xmlns:tns="http://NOW.it.telecomitalia.it/casedata_v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <tibex:Types>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/EngineTypes"
+            xmlns:tns="http://www.tibco.com/pe/EngineTypes" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ErrorReport">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="FullClass" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Class" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="FaultDetail">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ActivityName" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ProcessContext">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="JobId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessInstanceId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0"
+                        name="CustomJobId" type="xs:string"/>
+                    <!--xs:element name="RestartedFromCheckpoint" form="unqualified" block="extension restriction substitution" type="xs:boolean"/-->
+                    <!--xs:element minOccurs="0" maxOccurs="unbounded" name="TrackingInfo" form="unqualified" block="extension restriction substitution" type="xs:string"/-->
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="anydata">
+                <xs:sequence>
+                    <xs:any namespace="##any" processContents="lax"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ErrorReport" type="tns:ErrorReport"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="FaultDetail" type="tns:FaultDetail"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ProcessContext" type="tns:ProcessContext"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="CorrelationValue" type="xs:string"/>
+        </xs:schema>
+        <schema attributeFormDefault="unqualified"
+            elementFormDefault="unqualified"
+            targetNamespace="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions"
+            version="" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions">
+            <complexType name="ActivityExceptionType">
+                <sequence>
+                    <element name="msg" type="string"/>
+                    <element minOccurs="0" name="msgCode" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="ActivityException" type="tns:ActivityExceptionType"/>
+            <complexType name="ActivityTimedOutExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType"/>
+                </complexContent>
+            </complexType>
+            <element name="ActivityTimedOutException" type="tns:ActivityTimedOutExceptionType"/>
+        </schema>
+        <wsdl:definitions
+            targetNamespace="http://xmlns.example.com/20190729130953PLT"
+            xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+            xmlns:ptyp="http://www.tim.com/NOW/wsdl/abstract/Recharge/"
+            xmlns:ptyp2="http://telecomitalia.it/SOA/B2BDynamicResourceMgmtResponse"
+            xmlns:tns="http://xmlns.example.com/20190729130953PLT"
+            xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+            xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <plnk:partnerLinkType name="partnerLinkType">
+                <plnk:role name="use" portType="ptyp:RechargePortType"/>
+            </plnk:partnerLinkType>
+            <wsdl:import namespace="http://www.tim.com/NOW/wsdl/abstract/Recharge/"/>
+            <wsdl:import namespace="http://telecomitalia.it/SOA/B2BDynamicResourceMgmtResponse"/>
+        </wsdl:definitions>
+    </tibex:Types>
+    <tibex:ProcessInfo callable="false" createdBy="NicoliniDa"
+        createdOn="Mon Jul 29 13:09:53 CEST 2019" description=""
+        extraErrorVars="false" modifiers="public"
+        productVersion="6.3.2 HF3 V42 2016-09-08" scalable="true"
+        singleton="true" stateless="false" type="IT"/>
+    <tibex:ProcessInterface context="" input="" output=""/>
+    <tibex:ProcessTemplateConfigurations/>
+    <notation:Diagram measurementUnit="Pixel" type="BWProcess"
+        xmlns:bwnotation="http://tns.tibco.com/bw/runtime/BWNotation"
+        xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <children type="2001">
+            <children type="5001"/>
+            <children type="3001">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <children type="3002">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3003">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3004">
+                <children type="4018">
+                    <children type="3018">
+                        <children type="4020">
+                            <children type="3020">
+                                <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint x="2"
+                                    xsi:type="notation:Bounds" y="65"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint x="725"
+                                    xsi:type="notation:Bounds" y="65"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.2"/>
+                                    <layoutConstraint x="116"
+                                    xsi:type="notation:Bounds" y="65"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.3"/>
+                                    <layoutConstraint x="577"
+                                    xsi:type="notation:Bounds" y="65"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.4"/>
+                                    <layoutConstraint x="233"
+                                    xsi:type="notation:Bounds" y="65"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.5"/>
+                                    <layoutConstraint x="338"
+                                    xsi:type="notation:Bounds" y="65"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.6"/>
+                                    <layoutConstraint x="450"
+                                    xsi:type="notation:Bounds" y="65"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    <layoutConstraint height="165"
+                                    width="904" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity"/>
+                            <layoutConstraint height="165" width="907" xsi:type="notation:Bounds"/>
+                        </children>
+                        <children type="4022">
+                            <children type="3022">
+                                <children type="4029">
+                                    <children type="3031">
+                                    <children type="4033">
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll"/>
+                                    <layoutConstraint
+                                    height="34" width="34"
+                                    xsi:type="notation:Bounds" y="68"/>
+                                    </children>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    </children>
+                                    <children type="3032">
+                                    <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint
+                                    x="136"
+                                    xsi:type="notation:Bounds" y="29"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles
+                                    fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint
+                                    x="273"
+                                    xsi:type="notation:Bounds" y="29"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll/@activity/@activity"/>
+                                    <layoutConstraint
+                                    height="133" width="804" xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    </children>
+                                    <styles fontName="Segoe UI"
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll"/>
+                                    <layoutConstraint height="128"
+                                    width="857" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity/@faultHandlers"/>
+                            <layoutConstraint height="154" width="867"
+                                x="22" xsi:type="notation:Bounds" y="165"/>
+                        </children>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <element href="//0/@process/@activity"/>
+                    </children>
+                    <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@activity"/>
+                    <layoutConstraint height="320" width="907" x="1"
+                        xsi:type="notation:Bounds" y="1"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <styles fontName="Segoe UI" lineColor="0" xsi:type="notation:ShapeStyle"/>
+            <element href="//0/@process"/>
+            <layoutConstraint height="372" width="1220" xsi:type="notation:Bounds"/>
+        </children>
+        <styles xsi:type="notation:DiagramStyle"/>
+        <element href="//0"/>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[25, -7, -84, 0]$[85, 0, -24, 7]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.1"/>
+            <bendpoints points="[25, 6, -130, 0]$[131, 0, -24, -6]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.1/@children.0/@children.0/@children.1/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.1/@children.0/@children.0/@children.1/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@faultHandlers/@catchAll/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[25, 8, -103, 0]$[104, 0, -24, -8]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.2"/>
+            <bendpoints points="[25, 0, -92, 0]$[93, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.5" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.3"/>
+            <bendpoints points="[25, 0, -80, 0]$[81, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.5"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.6" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.4"/>
+            <bendpoints points="[25, 0, -355, 0]$[356, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.6"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles fontName="Segoe UI" xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.5"/>
+            <bendpoints points="[25, 0, -215, 0]$[216, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+    </notation:Diagram>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/" namespace="http://www.tim.com/NOW/wsdl/abstract/Recharge/"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/GenericLogger"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://telecomitalia.it/ResourceMgmt/"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://NOW.it.telecomitalia.it/casedata_v1"/>
+    <bpws:partnerLinks>
+        <bpws:partnerLink myRole="use" name="RechargePortType"
+            partnerLinkType="ns0:partnerLinkType"
+            sca-bpel:ignore="false" sca-bpel:service="RechargePortType"/>
+    </bpws:partnerLinks>
+    <bpws:variables>
+        <bpws:variable element="ns:ProcessContext"
+            name="_processContext" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:RechargeRequest"
+            name="RechargeIn" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:RechargeResponse"
+            name="RechargeOut-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:CW_BUS_MESSAGE"
+            name="LogStartRechargeIn-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:CW_BUS_MESSAGE"
+            name="LogEndRechargeIn-input" sca-bpel:internal="true"/>
+        <bpws:variable name="LoggerName" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LoggerName" type="xsd:string"/>
+        <bpws:variable name="LogLevel" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LogLevel" type="xsd:string"/>
+        <bpws:variable name="FaultName" sca-bpel:internal="true" type="xsd:string"/>
+        <bpws:variable element="ns:FaultDetail" name="FaultDetails" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:CW_BUS_MESSAGE"
+            name="LogfaultRechargesList-input" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns1:RechargeFault"
+            name="Reply-input" sca-bpel:internal="true"/>
+        <bpws:variable name="TransactionID" type="xsd:string"/>
+        <bpws:variable name="MessageID" type="xsd:string"/>
+        <bpws:variable element="ns4:Req" name="ResourceMgmt-input" sca-bpel:internal="true"/>
+    </bpws:variables>
+    <bpws:extensions>
+        <bpws:extension mustUnderstand="no" namespace="http://www.eclipse.org/gmf/runtime/1.0.2/notation"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bw/process/info"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca/200912"/>
+        <bpws:extension mustUnderstand="no" namespace="http://ns.tibco.com/bw/property"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bpel/2007/extensions"/>
+    </bpws:extensions>
+    <bpws:scope name="scope">
+        <bpws:faultHandlers>
+            <bpws:catchAll tibex:faultDetailsVar="FaultDetails"
+                tibex:faultNameVar="FaultName" tibex:xpdlId="b0076fc1-45fc-4fae-806f-64a815d1668b">
+                <bpws:scope name="scope1">
+                    <bpws:flow name="flow1">
+                        <bpws:links>
+                            <bpws:link name="CallProcessToReply" tibex:linkType="SUCCESS"/>
+                        </bpws:links>
+                        <bpws:extensionActivity>
+                            <tibex:extActivity
+                                expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns2=&quot;http://telecomitalia.it/Recharge/&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;RechargeIn&quot;/>&lt;xsl:param name=&quot;LoggerName&quot;/>&lt;xsl:param name=&quot;FaultDetails&quot;/>&lt;xsl:template name=&quot;CallProcess-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.ESB.application&amp;quot;&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;RechargesList&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;RechargePortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;Recharge&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns2:Request/tns2:BusinessID&quot;/>&lt;/tns:BusinessID>&lt;tns:Message>&lt;xsl:value-of select=&quot;concat($FaultDetails/ActivityName,$FaultDetails/StackTrace,$FaultDetails/ProcessStack,$FaultDetails/Msg,$FaultDetails/MsgCode)&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$LoggerName&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;'Error'&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                                expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                                inputVariable="LogfaultRechargesList-input"
+                                name="LogfaultRechargesList"
+                                tibex:xpdlId="7e05746a-2719-416e-968d-5ba6ca5cf918"
+                                type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                                <bpws:sources>
+                                    <bpws:source linkName="CallProcessToReply"/>
+                                </bpws:sources>
+                                <tibex:inputBindings>
+                                    <tibex:inputBinding
+                                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns2=&quot;http://telecomitalia.it/Recharge/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RechargeIn.Request&quot;/>&#xa;    &lt;xsl:param name=&quot;LoggerName&quot;/>&#xa;    &lt;xsl:param name=&quot;FaultDetails&quot;/>&#xa;    &lt;xsl:template name=&quot;CallProcess-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:CW_BUS_MESSAGE>&#xa;            &lt;tns:GenericLogger>&#xa;                &lt;tns:Application>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;tim.now.ESB.application&amp;quot;&quot;/>&#xa;                &lt;/tns:Application>&#xa;                &lt;tns:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RechargesList&amp;quot;&quot;/>&#xa;                &lt;/tns:Process>&#xa;                &lt;tns:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RechargePortType&amp;quot;&quot;/>&#xa;                &lt;/tns:Service>&#xa;                &lt;tns:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;Recharge&amp;quot;&quot;/>&#xa;                &lt;/tns:Operation>&#xa;                &lt;tns:BusinessID>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns2:BusinessID&quot;/>&#xa;                &lt;/tns:BusinessID>&#xa;                &lt;tns:Message>&#xa;                    &lt;xsl:value-of select=&quot;concat($FaultDetails/ActivityName,$FaultDetails/StackTrace,$FaultDetails/ProcessStack,$FaultDetails/Msg,$FaultDetails/MsgCode)&quot;/>&#xa;                &lt;/tns:Message>&#xa;                &lt;tns:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$LoggerName&quot;/>&#xa;                &lt;/tns:LoggerName>&#xa;                &lt;tns:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;'Error'&quot;/>&#xa;                &lt;/tns:LogLevel>&#xa;                &lt;tns:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                &lt;/tns:LogJMS>&#xa;            &lt;/tns:GenericLogger>&#xa;        &lt;/tns:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                                </tibex:inputBindings>
+                                <tibex:CallProcess
+                                    moduleRef="tim.now.shared_library"
+                                    spawn="true"
+                                    subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                            </tibex:extActivity>
+                        </bpws:extensionActivity>
+                        <bpws:reply faultName="fault" name="Reply"
+                            operation="Recharge"
+                            partnerLink="RechargePortType"
+                            portType="ns1:RechargePortType"
+                            tibex:xpdlId="a0a37b2a-8be9-4195-80ca-47b8f3d3c004" variable="Reply-input">
+                            <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://www.tim.com/NOW/wsdl/abstract/Recharge/" xmlns:tns1="http://telecomitalia.it/Recharge/" version="2.0"&gt;&lt;xsl:param name="FaultDetails"/&gt;&lt;xsl:template name="Reply-input" match="/"&gt;&lt;tns:RechargeFault&gt;&lt;Fault&gt;&lt;tns1:Fault&gt;&lt;tns1:Code&gt;&lt;xsl:value-of select="$FaultDetails/MsgCode"/&gt;&lt;/tns1:Code&gt;&lt;tns1:Msg&gt;&lt;xsl:value-of select="concat($FaultDetails/ActivityName,$FaultDetails/StackTrace,$FaultDetails/ProcessStack,$FaultDetails/MsgCode,$FaultDetails/Msg)"/&gt;&lt;/tns1:Msg&gt;&lt;/tns1:Fault&gt;&lt;/Fault&gt;&lt;/tns:RechargeFault&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                            <tibex:inputBindings>
+                                <tibex:partBinding
+                                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/wsdl/abstract/Recharge/&quot; xmlns:tns1=&quot;http://telecomitalia.it/Recharge/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;FaultDetails&quot;/>&#xa;    &lt;xsl:template name=&quot;Reply-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns1:Fault>&#xa;            &lt;tns1:Code>&#xa;                &lt;xsl:value-of select=&quot;$FaultDetails/MsgCode&quot;/>&#xa;            &lt;/tns1:Code>&#xa;            &lt;tns1:Msg>&#xa;                &lt;xsl:value-of select=&quot;concat($FaultDetails/ActivityName,$FaultDetails/StackTrace,$FaultDetails/ProcessStack,$FaultDetails/MsgCode,$FaultDetails/Msg)&quot;/>&#xa;            &lt;/tns1:Msg>&#xa;        &lt;/tns1:Fault>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                            </tibex:inputBindings>
+                            <bpws:targets>
+                                <bpws:target linkName="CallProcessToReply"/>
+                            </bpws:targets>
+                        </bpws:reply>
+                    </bpws:flow>
+                </bpws:scope>
+            </bpws:catchAll>
+        </bpws:faultHandlers>
+        <bpws:flow name="flow">
+            <bpws:links>
+                <bpws:link name="RechargeInToCallProcess" tibex:linkType="SUCCESS"/>
+                <bpws:link name="CallProcess1ToRechargeOut" tibex:linkType="SUCCESS"/>
+                <bpws:link name="LogStartRechargeInToAssign" tibex:linkType="SUCCESS"/>
+                <bpws:link name="AssignToAssign1" tibex:linkType="SUCCESS"/>
+                <bpws:link name="MessageIDToResourceMgmt" tibex:linkType="SUCCESS"/>
+                <bpws:link name="ResourceMgmtToLogEndRechargeIn" tibex:linkType="SUCCESS"/>
+            </bpws:links>
+            <bpws:receive createInstance="yes" name="RechargeIn"
+                operation="Recharge" partnerLink="RechargePortType"
+                portType="ns1:RechargePortType"
+                tibex:xpdlId="4e10d1ad-c13b-40f4-9688-22693e5fe0a4" variable="RechargeIn">
+                <bpws:sources>
+                    <bpws:source linkName="RechargeInToCallProcess"/>
+                </bpws:sources>
+            </bpws:receive>
+            <bpws:reply name="RechargeOut" operation="Recharge"
+                partnerLink="RechargePortType"
+                portType="ns1:RechargePortType"
+                tibex:xpdlId="01a62fd1-747d-45ea-bec2-44a25661c0cc" variable="RechargeOut-input">
+                <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://www.tim.com/NOW/wsdl/abstract/Recharge/" xmlns:tns1="http://telecomitalia.it/Recharge/" version="2.0"&gt;&lt;xsl:template name="RechargeOut-input" match="/"&gt;&lt;tns:RechargeResponse&gt;&lt;Response&gt;&lt;tns1:Response&gt;&lt;tns1:Esito&gt;&lt;xsl:value-of select="'OK'"/&gt;&lt;/tns1:Esito&gt;&lt;/tns1:Response&gt;&lt;/Response&gt;&lt;/tns:RechargeResponse&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                <tibex:inputBindings>
+                    <tibex:partBinding
+                        expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/wsdl/abstract/Recharge/&quot; xmlns:tns1=&quot;http://telecomitalia.it/Recharge/&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:template name=&quot;RechargeOut-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns1:Response>&#xa;            &lt;tns1:Esito>&#xa;                &lt;xsl:value-of select=&quot;'OK'&quot;/>&#xa;            &lt;/tns1:Esito>&#xa;        &lt;/tns1:Response>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                </tibex:inputBindings>
+                <bpws:targets>
+                    <bpws:target linkName="CallProcess1ToRechargeOut"/>
+                </bpws:targets>
+            </bpws:reply>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns2=&quot;http://telecomitalia.it/Recharge/&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;RechargeIn&quot;/>&lt;xsl:param name=&quot;LoggerName&quot;/>&lt;xsl:param name=&quot;LogLevel&quot;/>&lt;xsl:template name=&quot;CallProcess-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.ESB.application&amp;quot;&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;RechargesList&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;RechargePortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;Recharge&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns2:Request/tns2:BusinessID&quot;/>&lt;/tns:BusinessID>&lt;tns:Message>&lt;xsl:value-of select=&quot;concat(&amp;quot;Start RechargesList&amp;quot;, tib:render-xml($RechargeIn/Request/tns2:Request,true(),true()))&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$LoggerName&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$LogLevel&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="LogStartRechargeIn-input"
+                    name="LogStartRechargeIn"
+                    tibex:xpdlId="c8871b64-2708-4586-a3f0-d20f3db08cd2"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="RechargeInToCallProcess"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="LogStartRechargeInToAssign"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns2=&quot;http://telecomitalia.it/Recharge/&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RechargeIn.Request&quot;/>&#xa;    &lt;xsl:param name=&quot;LoggerName&quot;/>&#xa;    &lt;xsl:param name=&quot;LogLevel&quot;/>&#xa;    &lt;xsl:template name=&quot;CallProcess-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:CW_BUS_MESSAGE>&#xa;            &lt;tns:GenericLogger>&#xa;                &lt;tns:Application>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;tim.now.ESB.application&amp;quot;&quot;/>&#xa;                &lt;/tns:Application>&#xa;                &lt;tns:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RechargesList&amp;quot;&quot;/>&#xa;                &lt;/tns:Process>&#xa;                &lt;tns:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RechargePortType&amp;quot;&quot;/>&#xa;                &lt;/tns:Service>&#xa;                &lt;tns:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;Recharge&amp;quot;&quot;/>&#xa;                &lt;/tns:Operation>&#xa;                &lt;tns:BusinessID>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns2:BusinessID&quot;/>&#xa;                &lt;/tns:BusinessID>&#xa;                &lt;tns:Message>&#xa;                    &lt;xsl:value-of select=&quot;concat(&amp;quot;Start RechargesList&amp;quot;, tib:render-xml($RechargeIn.Request,true(),true()))&quot;/>&#xa;                &lt;/tns:Message>&#xa;                &lt;tns:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$LoggerName&quot;/>&#xa;                &lt;/tns:LoggerName>&#xa;                &lt;tns:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$LogLevel&quot;/>&#xa;                &lt;/tns:LogLevel>&#xa;                &lt;tns:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                &lt;/tns:LogJMS>&#xa;            &lt;/tns:GenericLogger>&#xa;        &lt;/tns:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        moduleRef="tim.now.shared_library" spawn="true"
+                        subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns2=&quot;http://telecomitalia.it/Recharge/&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;RechargeIn&quot;/>&lt;xsl:param name=&quot;LoggerName&quot;/>&lt;xsl:param name=&quot;LogLevel&quot;/>&lt;xsl:template name=&quot;CallProcess1-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.ESB.application&amp;quot;&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;RechargesList&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;RechargePortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;Recharge&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns2:Request/tns2:BusinessID&quot;/>&lt;/tns:BusinessID>&lt;tns:Message>&lt;xsl:value-of select=&quot;'End RechargesList '&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$LoggerName&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$LogLevel&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="LogEndRechargeIn-input"
+                    name="LogEndRechargeIn"
+                    tibex:xpdlId="772714a3-6782-4cee-b6cc-9f7a5c777da5"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="ResourceMgmtToLogEndRechargeIn"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="CallProcess1ToRechargeOut"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns2=&quot;http://telecomitalia.it/Recharge/&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RechargeIn.Request&quot;/>&#xa;    &lt;xsl:param name=&quot;LoggerName&quot;/>&#xa;    &lt;xsl:param name=&quot;LogLevel&quot;/>&#xa;    &lt;xsl:template name=&quot;CallProcess1-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:CW_BUS_MESSAGE>&#xa;            &lt;tns:GenericLogger>&#xa;                &lt;tns:Application>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;tim.now.ESB.application&amp;quot;&quot;/>&#xa;                &lt;/tns:Application>&#xa;                &lt;tns:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RechargesList&amp;quot;&quot;/>&#xa;                &lt;/tns:Process>&#xa;                &lt;tns:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;RechargePortType&amp;quot;&quot;/>&#xa;                &lt;/tns:Service>&#xa;                &lt;tns:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;Recharge&amp;quot;&quot;/>&#xa;                &lt;/tns:Operation>&#xa;                &lt;tns:BusinessID>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns2:BusinessID&quot;/>&#xa;                &lt;/tns:BusinessID>&#xa;                &lt;tns:Message>&#xa;                    &lt;xsl:value-of select=&quot;'End RechargesList '&quot;/>&#xa;                &lt;/tns:Message>&#xa;                &lt;tns:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$LoggerName&quot;/>&#xa;                &lt;/tns:LoggerName>&#xa;                &lt;tns:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$LogLevel&quot;/>&#xa;                &lt;/tns:LogLevel>&#xa;                &lt;tns:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                &lt;/tns:LogJMS>&#xa;            &lt;/tns:GenericLogger>&#xa;        &lt;/tns:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        moduleRef="tim.now.shared_library" spawn="true"
+                        subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="string(tib:timestamp())"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"
+                    inputVariable="TransactionID" name="TransactionID"
+                    outputVariable="TransactionID"
+                    tibex:xpdlId="0210d2a1-2fb9-4332-812f-52d3e66078e5" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="LogStartRechargeInToAssign"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="AssignToAssign1"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="string(tib:timestamp())" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.bwassign"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//BWAssign"/>
+                                    <value
+                                    processVariable="TransactionID" xsi:type="generalactivities:BWAssign"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="string(tib:timestamp())"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"
+                    inputVariable="MessageID" name="MessageID"
+                    outputVariable="MessageID"
+                    tibex:xpdlId="ee852bcd-bc01-4e8c-b14e-15d6b29dddea" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="AssignToAssign1"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="MessageIDToResourceMgmt"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="string(tib:timestamp())" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xpath2.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.bwassign"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//BWAssign"/>
+                                    <value processVariable="MessageID" xsi:type="generalactivities:BWAssign"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://telecomitalia.it/Recharge/&quot; xmlns:tns1=&quot;http://telecomitalia.it/ResourceMgmt/&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;TransactionID&quot;/>&lt;xsl:param name=&quot;MessageID&quot;/>&lt;xsl:param name=&quot;RechargeIn&quot;/>&lt;xsl:template name=&quot;ResourceMgmt-input&quot; match=&quot;/&quot;>&lt;tns1:Req>&lt;tns1:Richiesta>&lt;created>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/created&quot;/>&lt;/created>&lt;lastUpdate>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/lastUpdate&quot;/>&lt;/lastUpdate>&lt;operatore>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/operatore&quot;/>&lt;/operatore>&lt;IDRichiestaOLO>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDRichiestaOLO&quot;/>&lt;/IDRichiestaOLO>&lt;statoRichiestaNOW>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/statoRichiestaNOW&quot;/>&lt;/statoRichiestaNOW>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/statoRichiestaPrecedNOW&quot;>&lt;statoRichiestaPrecedNOW>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/statoRichiestaPrecedNOW&quot;/>&lt;/statoRichiestaPrecedNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/statoRichiestaOLO&quot;>&lt;statoRichiestaOLO>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/statoRichiestaOLO&quot;/>&lt;/statoRichiestaOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/statoRichiestaPrecedOLO&quot;>&lt;statoRichiestaPrecedOLO>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/statoRichiestaPrecedOLO&quot;/>&lt;/statoRichiestaPrecedOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/sottostatoLavorManuale&quot;>&lt;sottostatoLavorManuale>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/sottostatoLavorManuale&quot;/>&lt;/sottostatoLavorManuale>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDFileInput&quot;>&lt;IDFileInput>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDFileInput&quot;/>&lt;/IDFileInput>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDFileOutput&quot;>&lt;IDFileOutput>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDFileOutput&quot;/>&lt;/IDFileOutput>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/ambito&quot;>&lt;ambito>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/ambito&quot;/>&lt;/ambito>&lt;/xsl:if>&lt;canaleRichiesta>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/canaleRichiesta&quot;/>&lt;/canaleRichiesta>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/lavorazione&quot;>&lt;lavorazione>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/lavorazione&quot;/>&lt;/lavorazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/progressivoRichiestaFile&quot;>&lt;progressivoRichiestaFile>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/progressivoRichiestaFile&quot;/>&lt;/progressivoRichiestaFile>&lt;/xsl:if>&lt;strutturaRichiesta>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/strutturaRichiesta&quot;/>&lt;/strutturaRichiesta>&lt;tipoRichiesta>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipoRichiesta&quot;/>&lt;/tipoRichiesta>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDRisorsa&quot;>&lt;IDRisorsa>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDRisorsa&quot;/>&lt;/IDRisorsa>&lt;/xsl:if>&lt;codificaOLOAGCOM>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLOAGCOM&quot;/>&lt;/codificaOLOAGCOM>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLONOW&quot;>&lt;codificaOLONOW>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLONOW&quot;/>&lt;/codificaOLONOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineOLO&quot;>&lt;codiceOrdineOLO>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineOLO&quot;/>&lt;/codiceOrdineOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineOLOTarget&quot;>&lt;codiceOrdineOLOTarget>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineOLOTarget&quot;/>&lt;/codiceOrdineOLOTarget>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineOLOPadre&quot;>&lt;codiceOrdineOLOPadre>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineOLOPadre&quot;/>&lt;/codiceOrdineOLOPadre>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineTI&quot;>&lt;codiceOrdineTI>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineTI&quot;/>&lt;/codiceOrdineTI>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineTITarget&quot;>&lt;codiceOrdineTITarget>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceOrdineTITarget&quot;/>&lt;/codiceOrdineTITarget>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceProgetto&quot;>&lt;codiceProgetto>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceProgetto&quot;/>&lt;/codiceProgetto>&lt;/xsl:if>&lt;dataInvioRichiesta>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/dataInvioRichiesta&quot;/>&lt;/dataInvioRichiesta>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDAnagraficaCausale&quot;>&lt;IDAnagraficaCausale>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDAnagraficaCausale&quot;/>&lt;/IDAnagraficaCausale>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDCorrelazione&quot;>&lt;IDCorrelazione>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDCorrelazione&quot;/>&lt;/IDCorrelazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/totaleRichiestePacchetto&quot;>&lt;totaleRichiestePacchetto>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/totaleRichiestePacchetto&quot;/>&lt;/totaleRichiestePacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipoPacchetto&quot;>&lt;tipoPacchetto>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipoPacchetto&quot;/>&lt;/tipoPacchetto>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDPacchettoNOW&quot;>&lt;IDPacchettoNOW>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDPacchettoNOW&quot;/>&lt;/IDPacchettoNOW>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/contenutoXML&quot;>&lt;contenutoXML>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/contenutoXML&quot;/>&lt;/contenutoXML>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/note&quot;>&lt;note>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/note&quot;/>&lt;/note>&lt;/xsl:if>&lt;xsl:copy-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/ordine&quot;/>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/dataControlliFormali&quot;>&lt;dataControlliFormali>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/dataControlliFormali&quot;/>&lt;/dataControlliFormali>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/totaleRichiesteRilevPac&quot;>&lt;totaleRichiesteRilevPac>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/totaleRichiesteRilevPac&quot;/>&lt;/totaleRichiesteRilevPac>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDContratto&quot;>&lt;IDContratto>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDContratto&quot;/>&lt;/IDContratto>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/ISTATComune&quot;>&lt;ISTATComune>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/ISTATComune&quot;/>&lt;/ISTATComune>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/localita&quot;>&lt;localita>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/localita&quot;/>&lt;/localita>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/offerta&quot;>&lt;offerta>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/offerta&quot;/>&lt;/offerta>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagNaked&quot;>&lt;flagNaked>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagNaked&quot;/>&lt;/flagNaked>&lt;/xsl:if>&lt;IDRichiestaLocalizzatore>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDRichiestaLocalizzatore&quot;/>&lt;/IDRichiestaLocalizzatore>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/testMode&quot;>&lt;testMode>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/testMode&quot;/>&lt;/testMode>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DAD&quot;>&lt;DAD>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DAD&quot;/>&lt;/DAD>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDFasciaOraria&quot;>&lt;IDFasciaOraria>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDFasciaOraria&quot;/>&lt;/IDFasciaOraria>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDOfferta&quot;>&lt;IDOfferta>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDOfferta&quot;/>&lt;/IDOfferta>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DRO&quot;>&lt;DRO>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DRO&quot;/>&lt;/DRO>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDNotifica&quot;>&lt;IDNotifica>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDNotifica&quot;/>&lt;/IDNotifica>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLOAGCOMDonating&quot;>&lt;codificaOLOAGCOMDonating>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLOAGCOMDonating&quot;/>&lt;/codificaOLOAGCOMDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLOAGCOMDonor&quot;>&lt;codificaOLOAGCOMDonor>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLOAGCOMDonor&quot;/>&lt;/codificaOLOAGCOMDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLONOWDonating&quot;>&lt;codificaOLONOWDonating>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLONOWDonating&quot;/>&lt;/codificaOLONOWDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLONOWDonor&quot;>&lt;codificaOLONOWDonor>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLONOWDonor&quot;/>&lt;/codificaOLONOWDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/numeroTelefonico&quot;>&lt;numeroTelefonico>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/numeroTelefonico&quot;/>&lt;/numeroTelefonico>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipologiaScenario&quot;>&lt;tipologiaScenario>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipologiaScenario&quot;/>&lt;/tipologiaScenario>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DAC&quot;>&lt;DAC>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DAC&quot;/>&lt;/DAC>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/progressivoNotificaDTU&quot;>&lt;progressivoNotificaDTU>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/progressivoNotificaDTU&quot;/>&lt;/progressivoNotificaDTU>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLOAGCOMRic&quot;>&lt;codificaOLOAGCOMRic>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codificaOLOAGCOMRic&quot;/>&lt;/codificaOLOAGCOMRic>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDNotificaDonor&quot;>&lt;IDNotificaDonor>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDNotificaDonor&quot;/>&lt;/IDNotificaDonor>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDNotificaDonating&quot;>&lt;IDNotificaDonating>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDNotificaDonating&quot;/>&lt;/IDNotificaDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/esito&quot;>&lt;esito>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/esito&quot;/>&lt;/esito>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceCausaleInterno&quot;>&lt;codiceCausaleInterno>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceCausaleInterno&quot;/>&lt;/codiceCausaleInterno>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/dataEspletamentoDONOR&quot;>&lt;dataEspletamentoDONOR>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/dataEspletamentoDONOR&quot;/>&lt;/dataEspletamentoDONOR>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceTrasformazione&quot;>&lt;codiceTrasformazione>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceTrasformazione&quot;/>&lt;/codiceTrasformazione>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagOpereSpeciali&quot;>&lt;flagOpereSpeciali>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagOpereSpeciali&quot;/>&lt;/flagOpereSpeciali>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDRisorsaCorrelato&quot;>&lt;IDRisorsaCorrelato>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDRisorsaCorrelato&quot;/>&lt;/IDRisorsaCorrelato>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDRichiestaOLOGenerante&quot;>&lt;IDRichiestaOLOGenerante>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDRichiestaOLOGenerante&quot;/>&lt;/IDRichiestaOLOGenerante>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipoComunicazioneNP&quot;>&lt;tipoComunicazioneNP>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipoComunicazioneNP&quot;/>&lt;/tipoComunicazioneNP>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/servizioOrigine&quot;>&lt;servizioOrigine>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/servizioOrigine&quot;/>&lt;/servizioOrigine>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceSTS&quot;>&lt;codiceSTS>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceSTS&quot;/>&lt;/codiceSTS>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/caratteristica&quot;>&lt;caratteristica>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/caratteristica&quot;/>&lt;/caratteristica>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceRisorsaDonating&quot;>&lt;codiceRisorsaDonating>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceRisorsaDonating&quot;/>&lt;/codiceRisorsaDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceRisorsaDonating2&quot;>&lt;codiceRisorsaDonating2>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceRisorsaDonating2&quot;/>&lt;/codiceRisorsaDonating2>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/cowCodeOLO&quot;>&lt;cowCodeOLO>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/cowCodeOLO&quot;/>&lt;/cowCodeOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/cowCodeOLO2&quot;>&lt;cowCodeOLO2>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/cowCodeOLO2&quot;/>&lt;/cowCodeOLO2>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceSessione&quot;>&lt;codiceSessione>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceSessione&quot;/>&lt;/codiceSessione>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceSessione2&quot;>&lt;codiceSessione2>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceSessione2&quot;/>&lt;/codiceSessione2>&lt;/xsl:if>&lt;xsl:for-each select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DNAggiuntivo&quot;>&lt;DNAggiuntivo>&lt;xsl:value-of select=&quot;.&quot;/>&lt;/DNAggiuntivo>&lt;/xsl:for-each>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDPreventivo&quot;>&lt;IDPreventivo>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDPreventivo&quot;/>&lt;/IDPreventivo>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDConsuntivo&quot;>&lt;IDConsuntivo>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDConsuntivo&quot;/>&lt;/IDConsuntivo>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/noteAltreLavorazioni&quot;>&lt;noteAltreLavorazioni>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/noteAltreLavorazioni&quot;/>&lt;/noteAltreLavorazioni>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codicePacchettoNOW&quot;>&lt;codicePacchettoNOW>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codicePacchettoNOW&quot;/>&lt;/codicePacchettoNOW>&lt;/xsl:if>&lt;xsl:copy-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/assetTarget&quot;/>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/operatoreRete&quot;>&lt;operatoreRete>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/operatoreRete&quot;/>&lt;/operatoreRete>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/transactionIDLocator&quot;>&lt;transactionIDLocator>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/transactionIDLocator&quot;/>&lt;/transactionIDLocator>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagNumAggiuntive&quot;>&lt;flagNumAggiuntive>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagNumAggiuntive&quot;/>&lt;/flagNumAggiuntive>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDAnagraficaCausaleGUI&quot;>&lt;IDAnagraficaCausaleGUI>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/IDAnagraficaCausaleGUI&quot;/>&lt;/IDAnagraficaCausaleGUI>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceRifiutoDonating&quot;>&lt;codiceRifiutoDonating>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceRifiutoDonating&quot;/>&lt;/codiceRifiutoDonating>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DACFile&quot;>&lt;DACFile>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/DACFile&quot;/>&lt;/DACFile>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipologiaSottolav&quot;>&lt;tipologiaSottolav>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/tipologiaSottolav&quot;/>&lt;/tipologiaSottolav>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceRifiuto&quot;>&lt;codiceRifiuto>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/codiceRifiuto&quot;/>&lt;/codiceRifiuto>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/routingNumber&quot;>&lt;routingNumber>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/routingNumber&quot;/>&lt;/routingNumber>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/progressivoEmissioneDTU&quot;>&lt;progressivoEmissioneDTU>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/progressivoEmissioneDTU&quot;/>&lt;/progressivoEmissioneDTU>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagAttesaDesospOLO&quot;>&lt;flagAttesaDesospOLO>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagAttesaDesospOLO&quot;/>&lt;/flagAttesaDesospOLO>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagDeliveryExposed&quot;>&lt;flagDeliveryExposed>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/flagDeliveryExposed&quot;/>&lt;/flagDeliveryExposed>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/disaggregato&quot;>&lt;disaggregato>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/disaggregato&quot;/>&lt;/disaggregato>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/exDisaggregato&quot;>&lt;exDisaggregato>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/exDisaggregato&quot;/>&lt;/exDisaggregato>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/FFACQKO&quot;>&lt;FFACQKO>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/FFACQKO&quot;/>&lt;/FFACQKO>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/idProgressivoNotificheFF&quot;>&lt;idProgressivoNotificheFF>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/idProgressivoNotificheFF&quot;/>&lt;/idProgressivoNotificheFF>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/idTplgCautelare&quot;>&lt;idTplgCautelare>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/idTplgCautelare&quot;/>&lt;/idTplgCautelare>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/rendezVous&quot;>&lt;rendezVous>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:Richiesta/rendezVous&quot;/>&lt;/rendezVous>&lt;/xsl:if>&lt;/tns1:Richiesta>&lt;xsl:if test=&quot;exists($RechargeIn/Request/tns:Request/tns:AssetRicarica)&quot;>&lt;tns1:AssetRicarica>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/IDAssetRicarica&quot;>&lt;IDAssetRicarica>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/IDAssetRicarica&quot;/>&lt;/IDAssetRicarica>&lt;/xsl:if>&lt;IDAsset>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/IDAsset&quot;/>&lt;/IDAsset>&lt;dataInizio>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/dataInizio&quot;/>&lt;/dataInizio>&lt;dataFine>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/dataFine&quot;/>&lt;/dataFine>&lt;tipologiaRicarica>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/tipologiaRicarica&quot;/>&lt;/tipologiaRicarica>&lt;statoAsset>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/statoAsset&quot;/>&lt;/statoAsset>&lt;famigliaAsset>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/famigliaAsset&quot;/>&lt;/famigliaAsset>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/lastUpdate&quot;>&lt;lastUpdate>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/lastUpdate&quot;/>&lt;/lastUpdate>&lt;/xsl:if>&lt;created>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/created&quot;/>&lt;/created>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/dataAccensione&quot;>&lt;dataAccensione>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/dataAccensione&quot;/>&lt;/dataAccensione>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/dataSpegnimento&quot;>&lt;dataSpegnimento>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/dataSpegnimento&quot;/>&lt;/dataSpegnimento>&lt;/xsl:if>&lt;xsl:if test=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/dataAnnullamento&quot;>&lt;dataAnnullamento>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/dataAnnullamento&quot;/>&lt;/dataAnnullamento>&lt;/xsl:if>&lt;operatore>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:AssetRicarica/operatore&quot;/>&lt;/operatore>&lt;/tns1:AssetRicarica>&lt;/xsl:if>&lt;tns1:BusinessID>&lt;xsl:value-of select=&quot;$RechargeIn/Request/tns:Request/tns:BusinessID&quot;/>&lt;/tns1:BusinessID>&lt;tns1:TransactionID>&lt;xsl:value-of select=&quot;$TransactionID&quot;/>&lt;/tns1:TransactionID>&lt;tns1:MessageID>&lt;xsl:value-of select=&quot;$MessageID&quot;/>&lt;/tns1:MessageID>&lt;tns1:ContenutoRequest>&lt;xsl:value-of select=&quot;tib:render-xml($RechargeIn/Request/tns:Request, true(),true())&quot;/>&lt;/tns1:ContenutoRequest>&lt;/tns1:Req>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="ResourceMgmt-input"
+                    name="ResourceMgmt"
+                    tibex:xpdlId="6b198e40-7064-409c-9ef3-4bf2f8528d90"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="MessageIDToResourceMgmt"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="ResourceMgmtToLogEndRechargeIn"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://telecomitalia.it/Recharge/&quot; xmlns:tns1=&quot;http://telecomitalia.it/ResourceMgmt/&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RechargeIn.Request&quot;/>&#xa;    &lt;xsl:param name=&quot;TransactionID&quot;/>&#xa;    &lt;xsl:param name=&quot;MessageID&quot;/>&#xa;    &lt;xsl:template name=&quot;ResourceMgmt-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns1:Req>&#xa;            &lt;tns1:Richiesta>&#xa;                &lt;created>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/created&quot;/>&#xa;                &lt;/created>&#xa;                &lt;lastUpdate>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/lastUpdate&quot;/>&#xa;                &lt;/lastUpdate>&#xa;                &lt;operatore>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/operatore&quot;/>&#xa;                &lt;/operatore>&#xa;                &lt;IDRichiestaOLO>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDRichiestaOLO&quot;/>&#xa;                &lt;/IDRichiestaOLO>&#xa;                &lt;statoRichiestaNOW>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/statoRichiestaNOW&quot;/>&#xa;                &lt;/statoRichiestaNOW>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/statoRichiestaPrecedNOW&quot;>&#xa;                    &lt;statoRichiestaPrecedNOW>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/statoRichiestaPrecedNOW&quot;/>&#xa;                    &lt;/statoRichiestaPrecedNOW>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/statoRichiestaOLO&quot;>&#xa;                    &lt;statoRichiestaOLO>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/statoRichiestaOLO&quot;/>&#xa;                    &lt;/statoRichiestaOLO>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/statoRichiestaPrecedOLO&quot;>&#xa;                    &lt;statoRichiestaPrecedOLO>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/statoRichiestaPrecedOLO&quot;/>&#xa;                    &lt;/statoRichiestaPrecedOLO>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/sottostatoLavorManuale&quot;>&#xa;                    &lt;sottostatoLavorManuale>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/sottostatoLavorManuale&quot;/>&#xa;                    &lt;/sottostatoLavorManuale>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDFileInput&quot;>&#xa;                    &lt;IDFileInput>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDFileInput&quot;/>&#xa;                    &lt;/IDFileInput>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDFileOutput&quot;>&#xa;                    &lt;IDFileOutput>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDFileOutput&quot;/>&#xa;                    &lt;/IDFileOutput>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/ambito&quot;>&#xa;                    &lt;ambito>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/ambito&quot;/>&#xa;                    &lt;/ambito>&#xa;                &lt;/xsl:if>&#xa;                &lt;canaleRichiesta>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/canaleRichiesta&quot;/>&#xa;                &lt;/canaleRichiesta>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/lavorazione&quot;>&#xa;                    &lt;lavorazione>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/lavorazione&quot;/>&#xa;                    &lt;/lavorazione>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/progressivoRichiestaFile&quot;>&#xa;                    &lt;progressivoRichiestaFile>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/progressivoRichiestaFile&quot;/>&#xa;                    &lt;/progressivoRichiestaFile>&#xa;                &lt;/xsl:if>&#xa;                &lt;strutturaRichiesta>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/strutturaRichiesta&quot;/>&#xa;                &lt;/strutturaRichiesta>&#xa;                &lt;tipoRichiesta>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/tipoRichiesta&quot;/>&#xa;                &lt;/tipoRichiesta>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDRisorsa&quot;>&#xa;                    &lt;IDRisorsa>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDRisorsa&quot;/>&#xa;                    &lt;/IDRisorsa>&#xa;                &lt;/xsl:if>&#xa;                &lt;codificaOLOAGCOM>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLOAGCOM&quot;/>&#xa;                &lt;/codificaOLOAGCOM>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLONOW&quot;>&#xa;                    &lt;codificaOLONOW>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLONOW&quot;/>&#xa;                    &lt;/codificaOLONOW>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineOLO&quot;>&#xa;                    &lt;codiceOrdineOLO>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineOLO&quot;/>&#xa;                    &lt;/codiceOrdineOLO>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineOLOTarget&quot;>&#xa;                    &lt;codiceOrdineOLOTarget>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineOLOTarget&quot;/>&#xa;                    &lt;/codiceOrdineOLOTarget>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineOLOPadre&quot;>&#xa;                    &lt;codiceOrdineOLOPadre>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineOLOPadre&quot;/>&#xa;                    &lt;/codiceOrdineOLOPadre>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineTI&quot;>&#xa;                    &lt;codiceOrdineTI>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineTI&quot;/>&#xa;                    &lt;/codiceOrdineTI>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineTITarget&quot;>&#xa;                    &lt;codiceOrdineTITarget>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceOrdineTITarget&quot;/>&#xa;                    &lt;/codiceOrdineTITarget>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceProgetto&quot;>&#xa;                    &lt;codiceProgetto>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceProgetto&quot;/>&#xa;                    &lt;/codiceProgetto>&#xa;                &lt;/xsl:if>&#xa;                &lt;dataInvioRichiesta>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/dataInvioRichiesta&quot;/>&#xa;                &lt;/dataInvioRichiesta>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDAnagraficaCausale&quot;>&#xa;                    &lt;IDAnagraficaCausale>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDAnagraficaCausale&quot;/>&#xa;                    &lt;/IDAnagraficaCausale>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDCorrelazione&quot;>&#xa;                    &lt;IDCorrelazione>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDCorrelazione&quot;/>&#xa;                    &lt;/IDCorrelazione>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/totaleRichiestePacchetto&quot;>&#xa;                    &lt;totaleRichiestePacchetto>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/totaleRichiestePacchetto&quot;/>&#xa;                    &lt;/totaleRichiestePacchetto>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/tipoPacchetto&quot;>&#xa;                    &lt;tipoPacchetto>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/tipoPacchetto&quot;/>&#xa;                    &lt;/tipoPacchetto>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDPacchettoNOW&quot;>&#xa;                    &lt;IDPacchettoNOW>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDPacchettoNOW&quot;/>&#xa;                    &lt;/IDPacchettoNOW>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/contenutoXML&quot;>&#xa;                    &lt;contenutoXML>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/contenutoXML&quot;/>&#xa;                    &lt;/contenutoXML>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/note&quot;>&#xa;                    &lt;note>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/note&quot;/>&#xa;                    &lt;/note>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:copy-of select=&quot;$RechargeIn.Request/tns:Richiesta/ordine&quot;/>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/dataControlliFormali&quot;>&#xa;                    &lt;dataControlliFormali>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/dataControlliFormali&quot;/>&#xa;                    &lt;/dataControlliFormali>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/totaleRichiesteRilevPac&quot;>&#xa;                    &lt;totaleRichiesteRilevPac>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/totaleRichiesteRilevPac&quot;/>&#xa;                    &lt;/totaleRichiesteRilevPac>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDContratto&quot;>&#xa;                    &lt;IDContratto>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDContratto&quot;/>&#xa;                    &lt;/IDContratto>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/ISTATComune&quot;>&#xa;                    &lt;ISTATComune>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/ISTATComune&quot;/>&#xa;                    &lt;/ISTATComune>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/localita&quot;>&#xa;                    &lt;localita>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/localita&quot;/>&#xa;                    &lt;/localita>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/offerta&quot;>&#xa;                    &lt;offerta>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/offerta&quot;/>&#xa;                    &lt;/offerta>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/flagNaked&quot;>&#xa;                    &lt;flagNaked>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/flagNaked&quot;/>&#xa;                    &lt;/flagNaked>&#xa;                &lt;/xsl:if>&#xa;                &lt;IDRichiestaLocalizzatore>&#xa;                    &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDRichiestaLocalizzatore&quot;/>&#xa;                &lt;/IDRichiestaLocalizzatore>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/testMode&quot;>&#xa;                    &lt;testMode>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/testMode&quot;/>&#xa;                    &lt;/testMode>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/DAD&quot;>&#xa;                    &lt;DAD>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/DAD&quot;/>&#xa;                    &lt;/DAD>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDFasciaOraria&quot;>&#xa;                    &lt;IDFasciaOraria>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDFasciaOraria&quot;/>&#xa;                    &lt;/IDFasciaOraria>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDOfferta&quot;>&#xa;                    &lt;IDOfferta>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDOfferta&quot;/>&#xa;                    &lt;/IDOfferta>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/DRO&quot;>&#xa;                    &lt;DRO>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/DRO&quot;/>&#xa;                    &lt;/DRO>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDNotifica&quot;>&#xa;                    &lt;IDNotifica>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDNotifica&quot;/>&#xa;                    &lt;/IDNotifica>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLOAGCOMDonating&quot;>&#xa;                    &lt;codificaOLOAGCOMDonating>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLOAGCOMDonating&quot;/>&#xa;                    &lt;/codificaOLOAGCOMDonating>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLOAGCOMDonor&quot;>&#xa;                    &lt;codificaOLOAGCOMDonor>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLOAGCOMDonor&quot;/>&#xa;                    &lt;/codificaOLOAGCOMDonor>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLONOWDonating&quot;>&#xa;                    &lt;codificaOLONOWDonating>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLONOWDonating&quot;/>&#xa;                    &lt;/codificaOLONOWDonating>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLONOWDonor&quot;>&#xa;                    &lt;codificaOLONOWDonor>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLONOWDonor&quot;/>&#xa;                    &lt;/codificaOLONOWDonor>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/numeroTelefonico&quot;>&#xa;                    &lt;numeroTelefonico>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/numeroTelefonico&quot;/>&#xa;                    &lt;/numeroTelefonico>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/tipologiaScenario&quot;>&#xa;                    &lt;tipologiaScenario>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/tipologiaScenario&quot;/>&#xa;                    &lt;/tipologiaScenario>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/DAC&quot;>&#xa;                    &lt;DAC>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/DAC&quot;/>&#xa;                    &lt;/DAC>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/progressivoNotificaDTU&quot;>&#xa;                    &lt;progressivoNotificaDTU>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/progressivoNotificaDTU&quot;/>&#xa;                    &lt;/progressivoNotificaDTU>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLOAGCOMRic&quot;>&#xa;                    &lt;codificaOLOAGCOMRic>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codificaOLOAGCOMRic&quot;/>&#xa;                    &lt;/codificaOLOAGCOMRic>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDNotificaDonor&quot;>&#xa;                    &lt;IDNotificaDonor>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDNotificaDonor&quot;/>&#xa;                    &lt;/IDNotificaDonor>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDNotificaDonating&quot;>&#xa;                    &lt;IDNotificaDonating>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDNotificaDonating&quot;/>&#xa;                    &lt;/IDNotificaDonating>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/esito&quot;>&#xa;                    &lt;esito>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/esito&quot;/>&#xa;                    &lt;/esito>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceCausaleInterno&quot;>&#xa;                    &lt;codiceCausaleInterno>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceCausaleInterno&quot;/>&#xa;                    &lt;/codiceCausaleInterno>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/dataEspletamentoDONOR&quot;>&#xa;                    &lt;dataEspletamentoDONOR>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/dataEspletamentoDONOR&quot;/>&#xa;                    &lt;/dataEspletamentoDONOR>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceTrasformazione&quot;>&#xa;                    &lt;codiceTrasformazione>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceTrasformazione&quot;/>&#xa;                    &lt;/codiceTrasformazione>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/flagOpereSpeciali&quot;>&#xa;                    &lt;flagOpereSpeciali>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/flagOpereSpeciali&quot;/>&#xa;                    &lt;/flagOpereSpeciali>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDRisorsaCorrelato&quot;>&#xa;                    &lt;IDRisorsaCorrelato>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDRisorsaCorrelato&quot;/>&#xa;                    &lt;/IDRisorsaCorrelato>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDRichiestaOLOGenerante&quot;>&#xa;                    &lt;IDRichiestaOLOGenerante>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDRichiestaOLOGenerante&quot;/>&#xa;                    &lt;/IDRichiestaOLOGenerante>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/tipoComunicazioneNP&quot;>&#xa;                    &lt;tipoComunicazioneNP>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/tipoComunicazioneNP&quot;/>&#xa;                    &lt;/tipoComunicazioneNP>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/servizioOrigine&quot;>&#xa;                    &lt;servizioOrigine>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/servizioOrigine&quot;/>&#xa;                    &lt;/servizioOrigine>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceSTS&quot;>&#xa;                    &lt;codiceSTS>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceSTS&quot;/>&#xa;                    &lt;/codiceSTS>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/caratteristica&quot;>&#xa;                    &lt;caratteristica>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/caratteristica&quot;/>&#xa;                    &lt;/caratteristica>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceRisorsaDonating&quot;>&#xa;                    &lt;codiceRisorsaDonating>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceRisorsaDonating&quot;/>&#xa;                    &lt;/codiceRisorsaDonating>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceRisorsaDonating2&quot;>&#xa;                    &lt;codiceRisorsaDonating2>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceRisorsaDonating2&quot;/>&#xa;                    &lt;/codiceRisorsaDonating2>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/cowCodeOLO&quot;>&#xa;                    &lt;cowCodeOLO>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/cowCodeOLO&quot;/>&#xa;                    &lt;/cowCodeOLO>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/cowCodeOLO2&quot;>&#xa;                    &lt;cowCodeOLO2>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/cowCodeOLO2&quot;/>&#xa;                    &lt;/cowCodeOLO2>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceSessione&quot;>&#xa;                    &lt;codiceSessione>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceSessione&quot;/>&#xa;                    &lt;/codiceSessione>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceSessione2&quot;>&#xa;                    &lt;codiceSessione2>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceSessione2&quot;/>&#xa;                    &lt;/codiceSessione2>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:for-each select=&quot;$RechargeIn.Request/tns:Richiesta/DNAggiuntivo&quot;>&#xa;                    &lt;DNAggiuntivo>&#xa;                        &lt;xsl:value-of select=&quot;.&quot;/>&#xa;                    &lt;/DNAggiuntivo>&#xa;                &lt;/xsl:for-each>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDPreventivo&quot;>&#xa;                    &lt;IDPreventivo>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDPreventivo&quot;/>&#xa;                    &lt;/IDPreventivo>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDConsuntivo&quot;>&#xa;                    &lt;IDConsuntivo>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDConsuntivo&quot;/>&#xa;                    &lt;/IDConsuntivo>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/noteAltreLavorazioni&quot;>&#xa;                    &lt;noteAltreLavorazioni>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/noteAltreLavorazioni&quot;/>&#xa;                    &lt;/noteAltreLavorazioni>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codicePacchettoNOW&quot;>&#xa;                    &lt;codicePacchettoNOW>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codicePacchettoNOW&quot;/>&#xa;                    &lt;/codicePacchettoNOW>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:copy-of select=&quot;$RechargeIn.Request/tns:Richiesta/assetTarget&quot;/>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/operatoreRete&quot;>&#xa;                    &lt;operatoreRete>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/operatoreRete&quot;/>&#xa;                    &lt;/operatoreRete>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/transactionIDLocator&quot;>&#xa;                    &lt;transactionIDLocator>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/transactionIDLocator&quot;/>&#xa;                    &lt;/transactionIDLocator>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/flagNumAggiuntive&quot;>&#xa;                    &lt;flagNumAggiuntive>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/flagNumAggiuntive&quot;/>&#xa;                    &lt;/flagNumAggiuntive>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/IDAnagraficaCausaleGUI&quot;>&#xa;                    &lt;IDAnagraficaCausaleGUI>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/IDAnagraficaCausaleGUI&quot;/>&#xa;                    &lt;/IDAnagraficaCausaleGUI>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceRifiutoDonating&quot;>&#xa;                    &lt;codiceRifiutoDonating>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceRifiutoDonating&quot;/>&#xa;                    &lt;/codiceRifiutoDonating>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/DACFile&quot;>&#xa;                    &lt;DACFile>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/DACFile&quot;/>&#xa;                    &lt;/DACFile>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/tipologiaSottolav&quot;>&#xa;                    &lt;tipologiaSottolav>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/tipologiaSottolav&quot;/>&#xa;                    &lt;/tipologiaSottolav>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/codiceRifiuto&quot;>&#xa;                    &lt;codiceRifiuto>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/codiceRifiuto&quot;/>&#xa;                    &lt;/codiceRifiuto>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/routingNumber&quot;>&#xa;                    &lt;routingNumber>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/routingNumber&quot;/>&#xa;                    &lt;/routingNumber>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/progressivoEmissioneDTU&quot;>&#xa;                    &lt;progressivoEmissioneDTU>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/progressivoEmissioneDTU&quot;/>&#xa;                    &lt;/progressivoEmissioneDTU>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/flagAttesaDesospOLO&quot;>&#xa;                    &lt;flagAttesaDesospOLO>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/flagAttesaDesospOLO&quot;/>&#xa;                    &lt;/flagAttesaDesospOLO>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/flagDeliveryExposed&quot;>&#xa;                    &lt;flagDeliveryExposed>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/flagDeliveryExposed&quot;/>&#xa;                    &lt;/flagDeliveryExposed>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/disaggregato&quot;>&#xa;                    &lt;disaggregato>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/disaggregato&quot;/>&#xa;                    &lt;/disaggregato>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/exDisaggregato&quot;>&#xa;                    &lt;exDisaggregato>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/exDisaggregato&quot;/>&#xa;                    &lt;/exDisaggregato>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/FFACQKO&quot;>&#xa;                    &lt;FFACQKO>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/FFACQKO&quot;/>&#xa;                    &lt;/FFACQKO>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/idProgressivoNotificheFF&quot;>&#xa;                    &lt;idProgressivoNotificheFF>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/idProgressivoNotificheFF&quot;/>&#xa;                    &lt;/idProgressivoNotificheFF>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/idTplgCautelare&quot;>&#xa;                    &lt;idTplgCautelare>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/idTplgCautelare&quot;/>&#xa;                    &lt;/idTplgCautelare>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$RechargeIn.Request/tns:Richiesta/rendezVous&quot;>&#xa;                    &lt;rendezVous>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:Richiesta/rendezVous&quot;/>&#xa;                    &lt;/rendezVous>&#xa;                &lt;/xsl:if>&#xa;            &lt;/tns1:Richiesta>&#xa;            &lt;xsl:if test=&quot;exists($RechargeIn.Request/tns:AssetRicarica)&quot;>&#xa;                &lt;tns1:AssetRicarica>&#xa;                    &lt;xsl:if test=&quot;$RechargeIn.Request/tns:AssetRicarica/IDAssetRicarica&quot;>&#xa;                        &lt;IDAssetRicarica>&#xa;                            &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/IDAssetRicarica&quot;/>&#xa;                        &lt;/IDAssetRicarica>&#xa;                    &lt;/xsl:if>&#xa;                    &lt;IDAsset>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/IDAsset&quot;/>&#xa;                    &lt;/IDAsset>&#xa;                    &lt;dataInizio>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/dataInizio&quot;/>&#xa;                    &lt;/dataInizio>&#xa;                    &lt;dataFine>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/dataFine&quot;/>&#xa;                    &lt;/dataFine>&#xa;                    &lt;tipologiaRicarica>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/tipologiaRicarica&quot;/>&#xa;                    &lt;/tipologiaRicarica>&#xa;                    &lt;statoAsset>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/statoAsset&quot;/>&#xa;                    &lt;/statoAsset>&#xa;                    &lt;famigliaAsset>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/famigliaAsset&quot;/>&#xa;                    &lt;/famigliaAsset>&#xa;                    &lt;xsl:if test=&quot;$RechargeIn.Request/tns:AssetRicarica/lastUpdate&quot;>&#xa;                        &lt;lastUpdate>&#xa;                            &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/lastUpdate&quot;/>&#xa;                        &lt;/lastUpdate>&#xa;                    &lt;/xsl:if>&#xa;                    &lt;created>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/created&quot;/>&#xa;                    &lt;/created>&#xa;                    &lt;xsl:if test=&quot;$RechargeIn.Request/tns:AssetRicarica/dataAccensione&quot;>&#xa;                        &lt;dataAccensione>&#xa;                            &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/dataAccensione&quot;/>&#xa;                        &lt;/dataAccensione>&#xa;                    &lt;/xsl:if>&#xa;                    &lt;xsl:if test=&quot;$RechargeIn.Request/tns:AssetRicarica/dataSpegnimento&quot;>&#xa;                        &lt;dataSpegnimento>&#xa;                            &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/dataSpegnimento&quot;/>&#xa;                        &lt;/dataSpegnimento>&#xa;                    &lt;/xsl:if>&#xa;                    &lt;xsl:if test=&quot;$RechargeIn.Request/tns:AssetRicarica/dataAnnullamento&quot;>&#xa;                        &lt;dataAnnullamento>&#xa;                            &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/dataAnnullamento&quot;/>&#xa;                        &lt;/dataAnnullamento>&#xa;                    &lt;/xsl:if>&#xa;                    &lt;operatore>&#xa;                        &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:AssetRicarica/operatore&quot;/>&#xa;                    &lt;/operatore>&#xa;                &lt;/tns1:AssetRicarica>&#xa;            &lt;/xsl:if>&#xa;            &lt;tns1:BusinessID>&#xa;                &lt;xsl:value-of select=&quot;$RechargeIn.Request/tns:BusinessID&quot;/>&#xa;            &lt;/tns1:BusinessID>&#xa;            &lt;tns1:TransactionID>&#xa;                &lt;xsl:value-of select=&quot;$TransactionID&quot;/>&#xa;            &lt;/tns1:TransactionID>&#xa;            &lt;tns1:MessageID>&#xa;                &lt;xsl:value-of select=&quot;$MessageID&quot;/>&#xa;            &lt;/tns1:MessageID>&#xa;            &lt;tns1:ContenutoRequest>&#xa;                &lt;xsl:value-of select=&quot;tib:render-xml($RechargeIn.Request, true(),true())&quot;/>&#xa;            &lt;/tns1:ContenutoRequest>&#xa;        &lt;/tns1:Req>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        subProcessName="tim.now.esb.ResourceMgmt" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+        </bpws:flow>
+    </bpws:scope>
+</bpws:process>

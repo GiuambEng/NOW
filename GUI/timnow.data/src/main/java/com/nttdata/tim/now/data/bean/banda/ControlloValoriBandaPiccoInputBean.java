@@ -1,0 +1,109 @@
+
+package com.nttdata.tim.now.data.bean.banda;
+
+import java.io.Serializable;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+@JsonInclude(Include.NON_NULL)
+public class ControlloValoriBandaPiccoInputBean implements Serializable {
+
+	private static final long serialVersionUID = -5177431513017105749L;
+
+	@JsonProperty("bandaPiccoDown")
+	private String bandaPiccoDown;
+	
+	@JsonProperty("bandaPiccoUp")
+	private String bandaPiccoUp;
+	
+	@JsonProperty("tipoCos")
+	private String tipoCos;
+	
+	@JsonProperty("codVlan")
+	private String codVlan;
+
+	public String getBandaPiccoDown() {
+		return bandaPiccoDown;
+	}
+
+	public void setBandaPiccoDown(String bandaPiccoDown) {
+		this.bandaPiccoDown = bandaPiccoDown;
+	}
+
+	public String getBandaPiccoUp() {
+		return bandaPiccoUp;
+	}
+
+	public void setBandaPiccoUp(String bandaPiccoUp) {
+		this.bandaPiccoUp = bandaPiccoUp;
+	}
+
+	public String getTipoCos() {
+		return tipoCos;
+	}
+
+	public void setTipoCos(String tipoCos) {
+		this.tipoCos = tipoCos;
+	}
+
+	public String getCodVlan() {
+		return codVlan;
+	}
+
+	public void setCodVlan(String codVlan) {
+		this.codVlan = codVlan;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((bandaPiccoDown == null) ? 0 : bandaPiccoDown.hashCode());
+		result = prime * result + ((bandaPiccoUp == null) ? 0 : bandaPiccoUp.hashCode());
+		result = prime * result + ((codVlan == null) ? 0 : codVlan.hashCode());
+		result = prime * result + ((tipoCos == null) ? 0 : tipoCos.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ControlloValoriBandaPiccoInputBean other = (ControlloValoriBandaPiccoInputBean) obj;
+		if (bandaPiccoDown == null) {
+			if (other.bandaPiccoDown != null)
+				return false;
+		} else if (!bandaPiccoDown.equals(other.bandaPiccoDown))
+			return false;
+		if (bandaPiccoUp == null) {
+			if (other.bandaPiccoUp != null)
+				return false;
+		} else if (!bandaPiccoUp.equals(other.bandaPiccoUp))
+			return false;
+		if (codVlan == null) {
+			if (other.codVlan != null)
+				return false;
+		} else if (!codVlan.equals(other.codVlan))
+			return false;
+		if (tipoCos == null) {
+			if (other.tipoCos != null)
+				return false;
+		} else if (!tipoCos.equals(other.tipoCos))
+			return false;
+		return true;
+	}
+
+	@Override
+	public String toString() {
+		return "ControlloValoriBandaPiccoInputBean [bandaPiccoDown=" + bandaPiccoDown + ", bandaPiccoUp=" + bandaPiccoUp
+				+ ", tipoCos=" + tipoCos + ", codVlan=" + codVlan + "]";
+	}
+
+	
+}

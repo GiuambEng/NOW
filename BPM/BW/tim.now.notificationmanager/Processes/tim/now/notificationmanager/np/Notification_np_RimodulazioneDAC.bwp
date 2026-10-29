@@ -1,0 +1,750 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpws:process exitOnStandardFault="no"
+    name="tim.now.notificationmanager.np.Notification_np_RimodulazioneDAC"
+    suppressJoinFailure="yes"
+    targetNamespace="http://xmlns.example.com/20160905130643"
+    xmlns:bpws="http://docs.oasis-open.org/wsbpel/2.0/process/executable"
+    xmlns:info="http://www.tibco.com/bw/process/info"
+    xmlns:ns="http://xmlns.example.com/20160905130643PLT"
+    xmlns:ns0="http://www.tibco.com/pe/EngineTypes"
+    xmlns:ns1="http://xmlns.example.com/20160905130643"
+    xmlns:ns2="http://www.tim.com/NOW/wsdl/abstract/GenericNotification/"
+    xmlns:ns3="http://xsd.telecomitalia.it/crm/npr"
+    xmlns:ns4="http://www.tim.com/NOW/wsdl/abstract/JDBCQuery/"
+    xmlns:ns5="http://www.tim.com/NOW/xsd/GenericLogger"
+    xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912"
+    xmlns:sca-bpel="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"
+    xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"
+    xmlns:tibprop="http://ns.tibco.com/bw/property"
+    xmlns:tns="http://NOW.it.telecomitalia.it/casedata_v1" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+    <tibex:Types>
+        <xs:schema attributeFormDefault="unqualified"
+            elementFormDefault="qualified"
+            targetNamespace="http://www.tibco.com/pe/EngineTypes"
+            xmlns:tns="http://www.tibco.com/pe/EngineTypes" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ErrorReport">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="FullClass" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Class" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="FaultDetail">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ActivityName" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0" name="Data" type="tns:anydata"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="Msg" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="MsgCode" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessStack" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="StackTrace" type="xs:string"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="ProcessContext">
+                <xs:sequence>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="JobId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" name="ProcessInstanceId" type="xs:string"/>
+                    <xs:element
+                        block="extension restriction substitution"
+                        form="unqualified" minOccurs="0"
+                        name="CustomJobId" type="xs:string"/>
+                    <!--xs:element name="RestartedFromCheckpoint" form="unqualified" block="extension restriction substitution" type="xs:boolean"/-->
+                    <!--xs:element minOccurs="0" maxOccurs="unbounded" name="TrackingInfo" form="unqualified" block="extension restriction substitution" type="xs:string"/-->
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType block="extension restriction"
+                final="extension restriction" name="anydata">
+                <xs:sequence>
+                    <xs:any namespace="##any" processContents="lax"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ErrorReport" type="tns:ErrorReport"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="FaultDetail" type="tns:FaultDetail"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="ProcessContext" type="tns:ProcessContext"/>
+            <xs:element block="extension restriction substitution"
+                final="extension restriction" name="CorrelationValue" type="xs:string"/>
+        </xs:schema>
+        <schema attributeFormDefault="unqualified"
+            elementFormDefault="unqualified"
+            targetNamespace="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions"
+            version="" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://schemas.tibco.com/bw/pe/plugin/5.0/exceptions">
+            <complexType name="ActivityExceptionType">
+                <sequence>
+                    <element name="msg" type="string"/>
+                    <element minOccurs="0" name="msgCode" type="string"/>
+                </sequence>
+            </complexType>
+            <element name="ActivityException" type="tns:ActivityExceptionType"/>
+            <complexType name="ActivityTimedOutExceptionType">
+                <complexContent>
+                    <extension base="tns:ActivityExceptionType"/>
+                </complexContent>
+            </complexType>
+            <element name="ActivityTimedOutException" type="tns:ActivityTimedOutExceptionType"/>
+        </schema>
+        <wsdl:definitions
+            targetNamespace="http://xmlns.example.com/20160905130643PLT"
+            xmlns:plnk="http://docs.oasis-open.org/wsbpel/2.0/plnktype"
+            xmlns:ptyp="http://xmlns.example.com/20160905130643"
+            xmlns:ptyp2="http://www.tim.com/NOW/wsdl/abstract/GenericNotification/"
+            xmlns:ptyp3="http://www.tim.com/NOW/wsdl/abstract/JDBCQuery/"
+            xmlns:tns="http://xmlns.example.com/20160905130643PLT"
+            xmlns:vprop="http://docs.oasis-open.org/wsbpel/2.0/varprop"
+            xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+            <plnk:partnerLinkType name="partnerLinkType">
+                <plnk:role name="use" portType="ptyp2:Notification_np_RimodulazioneDAC"/>
+            </plnk:partnerLinkType>
+            <plnk:partnerLinkType name="partnerLinkType1">
+                <plnk:role name="use" portType="ptyp3:JDBCQueryPortType"/>
+            </plnk:partnerLinkType>
+            <wsdl:import namespace="http://www.tim.com/NOW/wsdl/abstract/GenericNotification/"/>
+            <wsdl:import namespace="http://www.tim.com/NOW/wsdl/abstract/JDBCQuery/"/>
+        </wsdl:definitions>
+    </tibex:Types>
+    <tibex:ProcessInfo callable="false" createdBy="admlocal"
+        createdOn="Mon Sep 05 13:06:43 CEST 2016" description=""
+        extraErrorVars="false" modifiers="public"
+        productVersion="6.3.2 HF2 V40 2016-07-19" scalable="true"
+        singleton="true" stateless="false" type="IT"/>
+    <tibex:ProcessInterface context="" input="" output=""/>
+    <tibex:ProcessTemplateConfigurations/>
+    <notation:Diagram measurementUnit="Pixel" type="BWProcess"
+        xmlns:bwnotation="http://tns.tibco.com/bw/runtime/BWNotation"
+        xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+        <children type="2001">
+            <children type="5001"/>
+            <children type="3001">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <children type="3002">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3003">
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+            </children>
+            <children type="3004">
+                <children type="4018">
+                    <children type="3018">
+                        <children type="4020">
+                            <children type="3020">
+                                <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint x="9"
+                                    xsi:type="notation:Bounds" y="58"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint x="582"
+                                    xsi:type="notation:Bounds" y="58"/>
+                                    </children>
+                                    <children type="4002 bw.generalactivities.mapper">
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.2"/>
+                                    <layoutConstraint
+                                    height="40" width="40"
+                                    x="431"
+                                    xsi:type="notation:Bounds" y="58"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.3"/>
+                                    <layoutConstraint x="285"
+                                    xsi:type="notation:Bounds" y="58"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@activity/@activities.4"/>
+                                    <layoutConstraint x="148"
+                                    xsi:type="notation:Bounds" y="58"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    </children>
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@activity"/>
+                                    <layoutConstraint height="185"
+                                    width="738" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity"/>
+                            <layoutConstraint height="173" width="741" xsi:type="notation:Bounds"/>
+                        </children>
+                        <children type="4022">
+                            <children type="3022">
+                                <children type="4029">
+                                    <children type="3031">
+                                    <children type="4033">
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll"/>
+                                    <layoutConstraint
+                                    height="34" width="34"
+                                    xsi:type="notation:Bounds" y="68"/>
+                                    </children>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    </children>
+                                    <children type="3032">
+                                    <children type="4005">
+                                    <children type="3007">
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll/@activity/@activity/@activities.0"/>
+                                    <layoutConstraint
+                                    x="13"
+                                    xsi:type="notation:Bounds" y="28"/>
+                                    </children>
+                                    <children type="4002">
+                                    <children type="4017">
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <children type="4017">
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+
+                                    <layoutConstraint xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles
+                                    lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll/@activity/@activity/@activities.1"/>
+                                    <layoutConstraint
+                                    x="134"
+                                    xsi:type="notation:Bounds" y="28"/>
+                                    </children>
+                                    <styles xsi:type="notation:DrawerStyle"/>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    </children>
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles
+                                    backgroundColor="16777215"
+                                    gradientEndColor="50431"
+                                    gradientStartColor="16777215" xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll/@activity/@activity"/>
+                                    <layoutConstraint
+                                    height="168" width="640" xsi:type="notation:Bounds"/>
+                                    </children>
+                                    <styles xsi:type="notation:SortingStyle"/>
+                                    <styles xsi:type="notation:FilteringStyle"/>
+                                    </children>
+                                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                                    <element href="//0/@process/@activity/@faultHandlers/@catchAll"/>
+                                    <layoutConstraint height="139"
+                                    width="691" xsi:type="notation:Bounds"/>
+                                </children>
+                                <styles xsi:type="notation:SortingStyle"/>
+                                <styles xsi:type="notation:FilteringStyle"/>
+                            </children>
+                            <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                            <styles xsi:type="bwnotation:BackgroundStyle"/>
+                            <styles xsi:type="bwnotation:ResizingStyle"/>
+                            <element href="//0/@process/@activity/@faultHandlers"/>
+                            <layoutConstraint height="165" width="701"
+                                x="22" xsi:type="notation:Bounds" y="162"/>
+                        </children>
+                        <styles xsi:type="notation:SortingStyle"/>
+                        <styles xsi:type="notation:FilteringStyle"/>
+                        <element href="//0/@process/@activity"/>
+                    </children>
+                    <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+                    <styles xsi:type="bwnotation:BackgroundStyle"/>
+                    <styles xsi:type="bwnotation:ResizingStyle"/>
+                    <element href="//0/@process/@activity"/>
+                    <layoutConstraint height="328" width="741" x="1"
+                        xsi:type="notation:Bounds" y="1"/>
+                </children>
+                <styles xsi:type="notation:SortingStyle"/>
+                <styles xsi:type="notation:FilteringStyle"/>
+                <element href="//0/@process"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ShapeStyle"/>
+            <element href="//0/@process"/>
+            <layoutConstraint height="380" width="1083" xsi:type="notation:Bounds"/>
+        </children>
+        <styles xsi:type="notation:DiagramStyle"/>
+        <element href="//0"/>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.2" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.1"/>
+            <bendpoints points="[25, 0, -135, 0]$[136, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.2"/>
+            <bendpoints points="[25, 0, -77, 0]$[78, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.4"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.0/@children.0/@children.0/@children.0/@children.3" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@activity/@links/@children.3"/>
+            <bendpoints points="[25, 0, -115, 0]$[116, 0, -24, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+        <edges
+            source="//@children.0/@children.4/@children.0/@children.0/@children.1/@children.0/@children.0/@children.1/@children.0/@children.0/@children.0"
+            target="//@children.0/@children.4/@children.0/@children.0/@children.1/@children.0/@children.0/@children.1/@children.0/@children.0/@children.1" type="4006">
+            <children type="6002">
+                <layoutConstraint xsi:type="notation:Location" y="40"/>
+            </children>
+            <styles lineColor="0" xsi:type="notation:ConnectorStyle"/>
+            <styles xsi:type="notation:FontStyle"/>
+            <element href="//0/@process/@activity/@faultHandlers/@catchAll/@activity/@activity/@links/@children.0"/>
+            <bendpoints points="[0, 0, 0, 0]$[0, 0, 0, 0]" xsi:type="notation:RelativeBendpoints"/>
+        </edges>
+    </notation:Diagram>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="../../../../../Service%20Descriptors/NotificationManager/GenericNotification.wsdl" namespace="http://www.tim.com/NOW/wsdl/abstract/GenericNotification/"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://xsd.telecomitalia.it/crm/npr"/>
+    <bpws:import importType="http://schemas.xmlsoap.org/wsdl/"
+        location="../../../../../Service%20Descriptors/NotificationManager/JDBCQuery.wsdl" namespace="http://www.tim.com/NOW/wsdl/abstract/JDBCQuery/"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://www.tim.com/NOW/xsd/GenericLogger"/>
+    <bpws:import importType="http://www.w3.org/2001/XMLSchema" namespace="http://NOW.it.telecomitalia.it/casedata_v1"/>
+    <bpws:partnerLinks>
+        <bpws:partnerLink myRole="use"
+            name="Notification_np_RimodulazioneDAC"
+            partnerLinkType="ns:partnerLinkType" sca-bpel:ignore="false"
+            sca-bpel:service="Notification_np_RimodulazioneDAC" tibex:register="true"/>
+        <bpws:partnerLink name="JDBCQuery"
+            partnerLinkType="ns:partnerLinkType1" partnerRole="use"
+            sca-bpel:ignore="true" sca-bpel:reference="JDBCQuery" sca-bpel:wiredByImpl="false">
+            <tibex:ReferenceWire dynamic="false" inline="false"
+                processConfigurationName=""
+                processName="tim.now.notificationmanager.np.JDBCQuery" serviceName="JDBCQueryPortType"/>
+        </bpws:partnerLink>
+    </bpws:partnerLinks>
+    <bpws:variables>
+        <bpws:variable element="ns0:ProcessContext"
+            name="_processContext" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns2:GenericNotificationRequest"
+            name="GenericNotificationIn" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns2:GenericNotificationResponse1"
+            name="GenericNotificationOut-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:Rimodulazione_DAC"
+            name="RimodulazioneDAC_Mapper-input" sca-bpel:internal="true"/>
+        <bpws:variable element="ns3:Rimodulazione_DAC"
+            name="RimodulazioneDAC_Mapper" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns4:JDBCQueryRequest"
+            name="InvokeJDBCQuery-input" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns4:JDBCQueryResponse"
+            name="InvokeJDBCQuery" sca-bpel:internal="true"/>
+        <bpws:variable element="ns5:CW_BUS_MESSAGE"
+            name="LOG_NP_RimodulazioneDAC-input" sca-bpel:internal="true"/>
+        <bpws:variable name="logger_name" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LoggerName" type="xsd:string"/>
+        <bpws:variable name="log_level" sca-bpel:hotUpdate="false"
+            sca-bpel:privateProperty="true" sca-bpel:property="yes"
+            tibex:propertySource="/Log/LogLevel" type="xsd:string"/>
+        <bpws:variable name="FaultName" sca-bpel:internal="true" type="xsd:string"/>
+        <bpws:variable element="ns0:FaultDetail" name="FaultDetails" sca-bpel:internal="true"/>
+        <bpws:variable element="ns5:CW_BUS_MESSAGE"
+            name="LOG_Fault-input" sca-bpel:internal="true"/>
+        <bpws:variable messageType="ns2:GenericNotificationFault1"
+            name="Reply-input" sca-bpel:internal="true"/>
+    </bpws:variables>
+    <bpws:extensions>
+        <bpws:extension mustUnderstand="no" namespace="http://www.eclipse.org/gmf/runtime/1.0.2/notation"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bw/process/info"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca-bpel/200801"/>
+        <bpws:extension mustUnderstand="no" namespace="http://docs.oasis-open.org/ns/opencsa/sca/200912"/>
+        <bpws:extension mustUnderstand="no" namespace="http://ns.tibco.com/bw/property"/>
+        <bpws:extension mustUnderstand="no" namespace="http://www.tibco.com/bpel/2007/extensions"/>
+    </bpws:extensions>
+    <bpws:scope name="scope">
+        <bpws:faultHandlers>
+            <bpws:catchAll tibex:faultDetailsVar="FaultDetails"
+                tibex:faultNameVar="FaultName" tibex:xpdlId="e072ecf0-132d-4275-aa64-a48f8b85a325">
+                <bpws:scope name="scope1">
+                    <bpws:flow name="flow1">
+                        <bpws:links>
+                            <bpws:link name="CallProcessToReply" tibex:linkType="SUCCESS"/>
+                        </bpws:links>
+                        <bpws:extensionActivity>
+                            <tibex:extActivity
+                                expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;logger_name&quot;/>&lt;xsl:param name=&quot;log_level&quot;/>&lt;xsl:param name=&quot;FaultDetails&quot;/>&lt;xsl:param name=&quot;GenericNotificationIn&quot;/>&lt;xsl:template name=&quot;LOG_Fault-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.application&amp;quot;&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;Notification_np_RimodulazioneDAC&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;Notification_np_RimodulazioneDACPortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;GenericNotification&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns2:NotificaGenericaRequest/tns2:Richiesta/IDRichiestaOLO&quot;/>&lt;/tns:BusinessID>&lt;tns:Message>&lt;xsl:value-of select=&quot;tib:render-xml($FaultDetails, true(), true())&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$logger_name&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$log_level&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;false()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                                expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                                inputVariable="LOG_Fault-input"
+                                name="LOG_Fault"
+                                tibex:xpdlId="c57e3963-b7bc-46ff-9868-5e1c6aec0623"
+                                type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                                <bpws:sources>
+                                    <bpws:source linkName="CallProcessToReply"/>
+                                </bpws:sources>
+                                <tibex:inputBindings>
+                                    <tibex:inputBinding
+                                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;GenericNotificationIn.NotificaGenericaRichiesta&quot;/>&#xa;    &lt;xsl:param name=&quot;logger_name&quot;/>&#xa;    &lt;xsl:param name=&quot;log_level&quot;/>&#xa;    &lt;xsl:param name=&quot;FaultDetails&quot;/>&#xa;    &lt;xsl:template name=&quot;LOG_Fault-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:CW_BUS_MESSAGE>&#xa;            &lt;tns:GenericLogger>&#xa;                &lt;tns:Application>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.application&amp;quot;&quot;/>&#xa;                &lt;/tns:Application>&#xa;                &lt;tns:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;Notification_np_RimodulazioneDAC&amp;quot;&quot;/>&#xa;                &lt;/tns:Process>&#xa;                &lt;tns:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;Notification_np_RimodulazioneDACPortType&amp;quot;&quot;/>&#xa;                &lt;/tns:Service>&#xa;                &lt;tns:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;GenericNotification&amp;quot;&quot;/>&#xa;                &lt;/tns:Operation>&#xa;                &lt;tns:BusinessID>&#xa;                    &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns2:Richiesta/IDRichiestaOLO&quot;/>&#xa;                &lt;/tns:BusinessID>&#xa;                &lt;tns:Message>&#xa;                    &lt;xsl:value-of select=&quot;tib:render-xml($FaultDetails, true(), true())&quot;/>&#xa;                &lt;/tns:Message>&#xa;                &lt;tns:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$logger_name&quot;/>&#xa;                &lt;/tns:LoggerName>&#xa;                &lt;tns:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$log_level&quot;/>&#xa;                &lt;/tns:LogLevel>&#xa;                &lt;tns:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;false()&quot;/>&#xa;                &lt;/tns:LogJMS>&#xa;            &lt;/tns:GenericLogger>&#xa;        &lt;/tns:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                                </tibex:inputBindings>
+                                <tibex:CallProcess
+                                    moduleRef="tim.now.shared_library"
+                                    spawn="true"
+                                    subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                            </tibex:extActivity>
+                        </bpws:extensionActivity>
+                        <bpws:reply faultName="fault" name="Reply"
+                            operation="GenericNotification"
+                            partnerLink="Notification_np_RimodulazioneDAC"
+                            portType="ns2:Notification_np_RimodulazioneDAC"
+                            tibex:xpdlId="cf7c6560-e77f-413e-be75-47b13d467c4e" variable="Reply-input">
+                            <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://www.tim.com/NOW/wsdl/abstract/GenericNotification/" xmlns:tns1="http://www.tim.com/NOW/xsd/GenericNotification" xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions" version="2.0"&gt;&lt;xsl:param name="FaultDetails"/&gt;&lt;xsl:template name="Reply-input" match="/"&gt;&lt;tns:GenericNotificationFault1&gt;&lt;NotificaGenericaFault&gt;&lt;tns1:NotificaGenericaFault&gt;&lt;tns1:Codice&gt;&lt;xsl:value-of select="&amp;quot;KO&amp;quot;"/&gt;&lt;/tns1:Codice&gt;&lt;tns1:Descrizione&gt;&lt;xsl:value-of select="concat(tib:render-xml($FaultDetails), $FaultDetails/MsgCode)"/&gt;&lt;/tns1:Descrizione&gt;&lt;/tns1:NotificaGenericaFault&gt;&lt;/NotificaGenericaFault&gt;&lt;/tns:GenericNotificationFault1&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                            <tibex:inputBindings>
+                                <tibex:partBinding
+                                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/wsdl/abstract/GenericNotification/&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;FaultDetails&quot;/>&#xa;    &lt;xsl:template name=&quot;Reply-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns1:NotificaGenericaFault>&#xa;            &lt;tns1:Codice>&#xa;                &lt;xsl:value-of select=&quot;&amp;quot;KO&amp;quot;&quot;/>&#xa;            &lt;/tns1:Codice>&#xa;            &lt;tns1:Descrizione>&#xa;                &lt;xsl:value-of select=&quot;concat(tib:render-xml($FaultDetails), $FaultDetails/MsgCode)&quot;/>&#xa;            &lt;/tns1:Descrizione>&#xa;        &lt;/tns1:NotificaGenericaFault>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                            </tibex:inputBindings>
+                            <bpws:targets>
+                                <bpws:target linkName="CallProcessToReply"/>
+                            </bpws:targets>
+                        </bpws:reply>
+                    </bpws:flow>
+                </bpws:scope>
+            </bpws:catchAll>
+        </bpws:faultHandlers>
+        <bpws:flow name="flow">
+            <bpws:links>
+                <bpws:link name="MapperToGenericNotificationOut" tibex:linkType="SUCCESS"/>
+                <bpws:link name="InvokeToRimodulazioneDAC_Mapper" tibex:linkType="SUCCESS"/>
+                <bpws:link
+                    name="GenericNotificationInToLOG_NP_EspletamentoDonorRecipientDonating" tibex:linkType="SUCCESS"/>
+                <bpws:link
+                    name="LOG_NP_EspletamentoDonorRecipientDonatingToInvokeJDBCQuery" tibex:linkType="SUCCESS"/>
+            </bpws:links>
+            <bpws:receive createInstance="yes"
+                name="GenericNotificationIn"
+                operation="GenericNotification"
+                partnerLink="Notification_np_RimodulazioneDAC"
+                portType="ns2:Notification_np_RimodulazioneDAC"
+                tibex:xpdlId="a94bfbb8-eb25-4033-9d45-4ffa8251b52a" variable="GenericNotificationIn">
+                <bpws:sources>
+                    <bpws:source linkName="GenericNotificationInToLOG_NP_EspletamentoDonorRecipientDonating"/>
+                </bpws:sources>
+            </bpws:receive>
+            <bpws:reply name="GenericNotificationOut"
+                operation="GenericNotification"
+                partnerLink="Notification_np_RimodulazioneDAC"
+                portType="ns2:Notification_np_RimodulazioneDAC"
+                tibex:xpdlId="c3384e4e-ae5a-4a88-a800-383b78d13ff7" variable="GenericNotificationOut-input">
+                <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://www.tim.com/NOW/wsdl/abstract/GenericNotification/" xmlns:tns1="http://www.tim.com/NOW/xsd/GenericNotification" xmlns:tns2="http://xsd.telecomitalia.it/crm/npr" version="2.0"&gt;&lt;xsl:param name="RimodulazioneDAC_Mapper"/&gt;&lt;xsl:template name="GenericNotificationOut-input" match="/"&gt;&lt;tns:GenericNotificationResponse1&gt;&lt;NotificaGenericaRisposta&gt;&lt;tns1:NotificaGenericaResponse&gt;&lt;tns2:Risposta&gt;&lt;xsl:copy-of select="$RimodulazioneDAC_Mapper"/&gt;&lt;/tns2:Risposta&gt;&lt;/tns1:NotificaGenericaResponse&gt;&lt;/NotificaGenericaRisposta&gt;&lt;/tns:GenericNotificationResponse1&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                <tibex:inputBindings>
+                    <tibex:partBinding
+                        expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/wsdl/abstract/GenericNotification/&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; xmlns:tns2=&quot;http://xsd.telecomitalia.it/crm/npr&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;RimodulazioneDAC_Mapper&quot;/>&#xa;    &lt;xsl:template name=&quot;GenericNotificationOut-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns1:NotificaGenericaResponse>&#xa;            &lt;tns2:Risposta>&#xa;                &lt;xsl:copy-of select=&quot;$RimodulazioneDAC_Mapper&quot;/>&#xa;            &lt;/tns2:Risposta>&#xa;        &lt;/tns1:NotificaGenericaResponse>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                </tibex:inputBindings>
+                <bpws:targets>
+                    <bpws:target linkName="MapperToGenericNotificationOut"/>
+                </bpws:targets>
+            </bpws:reply>
+            <bpws:extensionActivity>
+                <tibex:activityExtension
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://xsd.telecomitalia.it/crm/npr&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/JDBCQuery&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;GenericNotificationIn&quot;/>&lt;xsl:param name=&quot;InvokeJDBCQuery&quot;/>&lt;xsl:template name=&quot;RimodulazioneDAC_Mapper-input&quot; match=&quot;/&quot;>&lt;tns:Rimodulazione_DAC>&lt;tns:TipoComunicazione>&lt;xsl:value-of select=&quot;10&quot;/>&lt;/tns:TipoComunicazione>&lt;tns:DatiNotifica>&lt;xsl:choose>&lt;xsl:when test=&quot;($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/tipologiaScenario = &amp;quot;NPSUTIF&amp;quot; or $GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/tipologiaScenario = &amp;quot;NPDONOROLO&amp;quot;) and $GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/statoRichiestaNOW = &amp;quot;INVERIFICADONATING&amp;quot; and $GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:CodificaOLOAGCOMDestinatario = &amp;quot;TLC&amp;quot;&quot;>&lt;tns:CodiceOrdine>&lt;xsl:value-of select=&quot;substring($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/codiceOrdineTI, 5)&quot;/>&lt;/tns:CodiceOrdine>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:CodiceOrdine>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/codiceOrdineOLO&quot;/>&lt;/tns:CodiceOrdine>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;tns:DataOrdine>&lt;xsl:value-of select=&quot;tib:parse-date(&amp;quot;yyyy-MM-dd&amp;quot;, string($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/dataInvioRichiesta))&quot;/>&lt;/tns:DataOrdine>&lt;tns:DirectoryNumber>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/numeroTelefonico&quot;/>&lt;/tns:DirectoryNumber>&lt;tns:IdentificativoOperatoreDonor>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:CodificaOLOAGCOMDonor&quot;/>&lt;/tns:IdentificativoOperatoreDonor>&lt;tns:DataInvioMessaggio>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group1/tns2:DataInvioMessaggio&quot;/>&lt;/tns:DataInvioMessaggio>&lt;xsl:if test=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/note&quot;>&lt;tns:Note>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/note&quot;/>&lt;/tns:Note>&lt;/xsl:if>&lt;tns:CodiceOpRecipient>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group2/tns2:CodiceOLORecipient&quot;/>&lt;/tns:CodiceOpRecipient>&lt;tns:CodiceSegreto>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group2/tns2:CodiceSegreto&quot;/>&lt;/tns:CodiceSegreto>&lt;xsl:choose>&lt;xsl:when test=&quot;string-length($InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group3/tns2:TipoLinea) > 0 or exists($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/ordine/dettaglioordine[nomeComponente = &amp;quot;NUMERIAGGIUNTIVI&amp;quot;])&quot;>&lt;tns:TipoLinea>&lt;xsl:choose>&lt;xsl:when test=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group3/tns2:TipoLinea = &amp;quot;3&amp;quot; or $InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group3/tns2:TipoLinea = &amp;quot;0&amp;quot; or exists($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/ordine/dettaglioordine[nomeComponente = &amp;quot;NUMERIAGGIUNTIVI&amp;quot;])&quot;>&lt;tns:ISDN>&lt;tns:TipoLineaID>&lt;xsl:value-of select=&quot;'0'&quot;/>&lt;/tns:TipoLineaID>&lt;xsl:choose>&lt;xsl:when test=&quot;string-length($InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:DefTipoLinea/tns2:ISDN/tns2:flagNPNumerazioniAggiuntive)>0&quot;>&lt;tns:FlagNPNumerazioniAggiuntive>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:DefTipoLinea/tns2:ISDN/tns2:flagNPNumerazioniAggiuntive&quot;/>&lt;/tns:FlagNPNumerazioniAggiuntive>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:FlagNPNumerazioniAggiuntive>&lt;xsl:value-of select=&quot;'0'&quot;/>&lt;/tns:FlagNPNumerazioniAggiuntive>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:DefTipoLinea/tns2:ISDN/tns2:NumAggiuntiva) or exists($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/ordine/dettaglioordine[nomeComponente = &amp;quot;NUMERIAGGIUNTIVI&amp;quot;])&quot;>&lt;xsl:choose>&lt;xsl:when test=&quot;exists($InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:DefTipoLinea/tns2:ISDN/tns2:NumAggiuntiva) &quot;>&lt;tns:NPAggiuntive>&lt;xsl:for-each select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:DefTipoLinea/tns2:ISDN/tns2:NumAggiuntiva/tns2:NumAggiuntivaPortata&quot;>&lt;tns:NumAggiuntivaPortata>&lt;xsl:value-of select=&quot;.&quot;/>&lt;/tns:NumAggiuntivaPortata>&lt;/xsl:for-each>&lt;/tns:NPAggiuntive>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:NPAggiuntive>&lt;xsl:for-each select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/ordine/dettaglioordine[nomeComponente = &amp;quot;NUMERIAGGIUNTIVI&amp;quot;]&quot;>&lt;tns:NumAggiuntivaPortata>&lt;xsl:value-of select=&quot;attributiDettaglioOrdine[nomeAttributo = &amp;quot;NUMEROTELEFONICO&amp;quot;]/valoreAttributo&quot;/>&lt;/tns:NumAggiuntivaPortata>&lt;/xsl:for-each>&lt;/tns:NPAggiuntive>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;/tns:ISDN>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:GNR>&lt;tns:TipoLineaID>&lt;xsl:value-of select=&quot;'1'&quot;/>&lt;/tns:TipoLineaID>&lt;/tns:GNR>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/tns:TipoLinea>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;xsl:choose>&lt;xsl:when test=&quot;string-length(string($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/ordine/DACRimodulata)) > 0&quot;>&lt;tns:DataAttesaConsegnaServizio>&lt;xsl:value-of select=&quot;tib:parse-date(&amp;quot;yyyy-MM-dd&amp;quot;, string($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/ordine/DACRimodulata))&quot;/>&lt;/tns:DataAttesaConsegnaServizio>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:DataAttesaConsegnaServizio>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group2/tns2:DataAttesaConsegnaServizio&quot;/>&lt;/tns:DataAttesaConsegnaServizio>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;tns:CognomeCliente_RagioneSociale>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group2/tns2:CognomeCliente_RagioneSociale&quot;/>&lt;/tns:CognomeCliente_RagioneSociale>&lt;xsl:if test=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group2/tns2:NomeCliente&quot;>&lt;tns:NomeCliente>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group2/tns2:NomeCliente&quot;/>&lt;/tns:NomeCliente>&lt;/xsl:if>&lt;xsl:if test=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/codiceProgetto&quot;>&lt;tns:CodiceProgetto>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/codiceProgetto&quot;/>&lt;/tns:CodiceProgetto>&lt;/xsl:if>&lt;tns:EmailReferenteRichiedente>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group2/tns2:EmailReferenteRichiedente&quot;/>&lt;/tns:EmailReferenteRichiedente>&lt;tns:TelefonoReferenteRichiedente>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:Group2/tns2:TelefonoReferenteRichiedente&quot;/>&lt;/tns:TelefonoReferenteRichiedente>&lt;xsl:choose>&lt;xsl:when test=&quot;string-length($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/IDCorrelazione) > 0 and string-length(string($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/totaleRichiestePacchetto)) > 0&quot;>&lt;tns:Correlazioni>&lt;tns:IdentificativoCorrelazioni>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/IDCorrelazione&quot;/>&lt;/tns:IdentificativoCorrelazioni>&lt;tns:TotaleRichieste>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/totaleRichiestePacchetto&quot;/>&lt;/tns:TotaleRichieste>&lt;/tns:Correlazioni>&lt;/xsl:when>&lt;xsl:otherwise/>&lt;/xsl:choose>&lt;/tns:DatiNotifica>&lt;tns:IdentificativoOperatoreDonating>&lt;xsl:value-of select=&quot;$InvokeJDBCQuery/JDBCQueryOutput/tns2:JDBCQueryResponse/tns2:CodificaOLOAGCOMDonating&quot;/>&lt;/tns:IdentificativoOperatoreDonating>&lt;xsl:choose>&lt;xsl:when test=&quot;string-length(string($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/ordine/DACRimodulata)) > 0&quot;>&lt;tns:DataAttesaConsegnaRimodulata>&lt;xsl:value-of select=&quot;tib:parse-date(&amp;quot;yyyy-MM-dd&amp;quot;, string($GenericNotificationIn/NotificaGenericaRichiesta/tns1:NotificaGenericaRequest/tns1:Richiesta/ordine/DACRimodulata))&quot;/>&lt;/tns:DataAttesaConsegnaRimodulata>&lt;/xsl:when>&lt;xsl:otherwise>&lt;tns:DataAttesaConsegnaRimodulata>&lt;xsl:value-of select=&quot;tib:parse-date(&amp;quot;yyyy-MM-dd&amp;quot;, string(current-date()))&quot;/>&lt;/tns:DataAttesaConsegnaRimodulata>&lt;/xsl:otherwise>&lt;/xsl:choose>&lt;/tns:Rimodulazione_DAC>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="RimodulazioneDAC_Mapper-input"
+                    name="RimodulazioneDAC_Mapper"
+                    outputVariable="RimodulazioneDAC_Mapper"
+                    tibex:xpdlId="f0ad7d4a-f4f9-4a3c-baf8-013d6982c5d7" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="InvokeToRimodulazioneDAC_Mapper"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="MapperToGenericNotificationOut"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://xsd.telecomitalia.it/crm/npr&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/JDBCQuery&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;GenericNotificationIn.NotificaGenericaRichiesta&quot;/>&#xa;    &lt;xsl:param name=&quot;InvokeJDBCQuery.JDBCQueryOutput&quot;/>&#xa;    &lt;xsl:template name=&quot;RimodulazioneDAC_Mapper-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:Rimodulazione_DAC>&#xa;            &lt;tns:TipoComunicazione>&#xa;                &lt;xsl:value-of select=&quot;10&quot;/>&#xa;            &lt;/tns:TipoComunicazione>&#xa;            &lt;tns:DatiNotifica>&#xa;                &lt;xsl:choose>&#xa;                    &lt;xsl:when test=&quot;($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/tipologiaScenario = &amp;quot;NPSUTIF&amp;quot; or $GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/tipologiaScenario = &amp;quot;NPDONOROLO&amp;quot;) and $GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/statoRichiestaNOW = &amp;quot;INVERIFICADONATING&amp;quot; and $GenericNotificationIn.NotificaGenericaRichiesta/tns1:CodificaOLOAGCOMDestinatario = &amp;quot;TLC&amp;quot;&quot;>&#xa;                        &lt;tns:CodiceOrdine>&#xa;                            &lt;xsl:value-of select=&quot;substring($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/codiceOrdineTI, 5)&quot;/>&#xa;                        &lt;/tns:CodiceOrdine>&#xa;                    &lt;/xsl:when>&#xa;                    &lt;xsl:otherwise>&#xa;                        &lt;tns:CodiceOrdine>&#xa;                            &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/codiceOrdineOLO&quot;/>&#xa;                        &lt;/tns:CodiceOrdine>&#xa;                    &lt;/xsl:otherwise>&#xa;                &lt;/xsl:choose>&#xa;                &lt;tns:DataOrdine>&#xa;                    &lt;xsl:value-of select=&quot;tib:parse-date(&amp;quot;yyyy-MM-dd&amp;quot;, string($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/dataInvioRichiesta))&quot;/>&#xa;                &lt;/tns:DataOrdine>&#xa;                &lt;tns:DirectoryNumber>&#xa;                    &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/numeroTelefonico&quot;/>&#xa;                &lt;/tns:DirectoryNumber>&#xa;                &lt;tns:IdentificativoOperatoreDonor>&#xa;                    &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:CodificaOLOAGCOMDonor&quot;/>&#xa;                &lt;/tns:IdentificativoOperatoreDonor>&#xa;                &lt;tns:DataInvioMessaggio>&#xa;                    &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group1/tns2:DataInvioMessaggio&quot;/>&#xa;                &lt;/tns:DataInvioMessaggio>&#xa;                &lt;xsl:if test=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/note&quot;>&#xa;                    &lt;tns:Note>&#xa;                        &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/note&quot;/>&#xa;                    &lt;/tns:Note>&#xa;                &lt;/xsl:if>&#xa;                &lt;tns:CodiceOpRecipient>&#xa;                    &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group2/tns2:CodiceOLORecipient&quot;/>&#xa;                &lt;/tns:CodiceOpRecipient>&#xa;                &lt;tns:CodiceSegreto>&#xa;                    &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group2/tns2:CodiceSegreto&quot;/>&#xa;                &lt;/tns:CodiceSegreto>&#xa;                &lt;xsl:choose>&#xa;                    &lt;xsl:when test=&quot;string-length($InvokeJDBCQuery.JDBCQueryOutput/tns2:Group3/tns2:TipoLinea) > 0 or exists($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/ordine/dettaglioordine[nomeComponente = &amp;quot;NUMERIAGGIUNTIVI&amp;quot;])&quot;>&#xa;                        &lt;tns:TipoLinea>&#xa;                            &lt;xsl:choose>&#xa;                                &lt;xsl:when test=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group3/tns2:TipoLinea = &amp;quot;3&amp;quot; or $InvokeJDBCQuery.JDBCQueryOutput/tns2:Group3/tns2:TipoLinea = &amp;quot;0&amp;quot; or exists($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/ordine/dettaglioordine[nomeComponente = &amp;quot;NUMERIAGGIUNTIVI&amp;quot;])&quot;>&#xa;                                    &lt;tns:ISDN>&#xa;                                        &lt;tns:TipoLineaID>&#xa;                                            &lt;xsl:value-of select=&quot;'0'&quot;/>&#xa;                                        &lt;/tns:TipoLineaID>&#xa;                                        &lt;xsl:choose>&#xa;                                            &lt;xsl:when test=&quot;string-length($InvokeJDBCQuery.JDBCQueryOutput/tns2:DefTipoLinea/tns2:ISDN/tns2:flagNPNumerazioniAggiuntive)>0&quot;>&#xa;                                                &lt;tns:FlagNPNumerazioniAggiuntive>&#xa;                                                    &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:DefTipoLinea/tns2:ISDN/tns2:flagNPNumerazioniAggiuntive&quot;/>&#xa;                                                &lt;/tns:FlagNPNumerazioniAggiuntive>&#xa;                                            &lt;/xsl:when>&#xa;                                            &lt;xsl:otherwise>&#xa;                                                &lt;tns:FlagNPNumerazioniAggiuntive>&#xa;                                                    &lt;xsl:value-of select=&quot;'0'&quot;/>&#xa;                                                &lt;/tns:FlagNPNumerazioniAggiuntive>&#xa;                                            &lt;/xsl:otherwise>&#xa;                                        &lt;/xsl:choose>&#xa;                                        &lt;xsl:choose>&#xa;                                            &lt;xsl:when test=&quot;exists($InvokeJDBCQuery.JDBCQueryOutput/tns2:DefTipoLinea/tns2:ISDN/tns2:NumAggiuntiva) or exists($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/ordine/dettaglioordine[nomeComponente = &amp;quot;NUMERIAGGIUNTIVI&amp;quot;])&quot;>&#xa;                                                &lt;xsl:choose>&#xa;                                                    &lt;xsl:when test=&quot;exists($InvokeJDBCQuery.JDBCQueryOutput/tns2:DefTipoLinea/tns2:ISDN/tns2:NumAggiuntiva) &quot;>&#xa;                                                        &lt;tns:NPAggiuntive>&#xa;                                                            &lt;xsl:for-each select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:DefTipoLinea/tns2:ISDN/tns2:NumAggiuntiva/tns2:NumAggiuntivaPortata&quot;>&#xa;                                                                &lt;tns:NumAggiuntivaPortata>&#xa;                                                                    &lt;xsl:value-of select=&quot;.&quot;/>&#xa;                                                                &lt;/tns:NumAggiuntivaPortata>&#xa;                                                            &lt;/xsl:for-each>&#xa;                                                        &lt;/tns:NPAggiuntive>&#xa;                                                    &lt;/xsl:when>&#xa;                                                    &lt;xsl:otherwise>&#xa;                                                        &lt;tns:NPAggiuntive>&#xa;                                                            &lt;xsl:for-each select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/ordine/dettaglioordine[nomeComponente = &amp;quot;NUMERIAGGIUNTIVI&amp;quot;]&quot;>&#xa;                                                                &lt;tns:NumAggiuntivaPortata>&#xa;                                                                    &lt;xsl:value-of select=&quot;attributiDettaglioOrdine[nomeAttributo = &amp;quot;NUMEROTELEFONICO&amp;quot;]/valoreAttributo&quot;/>&#xa;                                                                &lt;/tns:NumAggiuntivaPortata>&#xa;                                                            &lt;/xsl:for-each>&#xa;                                                        &lt;/tns:NPAggiuntive>&#xa;                                                    &lt;/xsl:otherwise>&#xa;                                                &lt;/xsl:choose>&#xa;                                            &lt;/xsl:when>&#xa;                                            &lt;xsl:otherwise/>&#xa;                                        &lt;/xsl:choose>&#xa;                                    &lt;/tns:ISDN>&#xa;                                &lt;/xsl:when>&#xa;                                &lt;xsl:otherwise>&#xa;                                    &lt;tns:GNR>&#xa;                                        &lt;tns:TipoLineaID>&#xa;                                            &lt;xsl:value-of select=&quot;'1'&quot;/>&#xa;                                        &lt;/tns:TipoLineaID>&#xa;                                    &lt;/tns:GNR>&#xa;                                &lt;/xsl:otherwise>&#xa;                            &lt;/xsl:choose>&#xa;                        &lt;/tns:TipoLinea>&#xa;                    &lt;/xsl:when>&#xa;                    &lt;xsl:otherwise/>&#xa;                &lt;/xsl:choose>&#xa;                &lt;xsl:choose>&#xa;                    &lt;xsl:when test=&quot;string-length(string($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/ordine/DACRimodulata)) > 0&quot;>&#xa;                        &lt;tns:DataAttesaConsegnaServizio>&#xa;                            &lt;xsl:value-of select=&quot;tib:parse-date(&amp;quot;yyyy-MM-dd&amp;quot;, string($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/ordine/DACRimodulata))&quot;/>&#xa;                        &lt;/tns:DataAttesaConsegnaServizio>&#xa;                    &lt;/xsl:when>&#xa;                    &lt;xsl:otherwise>&#xa;                        &lt;tns:DataAttesaConsegnaServizio>&#xa;                            &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group2/tns2:DataAttesaConsegnaServizio&quot;/>&#xa;                        &lt;/tns:DataAttesaConsegnaServizio>&#xa;                    &lt;/xsl:otherwise>&#xa;                &lt;/xsl:choose>&#xa;                &lt;tns:CognomeCliente_RagioneSociale>&#xa;                    &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group2/tns2:CognomeCliente_RagioneSociale&quot;/>&#xa;                &lt;/tns:CognomeCliente_RagioneSociale>&#xa;                &lt;xsl:if test=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group2/tns2:NomeCliente&quot;>&#xa;                    &lt;tns:NomeCliente>&#xa;                        &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group2/tns2:NomeCliente&quot;/>&#xa;                    &lt;/tns:NomeCliente>&#xa;                &lt;/xsl:if>&#xa;                &lt;xsl:if test=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/codiceProgetto&quot;>&#xa;                    &lt;tns:CodiceProgetto>&#xa;                        &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/codiceProgetto&quot;/>&#xa;                    &lt;/tns:CodiceProgetto>&#xa;                &lt;/xsl:if>&#xa;                &lt;tns:EmailReferenteRichiedente>&#xa;                    &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group2/tns2:EmailReferenteRichiedente&quot;/>&#xa;                &lt;/tns:EmailReferenteRichiedente>&#xa;                &lt;tns:TelefonoReferenteRichiedente>&#xa;                    &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:Group2/tns2:TelefonoReferenteRichiedente&quot;/>&#xa;                &lt;/tns:TelefonoReferenteRichiedente>&#xa;                &lt;xsl:choose>&#xa;                    &lt;xsl:when test=&quot;string-length($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/IDCorrelazione) > 0 and string-length(string($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/totaleRichiestePacchetto)) > 0&quot;>&#xa;                        &lt;tns:Correlazioni>&#xa;                            &lt;tns:IdentificativoCorrelazioni>&#xa;                                &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/IDCorrelazione&quot;/>&#xa;                            &lt;/tns:IdentificativoCorrelazioni>&#xa;                            &lt;tns:TotaleRichieste>&#xa;                                &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/totaleRichiestePacchetto&quot;/>&#xa;                            &lt;/tns:TotaleRichieste>&#xa;                        &lt;/tns:Correlazioni>&#xa;                    &lt;/xsl:when>&#xa;                    &lt;xsl:otherwise/>&#xa;                &lt;/xsl:choose>&#xa;            &lt;/tns:DatiNotifica>&#xa;            &lt;tns:IdentificativoOperatoreDonating>&#xa;                &lt;xsl:value-of select=&quot;$InvokeJDBCQuery.JDBCQueryOutput/tns2:CodificaOLOAGCOMDonating&quot;/>&#xa;            &lt;/tns:IdentificativoOperatoreDonating>&#xa;            &lt;xsl:choose>&#xa;                &lt;xsl:when test=&quot;string-length(string($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/ordine/DACRimodulata)) > 0&quot;>&#xa;                    &lt;tns:DataAttesaConsegnaRimodulata>&#xa;                        &lt;xsl:value-of select=&quot;tib:parse-date(&amp;quot;yyyy-MM-dd&amp;quot;, string($GenericNotificationIn.NotificaGenericaRichiesta/tns1:Richiesta/ordine/DACRimodulata))&quot;/>&#xa;                    &lt;/tns:DataAttesaConsegnaRimodulata>&#xa;                &lt;/xsl:when>&#xa;                &lt;xsl:otherwise>&#xa;                    &lt;tns:DataAttesaConsegnaRimodulata>&#xa;                        &lt;xsl:value-of select=&quot;tib:parse-date(&amp;quot;yyyy-MM-dd&amp;quot;, string(current-date()))&quot;/>&#xa;                    &lt;/tns:DataAttesaConsegnaRimodulata>&#xa;                &lt;/xsl:otherwise>&#xa;            &lt;/xsl:choose>&#xa;        &lt;/tns:Rimodulazione_DAC>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:config>
+                        <bwext:BWActivity
+                            activityTypeID="bw.generalactivities.mapper"
+                            version="6.0.0.001"
+                            xmlns:activityconfig="http://tns.tibco.com/bw/model/activityconfig"
+                            xmlns:bwext="http://tns.tibco.com/bw/model/core/bwext"
+                            xmlns:generalactivities="http://ns.tibco.com/bw/palette/generalactivities"
+                            xmlns:npr="http://xsd.telecomitalia.it/crm/npr" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                            <activityConfig>
+                                <properties name="config" xsi:type="activityconfig:EMFProperty">
+                                    <type href="http://ns.tibco.com/bw/palette/generalactivities#//Mapper"/>
+                                    <value
+                                    inputQName="npr:Rimodulazione_DAC" xsi:type="generalactivities:Mapper"/>
+                                </properties>
+                            </activityConfig>
+                        </bwext:BWActivity>
+                    </tibex:config>
+                </tibex:activityExtension>
+            </bpws:extensionActivity>
+            <bpws:invoke inputVariable="InvokeJDBCQuery-input"
+                name="InvokeJDBCQuery" operation="JDBCQuery"
+                outputVariable="InvokeJDBCQuery" partnerLink="JDBCQuery"
+                portType="ns4:JDBCQueryPortType" tibex:xpdlId="c92a16e0-fe79-424c-8e89-f41050e504a7">
+                <tibex:inputBinding expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:tns="http://www.tim.com/NOW/xsd/GenericNotification" xmlns:tns1="http://www.tim.com/NOW/wsdl/abstract/JDBCQuery/" xmlns:tns2="http://www.tim.com/NOW/xsd/JDBCQuery" version="2.0"&gt;&lt;xsl:param name="GenericNotificationIn"/&gt;&lt;xsl:template name="InvokeJDBCQuery-input" match="/"&gt;&lt;tns1:JDBCQueryRequest&gt;&lt;JDBCQueryInput&gt;&lt;tns2:JDBCQueryRequest&gt;&lt;tns2:NotificaGenericaRequest&gt;&lt;xsl:copy-of select="$GenericNotificationIn/NotificaGenericaRichiesta/tns:NotificaGenericaRequest/ancestor-or-self::*/namespace::node()"/&gt;&lt;xsl:copy-of select="$GenericNotificationIn/NotificaGenericaRichiesta/tns:NotificaGenericaRequest/@*"/&gt;&lt;xsl:copy-of select="$GenericNotificationIn/NotificaGenericaRichiesta/tns:NotificaGenericaRequest/node()"/&gt;&lt;/tns2:NotificaGenericaRequest&gt;&lt;/tns2:JDBCQueryRequest&gt;&lt;/JDBCQueryInput&gt;&lt;/tns1:JDBCQueryRequest&gt;&lt;/xsl:template&gt;&lt;/xsl:stylesheet&gt;</tibex:inputBinding>
+                <tibex:inputBindings>
+                    <tibex:partBinding
+                        expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; xmlns:tns1=&quot;http://www.tim.com/NOW/wsdl/abstract/JDBCQuery/&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/JDBCQuery&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;GenericNotificationIn.NotificaGenericaRichiesta&quot;/>&#xa;    &lt;xsl:template name=&quot;InvokeJDBCQuery-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns2:JDBCQueryRequest>&#xa;            &lt;tns2:NotificaGenericaRequest>&#xa;                &lt;xsl:copy-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/ancestor-or-self::*/namespace::node()&quot;/>&#xa;                &lt;xsl:copy-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/@*&quot;/>&#xa;                &lt;xsl:copy-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/node()&quot;/>&#xa;            &lt;/tns2:NotificaGenericaRequest>&#xa;        &lt;/tns2:JDBCQueryRequest>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                </tibex:inputBindings>
+                <bpws:targets>
+                    <bpws:target linkName="LOG_NP_EspletamentoDonorRecipientDonatingToInvokeJDBCQuery"/>
+                </bpws:targets>
+                <bpws:sources>
+                    <bpws:source linkName="InvokeToRimodulazioneDAC_Mapper"/>
+                </bpws:sources>
+            </bpws:invoke>
+            <bpws:extensionActivity>
+                <tibex:extActivity
+                    expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&lt;xsl:param name=&quot;logger_name&quot;/>&lt;xsl:param name=&quot;log_level&quot;/>&lt;xsl:param name=&quot;GenericNotificationIn&quot;/>&lt;xsl:template name=&quot;LOG_NP_RimodulazioneDAC-input&quot; match=&quot;/&quot;>&lt;tns:CW_BUS_MESSAGE>&lt;tns:GenericLogger>&lt;tns:Application>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.application&amp;quot;&quot;/>&lt;/tns:Application>&lt;tns:Process>&lt;xsl:value-of select=&quot;&amp;quot;Notification_np_RimodulazioneDAC&amp;quot;&quot;/>&lt;/tns:Process>&lt;tns:Service>&lt;xsl:value-of select=&quot;&amp;quot;Notification_np_RimodulazioneDACPortType&amp;quot;&quot;/>&lt;/tns:Service>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;GenericNotification&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns2:NotificaGenericaRequest/tns2:Richiesta/IDRichiestaOLO&quot;/>&lt;/tns:BusinessID>&lt;tns:Message>&lt;xsl:value-of select=&quot;concat(&amp;quot;Notifica in input:&amp;#xA;&amp;quot;, tib:render-xml($GenericNotificationIn/NotificaGenericaRichiesta/tns2:NotificaGenericaRequest/tns2:TipologiaNotifica, true(), true()))&quot;/>&lt;/tns:Message>&lt;tns:LoggerName>&lt;xsl:value-of select=&quot;$logger_name&quot;/>&lt;/tns:LoggerName>&lt;tns:LogLevel>&lt;xsl:value-of select=&quot;$log_level&quot;/>&lt;/tns:LogLevel>&lt;tns:LogJMS>&lt;xsl:value-of select=&quot;true()&quot;/>&lt;/tns:LogJMS>&lt;/tns:GenericLogger>&lt;tns:ActiveLoggerServices>&lt;tns:Envelope>&lt;tns:Identifier>&lt;tns:ServiceName>&lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.np&amp;quot;&quot;/>&lt;/tns:ServiceName>&lt;tns:Operation>&lt;xsl:value-of select=&quot;&amp;quot;GenericNotification&amp;quot;&quot;/>&lt;/tns:Operation>&lt;tns:Source>&lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&lt;/tns:Source>&lt;tns:BusinessID>&lt;xsl:value-of select=&quot;$GenericNotificationIn/NotificaGenericaRichiesta/tns2:NotificaGenericaRequest/tns2:Richiesta/IDRichiestaOLO&quot;/>&lt;/tns:BusinessID>&lt;tns:EventType>&lt;xsl:value-of select=&quot;&amp;quot;GenericNotification_SUB-PROCESS&amp;quot;&quot;/>&lt;/tns:EventType>&lt;tns:trackID>&lt;xsl:value-of select=&quot;concat(&amp;quot;GenericNotification_&amp;quot;,$GenericNotificationIn/NotificaGenericaRichiesta/tns2:NotificaGenericaRequest/tns2:Richiesta/IDRichiestaOLO)&quot;/>&lt;/tns:trackID>&lt;/tns:Identifier>&lt;tns:track_position>&lt;xsl:value-of select=&quot;&amp;quot;IN&amp;quot;&quot;/>&lt;/tns:track_position>&lt;tns:Timestamp>&lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&lt;/tns:Timestamp>&lt;/tns:Envelope>&lt;tns:Playload/>&lt;/tns:ActiveLoggerServices>&lt;/tns:CW_BUS_MESSAGE>&lt;/xsl:template>&lt;/xsl:stylesheet>"
+                    expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"
+                    inputVariable="LOG_NP_RimodulazioneDAC-input"
+                    name="LOG_NP_RimodulazioneDAC"
+                    tibex:xpdlId="1c05c994-5b70-4ed1-87f4-addfc403aed3"
+                    type="bw.generalactivities.callprocess" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions">
+                    <bpws:targets>
+                        <bpws:target linkName="GenericNotificationInToLOG_NP_EspletamentoDonorRecipientDonating"/>
+                    </bpws:targets>
+                    <bpws:sources>
+                        <bpws:source linkName="LOG_NP_EspletamentoDonorRecipientDonatingToInvokeJDBCQuery"/>
+                    </bpws:sources>
+                    <tibex:inputBindings>
+                        <tibex:inputBinding
+                            expression="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?>&#xa;&lt;xsl:stylesheet xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot; xmlns:tns=&quot;http://www.tim.com/NOW/xsd/GenericLogger&quot; xmlns:tns2=&quot;http://www.tim.com/NOW/xsd/GenericNotification&quot; xmlns:tib=&quot;http://www.tibco.com/bw/xslt/custom-functions&quot; version=&quot;2.0&quot;>&#xa;    &lt;xsl:param name=&quot;GenericNotificationIn.NotificaGenericaRichiesta&quot;/>&#xa;    &lt;xsl:param name=&quot;logger_name&quot;/>&#xa;    &lt;xsl:param name=&quot;log_level&quot;/>&#xa;    &lt;xsl:template name=&quot;LOG_NP_RimodulazioneDAC-input&quot; match=&quot;/&quot;>&#xa;        &lt;tns:CW_BUS_MESSAGE>&#xa;            &lt;tns:GenericLogger>&#xa;                &lt;tns:Application>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.application&amp;quot;&quot;/>&#xa;                &lt;/tns:Application>&#xa;                &lt;tns:Process>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;Notification_np_RimodulazioneDAC&amp;quot;&quot;/>&#xa;                &lt;/tns:Process>&#xa;                &lt;tns:Service>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;Notification_np_RimodulazioneDACPortType&amp;quot;&quot;/>&#xa;                &lt;/tns:Service>&#xa;                &lt;tns:Operation>&#xa;                    &lt;xsl:value-of select=&quot;&amp;quot;GenericNotification&amp;quot;&quot;/>&#xa;                &lt;/tns:Operation>&#xa;                &lt;tns:BusinessID>&#xa;                    &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns2:Richiesta/IDRichiestaOLO&quot;/>&#xa;                &lt;/tns:BusinessID>&#xa;                &lt;tns:Message>&#xa;                    &lt;xsl:value-of select=&quot;concat(&amp;quot;Notifica in input:&amp;#xA;&amp;quot;, tib:render-xml($GenericNotificationIn.NotificaGenericaRichiesta/tns2:TipologiaNotifica, true(), true()))&quot;/>&#xa;                &lt;/tns:Message>&#xa;                &lt;tns:LoggerName>&#xa;                    &lt;xsl:value-of select=&quot;$logger_name&quot;/>&#xa;                &lt;/tns:LoggerName>&#xa;                &lt;tns:LogLevel>&#xa;                    &lt;xsl:value-of select=&quot;$log_level&quot;/>&#xa;                &lt;/tns:LogLevel>&#xa;                &lt;tns:LogJMS>&#xa;                    &lt;xsl:value-of select=&quot;true()&quot;/>&#xa;                &lt;/tns:LogJMS>&#xa;            &lt;/tns:GenericLogger>&#xa;            &lt;tns:ActiveLoggerServices>&#xa;                &lt;tns:Envelope>&#xa;                    &lt;tns:Identifier>&#xa;                        &lt;tns:ServiceName>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;tim.now.notificationmanager.np&amp;quot;&quot;/>&#xa;                        &lt;/tns:ServiceName>&#xa;                        &lt;tns:Operation>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;GenericNotification&amp;quot;&quot;/>&#xa;                        &lt;/tns:Operation>&#xa;                        &lt;tns:Source>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;INTEGRATION&amp;quot;&quot;/>&#xa;                        &lt;/tns:Source>&#xa;                        &lt;tns:BusinessID>&#xa;                            &lt;xsl:value-of select=&quot;$GenericNotificationIn.NotificaGenericaRichiesta/tns2:Richiesta/IDRichiestaOLO&quot;/>&#xa;                        &lt;/tns:BusinessID>&#xa;                        &lt;tns:EventType>&#xa;                            &lt;xsl:value-of select=&quot;&amp;quot;GenericNotification_SUB-PROCESS&amp;quot;&quot;/>&#xa;                        &lt;/tns:EventType>&#xa;                        &lt;tns:trackID>&#xa;                            &lt;xsl:value-of select=&quot;concat(&amp;quot;GenericNotification_&amp;quot;,$GenericNotificationIn.NotificaGenericaRichiesta/tns2:Richiesta/IDRichiestaOLO)&quot;/>&#xa;                        &lt;/tns:trackID>&#xa;                    &lt;/tns:Identifier>&#xa;                    &lt;tns:track_position>&#xa;                        &lt;xsl:value-of select=&quot;&amp;quot;IN&amp;quot;&quot;/>&#xa;                    &lt;/tns:track_position>&#xa;                    &lt;tns:Timestamp>&#xa;                        &lt;xsl:value-of select=&quot;current-dateTime()&quot;/>&#xa;                    &lt;/tns:Timestamp>&#xa;                &lt;/tns:Envelope>&#xa;                &lt;tns:Playload/>&#xa;            &lt;/tns:ActiveLoggerServices>&#xa;        &lt;/tns:CW_BUS_MESSAGE>&#xa;    &lt;/xsl:template>&#xa;&lt;/xsl:stylesheet>" expressionLanguage="urn:oasis:names:tc:wsbpel:2.0:sublang:xslt1.0"/>
+                    </tibex:inputBindings>
+                    <tibex:CallProcess
+                        moduleRef="tim.now.shared_library" spawn="true"
+                        subProcessName="ProcessLogger.GenericLogger" xmlns:tibex="http://www.tibco.com/bpel/2007/extensions"/>
+                </tibex:extActivity>
+            </bpws:extensionActivity>
+        </bpws:flow>
+    </bpws:scope>
+</bpws:process>
